@@ -1,0 +1,46 @@
+{
+  "app": {
+    "name": "مبروك",
+    "tagline": "ابعت لحظة مش هينسوها."
+  },
+  "nav": {
+    "home": "الرئيسية",
+    "dashboard": "لوحة التحكم",
+    "admin": "الإدارة",
+    "login": "تسجيل الدخول",
+    "logout": "تسجيل الخروج"
+  },
+  "actions": {
+    "create": "إنشاء",
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "next": "التالي",
+    "back": "رجوع",
+    "continue": "متابعة",
+    "share": "مشاركة",
+    "close": "إغلاق",
+    "submit": "إرسال"
+  },
+  "player": {
+    "tapToStart": "اضغط للبدء",
+    "tapToContinue": "اضغط للمتابعة",
+    "replay": "إعادة",
+    "unavailableTitle": "هذا الرابط غير متاح",
+    "unavailableBody": "قد يكون تم حذفه أو لم يصبح جاهزًا بعد."
+  },
+  "order": {
+    "status": {
+      "pending": "بانتظار الدفع",
+      "submitted": "قيد المراجعة",
+      "approved": "تمت الموافقة",
+      "rejected": "مرفوض",
+      "refunded": "تم الاسترداد"
+    }
+  },
+  "common": {
+    "loading": "جارٍ التحميل…",
+    "error": "حدث خطأ ما",
+    "free": "مجاني",
+    "egp": "ج.م"
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "app": {
+    "name": "Congrats",
+    "tagline": "Send a moment they'll never forget."
+  },
+  "nav": {
+    "home": "Home",
+    "dashboard": "Dashboard",
+    "admin": "Admin",
+    "login": "Log in",
+    "logout": "Log out"
+  },
+  "actions": {
+    "create": "Create",
+    "save": "Save",
+    "cancel": "Cancel",
+    "next": "Next",
+    "back": "Back",
+    "continue": "Continue",
+    "share": "Share",
+    "close": "Close",
+    "submit": "Submit"
+  },
+  "player": {
+    "tapToStart": "Tap to start",
+    "tapToContinue": "Tap to continue",
+    "replay": "Replay",
+    "unavailableTitle": "This link isn't available",
+    "unavailableBody": "It may have been removed or isn't ready yet."
+  },
+  "order": {
+    "status": {
+      "pending": "Awaiting payment",
+      "submitted": "Under review",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "refunded": "Refunded"
+    }
+  },
+  "common": {
+    "loading": "Loading…",
+    "error": "Something went wrong",
+    "free": "Free",
+    "egp": "EGP"
+  }
+}

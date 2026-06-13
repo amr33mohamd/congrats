@@ -1,0 +1,2 @@
+# Owned by B2. Admin route handlers live here (approval queue, approve/reject,
+# template/category/pricing CRUD, users, audit log). Do NOT add other teams' routes.

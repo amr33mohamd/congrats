@@ -1,0 +1,107 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/**
+ * Design tokens (two-layer): raw ramps → semantic aliases. Components/UI kit
+ * reference the SEMANTIC aliases only. Colors are space-separated RGB channels
+ * so Tailwind's `rgb(var(--token) / <alpha>)` works.
+ */
+:root {
+  /* ── raw ramps ── */
+  --c-brand-50: 255 241 244;
+  --c-brand-300: 255 143 168;
+  --c-brand-500: 240 67 110;
+  --c-brand-700: 174 31 68;
+  --c-gold-300: 233 198 103;
+  --c-gold-500: 214 164 53;
+  --c-neutral-0: 255 255 255;
+  --c-neutral-50: 250 248 247;
+  --c-neutral-100: 242 238 236;
+  --c-neutral-300: 217 210 206;
+  --c-neutral-500: 140 129 123;
+  --c-neutral-700: 74 66 62;
+  --c-neutral-900: 26 22 20;
+  --c-ink: 20 16 14;
+  --c-success-500: 34 160 109;
+  --c-danger-500: 220 53 69;
+  --c-warning-500: 214 164 53;
+
+  /* ── semantic aliases ── */
+  --color-brand: var(--c-brand-500);
+  --color-brand-strong: var(--c-brand-700);
+  --color-gold: var(--c-gold-500);
+  --color-ink: var(--c-ink);
+  --color-surface: var(--c-neutral-0);
+  --color-surface-2: var(--c-neutral-50);
+  --color-muted: var(--c-neutral-500);
+  --color-border: var(--c-neutral-300);
+  --color-success: var(--c-success-500);
+  --color-danger: var(--c-danger-500);
+  --color-warning: var(--c-warning-500);
+
+  /* ── spacing scale ── */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+
+  /* ── radii ── */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.625rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+  --radius-pill: 9999px;
+
+  /* ── motion ── */
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-emphasized: cubic-bezier(0.22, 1, 0.36, 1);
+  --motion-fast: 150ms;
+  --motion-base: 280ms;
+  --motion-slow: 520ms;
+
+  /* ── elevation ── */
+  --shadow-card: 0 1px 2px rgb(20 16 14 / 0.04), 0 8px 24px -12px rgb(20 16 14 / 0.18);
+  --shadow-pop: 0 12px 48px -16px rgb(20 16 14 / 0.32);
+}
+
+.dark {
+  --color-surface: var(--c-neutral-900);
+  --color-surface-2: 32 27 24;
+  --color-ink: var(--c-neutral-50);
+  --color-muted: var(--c-neutral-300);
+  --color-border: 60 53 49;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  padding: 0;
+  margin: 0;
+  background: rgb(var(--color-surface-2));
+  color: rgb(var(--color-ink));
+  font-family: var(--font-body), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Logical-property helpers for RTL/LTR safety. */
+.inline-start-0 {
+  inset-inline-start: 0;
+}
+.inline-end-0 {
+  inset-inline-end: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
