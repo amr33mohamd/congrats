@@ -53,8 +53,17 @@ async function request<T>(input: string, init?: RequestInit): Promise<T> {
   if (!res.ok) {
     let detail = res.statusText;
     try {
-      const body = (await res.json()) as { error?: string; message?: string };
-      detail = body.error ?? body.message ?? detail;
+      // Server errors come back as { error: { code, message } } (dashboard/admin
+      // HTTP helpers); older/simple ones as { error: string } or { message }.
+      const body = (await res.json()) as {
+        error?: string | { message?: string; code?: string };
+        message?: string;
+      };
+      if (body.error && typeof body.error === 'object') {
+        detail = body.error.message ?? detail;
+      } else {
+        detail = (body.error as string | undefined) ?? body.message ?? detail;
+      }
     } catch {
       /* non-JSON error body */
     }

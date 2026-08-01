@@ -6,7 +6,7 @@ import { useRouter } from '@/i18n/navigation';
 import { Button, Spinner, Badge } from '@/components/ui';
 import type { EditorExperience, AppLocale } from '../types';
 import type { LocalStep } from '../editor-state';
-import { dashboardApi } from '../api-client';
+import { dashboardApi, ApiError } from '../api-client';
 import { formatEgp } from '../money';
 import { BuilderPreview } from '../BuilderPreview';
 
@@ -47,8 +47,11 @@ export function ReviewStep({
       } else {
         router.push('/dashboard');
       }
-    } catch {
-      setError(t('publishError'));
+    } catch (e) {
+      // Surface the server's specific reason when we have one (e.g. a real
+      // validation message), otherwise the generic fallback.
+      const msg = e instanceof ApiError && e.message && e.status !== 0 ? e.message : t('publishError');
+      setError(msg);
       setBusy(false);
     }
   };

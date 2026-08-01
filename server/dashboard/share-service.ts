@@ -89,23 +89,11 @@ export async function publishExperience(
     throw DashboardError.unprocessable('experience has no steps to publish');
   }
 
-  // Every REQUIRED image slot must have its minimum photos uploaded — otherwise
-  // a user could pay for / publish a photo card with empty picture scenes.
-  const def = parseTemplateDefinition(tpl.definition);
-  const mediaRows = await repo.listExperienceMedia(ctx.db, ctx.user.id, experienceId);
-  const mediaCount = (stepId: string, slotKey: string) =>
-    mediaRows.filter((m) => m.templateStepId === stepId && m.slotKey === slotKey).length;
-  for (const scene of def.scenes) {
-    for (const slot of scene.slots) {
-      if (slot.type !== 'image' || !slot.required) continue;
-      const min = slot.min ?? 1;
-      if (mediaCount(scene.id, slot.key) < min) {
-        throw DashboardError.unprocessable(
-          `add ${min} photo${min > 1 ? 's' : ''} to every required picture scene before publishing`,
-        );
-      }
-    }
-  }
+  // NOTE: we intentionally do NOT hard-block publishing when photo slots are
+  // empty. The player degrades gracefully (a picture scene with no photo shows
+  // its text + background), so a text-only card is valid. Requiring photos was
+  // over-strict and blocked legitimate cards. The builder still nudges users to
+  // add photos, but it's their choice.
 
   const { slug } = await ensureShareLink(ctx, experienceId);
 
