@@ -21,6 +21,30 @@ npm test                    # vitest (jsdom)
 - **Dev login:** `/login` → enter any email. The `SEED_ADMIN_EMAIL` (default `admin@congrats.dev`) becomes an admin.
 - **Player:** unlocked experiences play at `/[locale]/p/[slug]`.
 
+## Run with Docker
+
+```bash
+docker compose up --build        # http://localhost:3000  (redirects to /ar)
+```
+
+A single self-contained container: in-process PGlite (no external DB), fully
+offline. The entrypoint seeds the catalog + demo admin on first boot
+(idempotent). PGlite data and uploaded media persist in the `congrats-data`
+volume.
+
+Production-like stack with a real Postgres instead of PGlite:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.postgres.yml up --build
+```
+
+This adds a `postgres:16` service, sets `DATABASE_URL`, applies the schema with
+`drizzle-kit push`, then seeds — all automatically once the DB is healthy.
+
+Override secrets/URLs via the environment (or a shell `.env`), e.g.
+`AUTH_SECRET`, `AUTH_URL`, `SEED_ADMIN_EMAIL`, `INSTAPAY_HANDLE`. Generate a
+secret with `openssl rand -base64 32`.
+
 ## Ownership
 
 This repo's foundation (root config, `db/**`, contracts, player, i18n, auth, server base, UI kit) is **frozen** and owned by F0. See the handoff doc for the directory-ownership map, API signatures, and contracts before editing anything.

@@ -1,0 +1,173 @@
+{
+  "nav": {
+    "experiences": "My experiences",
+    "create": "Create new",
+    "backToSite": "Back to site"
+  },
+  "list": {
+    "title": "My experiences",
+    "subtitle": "Create, manage and share your animated greetings.",
+    "empty": {
+      "title": "No experiences yet",
+      "body": "Start your first animated greeting — it only takes a few minutes.",
+      "cta": "Create your first experience"
+    },
+    "createCta": "New experience",
+    "recipient": "For {name}",
+    "untitled": "Untitled experience",
+    "noRecipient": "someone special"
+  },
+  "status": {
+    "draft": "Draft",
+    "awaiting_payment": "Awaiting payment",
+    "locked": "Awaiting approval",
+    "published": "Published",
+    "rejected": "Payment rejected"
+  },
+  "card": {
+    "edit": "Edit",
+    "continue": "Continue editing",
+    "open": "Open link",
+    "share": "Share",
+    "delete": "Delete",
+    "checkout": "Complete payment",
+    "viewStatus": "View status",
+    "created": "Created {date}",
+    "deleteConfirmTitle": "Delete this experience?",
+    "deleteConfirmBody": "This can't be undone. The shareable link will stop working.",
+    "deleteConfirm": "Delete",
+    "deleteCancel": "Keep it"
+  },
+  "share": {
+    "title": "Share your experience",
+    "subtitle": "Send this private link to the person you're celebrating.",
+    "copy": "Copy link",
+    "copied": "Copied!",
+    "whatsapp": "Share on WhatsApp",
+    "whatsappText": "I made something special for you 💛 ",
+    "qr": "QR code",
+    "qrHint": "Scan to open on a phone",
+    "notReady": "Publish this experience to get a shareable link.",
+    "open": "Open experience"
+  },
+  "create": {
+    "title": "Create a new experience",
+    "subtitle": "Choose a template to begin. You can personalize everything next.",
+    "loading": "Loading templates…",
+    "noTemplates": "No templates available yet. Please check back soon.",
+    "free": "Free",
+    "premium": "Premium",
+    "use": "Use this template",
+    "error": "Couldn't create the experience. Please try again."
+  },
+  "wizard": {
+    "steps": {
+      "details": "Details",
+      "content": "Personalize",
+      "review": "Review"
+    },
+    "next": "Next",
+    "back": "Back",
+    "saving": "Saving…",
+    "saved": "All changes saved",
+    "saveError": "Couldn't save — retrying",
+    "exit": "Save & exit",
+    "details": {
+      "title": "Who is this for?",
+      "subtitle": "We'll use this name throughout the experience.",
+      "recipientLabel": "Recipient's name",
+      "recipientPlaceholder": "e.g. Layla",
+      "titleLabel": "Experience title (only you see this)",
+      "titlePlaceholder": "e.g. Layla's anniversary",
+      "localeLabel": "Language & direction",
+      "localeAr": "العربية (right to left)",
+      "localeEn": "English (left to right)"
+    },
+    "content": {
+      "title": "Personalize each scene",
+      "subtitle": "Edit the words and add a photo to every step. The preview updates live.",
+      "stepLabel": "Scene {index} of {total}",
+      "textLabel": "Text",
+      "dateLabel": "Date",
+      "imageLabel": "Photo",
+      "upload": "Upload photo",
+      "uploading": "Uploading…",
+      "replace": "Replace",
+      "remove": "Remove",
+      "addPhoto": "Add photo",
+      "photoCount": "{count} of {max} photos",
+      "previewTitle": "Live preview",
+      "previewHint": "Tap the phone to play",
+      "tokenHint": "Tip: type '{recipient}' to insert their name automatically.",
+      "required": "Required",
+      "charsLeft": "{count} left"
+    },
+    "review": {
+      "title": "Ready to share?",
+      "subtitle": "Take one last look, then publish or continue to payment.",
+      "summary": "Summary",
+      "recipient": "Recipient",
+      "language": "Language",
+      "scenes": "Scenes",
+      "template": "Template",
+      "price": "Price",
+      "free": "Free",
+      "publishFree": "Publish & get link",
+      "goCheckout": "Continue to payment",
+      "publishing": "Publishing…",
+      "previewFull": "Preview full experience",
+      "publishError": "Couldn't publish. Please try again."
+    }
+  },
+  "checkout": {
+    "title": "Complete your payment",
+    "subtitle": "Premium experiences unlock after a quick manual review.",
+    "error": "Couldn't upload your screenshot. Please try again.",
+    "amount": "Amount to pay",
+    "instapayTitle": "Pay via InstaPay",
+    "instapayHandle": "InstaPay handle",
+    "orderRef": "Order reference",
+    "copy": "Copy",
+    "copied": "Copied",
+    "steps": {
+      "title": "How to pay",
+      "s1": "Open your banking or InstaPay app.",
+      "s2": "Send the exact amount to the handle above.",
+      "s3": "Take a screenshot of the successful transfer.",
+      "s4": "Upload it below with the transfer reference."
+    },
+    "form": {
+      "screenshotLabel": "Payment screenshot",
+      "upload": "Upload screenshot",
+      "uploading": "Uploading…",
+      "refLabel": "Transfer reference number",
+      "refPlaceholder": "e.g. 100234567",
+      "submit": "Submit for review",
+      "submitting": "Submitting…",
+      "error": "Couldn't submit. Check your details and try again.",
+      "needScreenshot": "Please upload your payment screenshot first."
+    }
+  },
+  "order": {
+    "title": "Order status",
+    "ref": "Order reference",
+    "amount": "Amount",
+    "submittedTitle": "Payment submitted",
+    "submittedBody": "Thanks! Our team is reviewing your transfer. This usually takes a short while — we'll unlock your link once it's confirmed.",
+    "approvedTitle": "You're all set!",
+    "approvedBody": "Your payment was confirmed and your experience is now live.",
+    "rejectedTitle": "Payment couldn't be confirmed",
+    "rejectedBody": "We couldn't verify this transfer. Please review the reason and try again.",
+    "rejectedReason": "Reason",
+    "pendingTitle": "Awaiting payment",
+    "pendingBody": "Complete your payment to unlock this experience.",
+    "openLink": "Open shareable link",
+    "backToDashboard": "Back to my experiences",
+    "retry": "Try payment again",
+    "refresh": "Refresh status"
+  },
+  "errors": {
+    "loadFailed": "Couldn't load this. Please refresh.",
+    "notFound": "We couldn't find that experience."
+  }
+}

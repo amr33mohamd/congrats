@@ -1,6 +1,6 @@
-import { setRequestLocale, getTranslations } from 'next-intl/server';
+import { setRequestLocale } from 'next-intl/server';
+import { ExperienceList } from '@/components/dashboard/ExperienceList';
 
-// PLACEHOLDER owned by F0 — D1 builds the builder wizard + my-experiences here.
 export default async function DashboardHome({
   params,
 }: {
@@ -8,12 +8,5 @@ export default async function DashboardHome({
 }) {
   const { locale } = await params;
   setRequestLocale(locale);
-  const t = await getTranslations('common');
-
-  return (
-    <main className="mx-auto max-w-3xl p-token-8">
-      <h1 className="font-heading text-2xl font-bold text-ink">{t('nav.dashboard')}</h1>
-      <p className="mt-token-2 text-sm text-muted">[dashboard — D1 · consumes /api/dashboard/*]</p>
-    </main>
-  );
+  return <ExperienceList />;
 }

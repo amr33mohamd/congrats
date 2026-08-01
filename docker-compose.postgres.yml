@@ -1,0 +1,34 @@
+# Production-like override: run the app against a real Postgres instead of PGlite.
+#
+#   docker compose -f docker-compose.yml -f docker-compose.postgres.yml up --build
+#
+# The entrypoint detects DATABASE_URL, applies the schema with drizzle-kit push,
+# then seeds. The app waits for Postgres to be healthy before starting.
+
+services:
+  app:
+    environment:
+      DATABASE_URL: postgresql://congrats:congrats@db:5432/congrats
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: congrats
+      POSTGRES_PASSWORD: congrats
+      POSTGRES_DB: congrats
+    ports:
+      - "5432:5432"
+    volumes:
+      - congrats-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U congrats -d congrats"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  congrats-pgdata:

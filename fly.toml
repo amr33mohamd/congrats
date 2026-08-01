@@ -1,0 +1,38 @@
+# Fly.io config for Congrats. See DEPLOY.md for the full walkthrough.
+#
+#   fly launch --no-deploy        # create the app (edit the name below if taken)
+#   fly postgres create           # create a managed Postgres, then attach it:
+#   fly postgres attach <pg-app>  # sets DATABASE_URL secret automatically
+#   fly secrets set AUTH_SECRET=$(openssl rand -base64 32) AUTH_TRUST_HOST=true \
+#       AUTH_URL=https://<app>.fly.dev SEED_ADMIN_EMAIL=admin@congrats.dev \
+#       SEED_ADMIN_PASSWORD=$(openssl rand -base64 12) INSTAPAY_HANDLE=you@instapay
+#   fly deploy
+
+app = "congrats"
+primary_region = "cdg"  # Paris — closest low-latency region to Egypt/MENA on Fly
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  NODE_ENV = "production"
+  PORT = "3000"
+
+[http_service]
+  internal_port = 3000
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 1
+
+  [[http_service.checks]]
+    grace_period = "20s"
+    interval = "30s"
+    method = "GET"
+    timeout = "5s"
+    path = "/api/health"
+
+[[vm]]
+  cpu_kind = "shared"
+  cpus = 1
+  memory_mb = 512

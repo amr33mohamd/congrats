@@ -22,8 +22,11 @@ next-env.d.ts
 # testing
 /coverage
 
-# drizzle
-/drizzle
+# build artifacts
+tsconfig.tsbuildinfo
+
+# NOTE: drizzle/ (versioned SQL migrations) IS committed on purpose — the deploy
+# entrypoint applies them to production Postgres.
 
 # misc
 .DS_Store
@@ -33,3 +36,8 @@ npm-debug.log*
 .vscode/*
 !.vscode/extensions.json
 .idea
+
+# Playwright
+/test-results/
+/playwright-report/
+/playwright/.cache/

@@ -1,6 +1,13 @@
-import { setRequestLocale, getTranslations } from 'next-intl/server';
+import { setRequestLocale } from 'next-intl/server';
+import { getSession } from '@/lib/auth';
+import { SiteHeader } from '@/components/marketing/SiteHeader';
+import { Hero } from '@/components/marketing/Hero';
+import { Occasions } from '@/components/marketing/Occasions';
+import { HowItWorks } from '@/components/marketing/HowItWorks';
+import { Pricing } from '@/components/marketing/Pricing';
+import { Faq } from '@/components/marketing/Faq';
+import { SiteFooter } from '@/components/marketing/SiteFooter';
 
-// PLACEHOLDER owned by F0 — D1 builds the real marketing landing in (marketing)/**.
 export default async function MarketingHome({
   params,
 }: {
@@ -8,13 +15,20 @@ export default async function MarketingHome({
 }) {
   const { locale } = await params;
   setRequestLocale(locale);
-  const t = await getTranslations('common');
+  const typed = (locale === 'ar' ? 'ar' : 'en') as 'ar' | 'en';
+  const session = await getSession();
 
   return (
-    <main className="mx-auto flex min-h-[100dvh] max-w-2xl flex-col items-center justify-center gap-token-4 p-token-8 text-center">
-      <h1 className="font-heading text-4xl font-bold text-ink">{t('app.name')}</h1>
-      <p className="text-lg text-muted">{t('app.tagline')}</p>
-      <p className="text-sm text-muted">[marketing landing — D1]</p>
-    </main>
+    <div className="min-h-[100dvh] bg-surface-2">
+      <SiteHeader isAuthed={Boolean(session)} />
+      <main>
+        <Hero locale={typed} />
+        <Occasions />
+        <HowItWorks />
+        <Pricing />
+        <Faq />
+      </main>
+      <SiteFooter />
+    </div>
   );
 }

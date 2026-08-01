@@ -1,7 +1,11 @@
 import { setRequestLocale, getTranslations } from 'next-intl/server';
 import type { Metadata } from 'next';
 import { Player } from '@/components/player';
-import { loadPublicExperience } from './load-experience';
+// Use B1's share-service which enforces the SAME unlock gate as the F0 stub but
+// additionally binds `media` rows to short-lived signed URLs so recipient photos
+// render. The gate (link active + not disabled + not expired + isUnlocked) means
+// paid+unapproved experiences still return null and render the neutral page.
+import { getPublicExperienceBySlug as loadPublicExperience } from '@/server/dashboard/share-service';
 
 // Public player route. F0 owns this: it enforces the unlock gate SERVER-SIDE
 // and renders the shared Player. Recipients are unauthenticated.

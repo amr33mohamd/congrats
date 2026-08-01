@@ -32,6 +32,7 @@ export const users = pgTable(
   {
     id: id(),
     email: text('email').notNull().unique(),
+    passwordHash: text('password_hash'),
     displayName: text('display_name'),
     locale: text('locale').notNull().default('ar'),
     avatarUrl: text('avatar_url'),
@@ -152,6 +153,15 @@ export const media = pgTable(
     userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
     experienceId: uuid('experience_id').references(() => experiences.id, { onDelete: 'cascade' }),
     stepId: uuid('step_id').references(() => steps.id, { onDelete: 'set null' }),
+    // Stable scene reference (TemplateDefinition.scenes[].id). Survives step-row
+    // churn (PUT /steps fully replaces step rows → new UUIDs), so media stays
+    // bound to its scene even after edits. Nullable for legacy/payment rows.
+    templateStepId: text('template_step_id'),
+    // Which image slot on the scene this media fills (e.g. 'coverImage',
+    // 'gallery'). Lets one scene carry multiple image slots and a gallery slot
+    // hold multiple photos. Nullable → binder falls back to the scene's first
+    // image-slot key for legacy rows.
+    slotKey: text('slot_key'),
     kind: text('kind').notNull(),
     storagePath: text('storage_path').notNull(),
     bucket: text('bucket').notNull(),
@@ -248,6 +258,22 @@ export const auditLog = pgTable(
   ],
 );
 
+/* ─────────────────────────── PASSWORD RESET ───────────────────────── */
+
+export const passwordResetTokens = pgTable(
+  'password_reset_tokens',
+  {
+    id: id(),
+    userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+    // Only a SHA-256 hash of the token is stored; the raw token lives in the email link.
+    tokenHash: text('token_hash').notNull().unique(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    usedAt: timestamp('used_at', { withTimezone: true }),
+    createdAt: createdAt(),
+  },
+  (t) => [index('password_reset_user_idx').on(t.userId)],
+);
+
 /* ───────────────────────────── INFERRED TYPES ─────────────────────── */
 
 export type User = typeof users.$inferSelect;
@@ -264,6 +290,7 @@ export type Order = typeof orders.$inferSelect;
 export type NewOrder = typeof orders.$inferInsert;
 export type ShareLink = typeof shareLinks.$inferSelect;
 export type AuditLogRow = typeof auditLog.$inferSelect;
+export type PasswordResetToken = typeof passwordResetTokens.$inferSelect;
 
 export const schema = {
   users,
@@ -276,4 +303,5 @@ export const schema = {
   orders,
   shareLinks,
   auditLog,
+  passwordResetTokens,
 };

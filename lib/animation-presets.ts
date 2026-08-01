@@ -109,6 +109,70 @@ export function getVariants(
         exit: { opacity: 0, transition: { duration: 0.3 } },
       };
 
+    case 'rise':
+      return {
+        hidden: { opacity: 0, y: 36 },
+        visible: { opacity: 1, y: 0, transition: t },
+        exit: { opacity: 0, y: -24, transition: { ...t, duration: duration * 0.6 } },
+      };
+
+    case 'blurIn':
+      return {
+        hidden: { opacity: 0, filter: 'blur(14px)', scale: 1.04 },
+        visible: { opacity: 1, filter: 'blur(0px)', scale: 1, transition: { ...t, duration: duration * 1.1 } },
+        exit: { opacity: 0, filter: 'blur(8px)', transition: { ...t, duration: duration * 0.6 } },
+      };
+
+    case 'glow':
+      return {
+        hidden: { opacity: 0, scale: 0.8 },
+        visible: {
+          opacity: 1,
+          scale: 1,
+          transition: { ...t, type: 'spring', stiffness: 120, damping: 14 },
+        },
+        exit: { opacity: 0, scale: 1.08, transition: { ...t, duration: duration * 0.6 } },
+      };
+
+    case 'bounce':
+      return {
+        hidden: { opacity: 0, scale: 0.6, y: 20 },
+        visible: {
+          opacity: 1,
+          scale: 1,
+          y: 0,
+          transition: { type: 'spring', stiffness: 260, damping: 16, delay },
+        },
+        exit: { opacity: 0, scale: 0.9, transition: { duration: 0.3 } },
+      };
+
+    case 'float':
+      return {
+        hidden: { opacity: 0, y: 50, scale: 0.96 },
+        visible: {
+          opacity: 1,
+          y: 0,
+          scale: 1,
+          transition: { type: 'spring', stiffness: 90, damping: 14, delay },
+        },
+        exit: { opacity: 0, y: -30, transition: { ...t, duration: duration * 0.6 } },
+      };
+
+    case 'kenBurns':
+      // Slow cinematic push-in; pairs with image scenes.
+      return {
+        hidden: { opacity: 0, scale: 1.18 },
+        visible: { opacity: 1, scale: 1, transition: { duration: Math.max(duration, 6), ease: 'linear', delay } },
+        exit: { opacity: 0, transition: { duration: 0.5 } },
+      };
+
+    case 'shimmer':
+      return {
+        hidden: { opacity: 0, x: startOffset(opts.direction, 24) },
+        visible: { opacity: 1, x: 0, transition: { ...t, duration: duration * 1.1 } },
+        exit: { opacity: 0, transition: { duration: 0.3 } },
+      };
+
     default:
       return {
         hidden: { opacity: 0 },

@@ -19,6 +19,9 @@ export const SCENE_TYPES = [
   'Gallery',
   'GiftReveal',
   'Finale',
+  // Expressive types added in the engine rebuild:
+  'Quote', // large stylized quote / verse with optional attribution
+  'Letter', // a personal note rendered like handwritten stationery
 ] as const;
 export const SceneTypeSchema = z.enum(SCENE_TYPES);
 export type SceneType = (typeof SCENE_TYPES)[number];
@@ -34,9 +37,74 @@ export const ANIMATION_PRESETS = [
   'parallax',
   'confettiBurst',
   'flip',
+  // Added in the engine rebuild for richer, more distinct motion:
+  'rise', // gently rises up while fading in
+  'blurIn', // de-blurs into focus
+  'glow', // scales up with a soft glow
+  'bounce', // springy entrance
+  'float', // drifts in with a buoyant overshoot
+  'kenBurns', // slow cinematic zoom/pan (image scenes)
+  'shimmer', // sheen sweep across the element
 ] as const;
 export const AnimationPresetSchema = z.enum(ANIMATION_PRESETS);
 export type AnimationPreset = (typeof ANIMATION_PRESETS)[number];
+
+/* ─────────────────── Background / decoration / style ───────────────── */
+
+/** A scene (or whole-experience) background. All fields optional → palette gradient fallback. */
+export const BackgroundSchema = z.object({
+  type: z.enum(['gradient', 'solid', 'radial', 'image', 'pattern']).default('gradient'),
+  colors: z.array(z.string()).default([]), // gradient/solid/radial stops
+  angle: z.number().default(160), // gradient angle (deg)
+  imageUrl: z.string().optional(), // external image URL (e.g. Unsplash)
+  /** Overlay painted OVER an image for text legibility (css color or gradient). */
+  overlay: z.string().optional(),
+  blurPx: z.number().nonnegative().optional(),
+  /** Decorative CSS pattern layered over the base. */
+  pattern: z.enum(['none', 'dots', 'grid', 'diagonal', 'confettiDots', 'noise']).optional(),
+  /** Slow cinematic zoom on an image background. */
+  kenBurns: z.boolean().optional(),
+});
+export type Background = z.infer<typeof BackgroundSchema>;
+
+/** Ambient particle / atmosphere layer for a scene. */
+export const DecorationSchema = z.object({
+  effect: z
+    .enum([
+      'none',
+      'confetti',
+      'hearts',
+      'petals',
+      'sparkles',
+      'snow',
+      'balloons',
+      'stars',
+      'bubbles',
+      'fireworks',
+      'glow',
+      'emoji',
+    ])
+    .default('none'),
+  intensity: z.enum(['low', 'medium', 'high']).default('medium'),
+  color: z.string().optional(),
+  /** Custom emoji used when effect === 'emoji'. */
+  emoji: z.string().optional(),
+});
+export type Decoration = z.infer<typeof DecorationSchema>;
+
+/** Per-scene typography & layout treatment. */
+export const SceneStyleSchema = z.object({
+  textAlign: z.enum(['start', 'center', 'end']).default('center'),
+  textPosition: z.enum(['center', 'top', 'bottom']).default('center'),
+  headingColor: z.string().optional(),
+  bodyColor: z.string().optional(),
+  headingSize: z.enum(['sm', 'md', 'lg', 'xl', '2xl']).optional(),
+  /** Per-scene heading font override (otherwise theme.fontHeading). */
+  headingFont: z.string().optional(),
+  /** How an image in this scene is framed. */
+  imageStyle: z.enum(['rounded', 'circle', 'full', 'polaroid', 'card', 'tilt']).optional(),
+});
+export type SceneStyle = z.infer<typeof SceneStyleSchema>;
 
 export const DirectionSchema = z.enum(['rtl', 'ltr']);
 export type Direction = z.infer<typeof DirectionSchema>;
@@ -87,6 +155,10 @@ export const SceneDefSchema = z.object({
   transitionOut: TransitionSchema.optional(),
   holdMs: z.number().int().positive().default(4000), // autoplay dwell time
   slots: z.array(SlotSchema).default([]),
+  // Visual customization (all optional → fall back to theme/palette defaults):
+  background: BackgroundSchema.optional(),
+  decoration: DecorationSchema.optional(),
+  style: SceneStyleSchema.optional(),
 });
 export type SceneDef = z.infer<typeof SceneDefSchema>;
 
@@ -98,6 +170,12 @@ export const TemplateThemeSchema = z.object({
   fontBody: z.string().optional(),
   music: z.string().optional(),
   accent: z.string().optional(),
+  /** Default background for every scene that doesn't declare its own. */
+  background: BackgroundSchema.optional(),
+  /** Default ambient decoration for the whole experience. */
+  decoration: DecorationSchema.optional(),
+  /** Default text color for scenes that don't override (defaults to white). */
+  textColor: z.string().optional(),
 });
 export type TemplateTheme = z.infer<typeof TemplateThemeSchema>;
 
@@ -111,6 +189,12 @@ export const TemplateDefinitionSchema = z.object({
   scenes: z.array(SceneDefSchema).min(1), // ORDERED scene defs
 });
 export type TemplateDefinition = z.infer<typeof TemplateDefinitionSchema>;
+/**
+ * Authoring shape (INPUT): fields with zod `.default()` (delayMs, textAlign,
+ * angle, colors, …) are optional here, so content authors only specify what
+ * they want. Validated/normalised to `TemplateDefinition` by the schema.
+ */
+export type TemplateDefinitionInput = z.input<typeof TemplateDefinitionSchema>;
 
 /* ─────────────── BoundExperience (what the Player plays) ───────────── */
 

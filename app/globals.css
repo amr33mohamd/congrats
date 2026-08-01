@@ -97,6 +97,32 @@ body {
   inset-inline-end: 0;
 }
 
+/* ─────────────── Player ambient decoration keyframes ─────────────── */
+/* Rise from below the viewport to above it, with a gentle horizontal sway. */
+@keyframes deco-rise {
+  0% { transform: translateY(8vh) translateX(0) rotate(0deg); opacity: 0; }
+  12% { opacity: var(--deco-opacity, 0.9); }
+  88% { opacity: var(--deco-opacity, 0.9); }
+  100% { transform: translateY(-112vh) translateX(var(--deco-drift, 24px)) rotate(var(--deco-spin, 20deg)); opacity: 0; }
+}
+/* Fall from above to below, swaying like petals/snow. */
+@keyframes deco-fall {
+  0% { transform: translateY(-12vh) translateX(0) rotate(0deg); opacity: 0; }
+  12% { opacity: var(--deco-opacity, 0.9); }
+  88% { opacity: var(--deco-opacity, 0.9); }
+  100% { transform: translateY(108vh) translateX(var(--deco-drift, 24px)) rotate(var(--deco-spin, 160deg)); opacity: 0; }
+}
+/* Twinkle in place (sparkles / stars). */
+@keyframes deco-twinkle {
+  0%, 100% { transform: scale(0.6); opacity: 0; }
+  50% { transform: scale(1.15); opacity: var(--deco-opacity, 1); }
+}
+/* Soft pulsing glow blob. */
+@keyframes deco-glow {
+  0%, 100% { transform: scale(0.9); opacity: 0.18; }
+  50% { transform: scale(1.25); opacity: 0.42; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

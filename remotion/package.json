@@ -1,0 +1,30 @@
+{
+  "name": "congrats-remotion-ads",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Animated ad videos for Congrats / مبروك, built with Remotion",
+  "scripts": {
+    "dev": "remotion studio",
+    "studio": "remotion studio",
+    "render:reel-en": "remotion render ReelAd-EN out/reel-en.mp4",
+    "render:reel-ar": "remotion render ReelAd-AR out/reel-ar.mp4",
+    "render:bumper-en": "remotion render Bumper-EN out/bumper-en.mp4",
+    "render:bumper-ar": "remotion render Bumper-AR out/bumper-ar.mp4",
+    "render:hero-en": "remotion render HeroSpot-EN out/hero-en.mp4",
+    "render:hero-ar": "remotion render HeroSpot-AR out/hero-ar.mp4",
+    "render:all": "npm run render:reel-en && npm run render:reel-ar && npm run render:bumper-en && npm run render:bumper-ar && npm run render:hero-en && npm run render:hero-ar",
+    "still:poster": "remotion still ReelAd-EN out/poster.png --frame=120"
+  },
+  "dependencies": {
+    "@remotion/google-fonts": "4.0.272",
+    "@remotion/shapes": "4.0.272",
+    "react": "19.0.0",
+    "react-dom": "19.0.0",
+    "remotion": "4.0.272"
+  },
+  "devDependencies": {
+    "@remotion/cli": "4.0.272",
+    "@types/react": "19.0.0",
+    "typescript": "5.7.2"
+  }
+}

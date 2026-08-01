@@ -91,17 +91,24 @@ export interface TransitionInput {
  * The state machine never imports the DB so it can be unit-tested in isolation.
  */
 export interface OrderEffects {
+  /**
+   * Persist the status change CONDITIONALLY on the order still being in
+   * `expectedFrom` (optimistic concurrency). Returns true if a row was updated,
+   * false if another concurrent transition already moved it — the state machine
+   * turns a false into an INVALID_TRANSITION so side effects never double-fire.
+   */
   persistOrder(
     orderId: string,
     patch: {
       status: OrderState;
+      expectedFrom: OrderState;
       paymentRef?: string;
       screenshotMediaId?: string;
       rejectReason?: string;
       reviewedBy?: string;
       reviewedAt?: Date;
     },
-  ): Promise<void>;
+  ): Promise<boolean>;
   setExperienceUnlocked(experienceId: string, unlocked: boolean): Promise<void>;
   setShareLinkActive(experienceId: string, active: boolean): Promise<void>;
   appendAudit(entry: {
@@ -163,14 +170,24 @@ export async function transitionOrder(
 
   const reviewedAt = action === 'approve' || action === 'reject' ? new Date() : undefined;
 
-  await effects.persistOrder(order.id, {
+  const persisted = await effects.persistOrder(order.id, {
     status: to,
+    expectedFrom: from,
     paymentRef: action === 'submit' ? input.paymentRef : undefined,
     screenshotMediaId: action === 'submit' ? input.screenshotMediaId : undefined,
     rejectReason: action === 'reject' ? input.rejectReason : undefined,
     reviewedBy: reviewedAt ? input.reviewedBy : undefined,
     reviewedAt,
   });
+
+  // Lost the race: another request already transitioned this order. Abort
+  // BEFORE any unlock/audit side effects so they can't double-fire.
+  if (!persisted) {
+    throw new OrderTransitionError(
+      `order '${order.id}' was already updated concurrently`,
+      'INVALID_TRANSITION',
+    );
+  }
 
   // Unlock / lock side effects.
   if (action === 'approve') {

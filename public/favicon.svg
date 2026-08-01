@@ -1,0 +1,14 @@
+<svg width="64" height="64" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Congrats">
+  <defs>
+    <linearGradient id="fav-rose" x1="12" y1="8" x2="108" y2="112" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F0436E"/>
+      <stop offset="1" stop-color="#AE1F44"/>
+    </linearGradient>
+  </defs>
+  <rect x="4" y="4" width="112" height="112" rx="30" fill="url(#fav-rose)"/>
+  <rect x="32" y="54" width="56" height="40" rx="9" fill="#FFFFFF"/>
+  <path d="M32 63l28 17 28-17" stroke="#AE1F44" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.5"/>
+  <path d="M60 18c2.5 9 5 11.5 14 14-9 2.5-11.5 5-14 14-2.5-9-5-11.5-14-14 9-2.5 11.5-5 14-14z" fill="#FFFFFF"/>
+  <circle cx="38" cy="36" r="4.5" fill="#D6A435"/>
+  <circle cx="84" cy="32" r="4" fill="#D6A435"/>
+</svg>

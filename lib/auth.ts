@@ -11,6 +11,8 @@ import Credentials from 'next-auth/providers/credentials';
 import { eq } from 'drizzle-orm';
 import { getDb } from '@/db';
 import { users, adminUsers } from '@/db/schema';
+import { verifyPassword, DUMMY_PASSWORD_HASH } from '@/lib/password';
+import { rateLimit, clientIp } from '@/lib/rate-limit';
 
 declare module 'next-auth' {
   interface Session {
@@ -23,33 +25,25 @@ declare module 'next-auth' {
   }
 }
 
-async function upsertUserByEmail(email: string) {
-  const db = await getDb();
-  const normalized = email.trim().toLowerCase();
-
-  const existing = await db.select().from(users).where(eq(users.email, normalized)).limit(1);
-  let user = existing[0];
-  if (!user) {
-    const inserted = await db
-      .insert(users)
-      .values({ email: normalized, displayName: normalized.split('@')[0] })
-      .returning();
-    user = inserted[0];
-  }
-
-  // Promote to admin if the email matches the seeded admin and no admin row yet.
+/**
+ * Resolve a user's admin role, auto-promoting the seeded admin email to
+ * `superadmin` the first time it signs in. Returns null for normal users.
+ */
+export async function resolveRole(
+  db: Awaited<ReturnType<typeof getDb>>,
+  user: { id: string; email: string },
+): Promise<string | null> {
   const seedAdmin = (process.env.SEED_ADMIN_EMAIL ?? 'admin@congrats.dev').toLowerCase();
   const adminRow = await db.select().from(adminUsers).where(eq(adminUsers.userId, user.id)).limit(1);
-  let role: string | null = adminRow[0]?.role ?? null;
-  if (!adminRow[0] && normalized === seedAdmin) {
+  if (adminRow[0]) return adminRow[0].role;
+  if (user.email.toLowerCase() === seedAdmin) {
     const created = await db
       .insert(adminUsers)
       .values({ userId: user.id, role: 'superadmin' })
       .returning();
-    role = created[0].role;
+    return created[0].role;
   }
-
-  return { user, role };
+  return null;
 }
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
@@ -57,13 +51,32 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   session: { strategy: 'jwt' },
   providers: [
     Credentials({
-      id: 'dev-login',
-      name: 'Dev Login',
-      credentials: { email: { label: 'Email', type: 'email' } },
-      async authorize(creds) {
-        const email = creds?.email;
-        if (!email || typeof email !== 'string') return null;
-        const { user, role } = await upsertUserByEmail(email);
+      id: 'password',
+      name: 'Email & Password',
+      credentials: {
+        email: { label: 'Email', type: 'email' },
+        password: { label: 'Password', type: 'password' },
+      },
+      async authorize(creds, request) {
+        const email = typeof creds?.email === 'string' ? creds.email.trim().toLowerCase() : '';
+        const password = typeof creds?.password === 'string' ? creds.password : '';
+        if (!email || !password) return null;
+
+        // Brute-force protection: cap attempts per IP and per email/window.
+        const ip = request ? clientIp(request as unknown as Request) : 'local';
+        if (!rateLimit(`login-ip:${ip}`, 20, 60_000).ok) return null;
+        if (!rateLimit(`login-email:${email}`, 8, 60_000).ok) return null;
+
+        const db = await getDb();
+        const found = await db.select().from(users).where(eq(users.email, email)).limit(1);
+        const user = found[0];
+        // Always run a bcrypt compare (against a dummy hash when the user is
+        // missing) so timing can't reveal whether the email is registered.
+        const ok = await verifyPassword(password, user?.passwordHash ?? DUMMY_PASSWORD_HASH);
+        // Same outcome whether the user is missing, blocked, or the password is wrong.
+        if (!user || user.isBlocked || !ok) return null;
+
+        const role = await resolveRole(db, user);
         return {
           id: user.id,
           email: user.email,

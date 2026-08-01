@@ -73,6 +73,7 @@ async function ensurePgliteSchema(pg: { exec: (sql: string) => Promise<unknown> 
     CREATE TABLE IF NOT EXISTS users (
       id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
       email text NOT NULL UNIQUE,
+      password_hash text,
       display_name text,
       locale text NOT NULL DEFAULT 'ar' CHECK (locale IN ('ar','en')),
       avatar_url text,
@@ -153,6 +154,8 @@ async function ensurePgliteSchema(pg: { exec: (sql: string) => Promise<unknown> 
       user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
       experience_id uuid REFERENCES experiences(id) ON DELETE CASCADE,
       step_id uuid REFERENCES steps(id) ON DELETE SET NULL,
+      template_step_id text,
+      slot_key text,
       kind text NOT NULL CHECK (kind IN ('step_image','payment_screenshot','thumbnail')),
       storage_path text NOT NULL,
       bucket text NOT NULL CHECK (bucket IN ('experience-media','payment-proofs')),
@@ -207,6 +210,24 @@ async function ensurePgliteSchema(pg: { exec: (sql: string) => Promise<unknown> 
       user_agent text,
       created_at timestamptz NOT NULL DEFAULT now()
     );
+
+    CREATE TABLE IF NOT EXISTS password_reset_tokens (
+      id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+      user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      token_hash text NOT NULL UNIQUE,
+      expires_at timestamptz NOT NULL,
+      used_at timestamptz,
+      created_at timestamptz NOT NULL DEFAULT now()
+    );
+  `);
+
+  // ── Idempotent migrations ───────────────────────────────────────────
+  // `CREATE TABLE IF NOT EXISTS` never alters an already-existing table, so
+  // columns added after a DB was first created must be back-filled here.
+  // Each statement is individually guarded with IF NOT EXISTS so it is safe to
+  // re-run on every boot, including against a fresh database.
+  await pg.exec(/* sql */ `
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS password_hash text;
   `);
 }
 

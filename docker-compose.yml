@@ -1,0 +1,44 @@
+# Default stack: a single self-contained container.
+# The app uses in-process PGlite (no external database) and persists PGlite data
+# + uploaded media to the `congrats-data` volume. Fully offline.
+#
+#   docker compose up --build
+#
+# For a production-like Postgres stack instead, layer the override file:
+#   docker compose -f docker-compose.yml -f docker-compose.postgres.yml up --build
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: congrats:latest
+    ports:
+      # Host port is configurable (default 3000) so it can avoid conflicts.
+      - "${APP_PORT:-3000}:3000"
+    environment:
+      NODE_ENV: production
+      # Persist PGlite + local uploads under the mounted volume.
+      PGLITE_PATH: /app/.data/pglite
+      LOCAL_STORAGE_ROOT: /app/.data/uploads
+      STORAGE_DRIVER: local
+      # Auth.js (NextAuth v5). Leave AUTH_SECRET unset and the entrypoint
+      # generates a strong random one (persisted to the volume). Set it
+      # explicitly for multi-instance production. NEVER a known/committed value.
+      AUTH_SECRET: ${AUTH_SECRET:-}
+      AUTH_URL: ${AUTH_URL:-http://localhost:3000}
+      AUTH_TRUST_HOST: "true"
+      SEED_ADMIN_EMAIL: ${SEED_ADMIN_EMAIL:-admin@congrats.dev}
+      # Leave SEED_ADMIN_PASSWORD unset → the entrypoint generates one and prints
+      # it once in the logs. Set it to choose your own.
+      SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD:-}
+      INSTAPAY_HANDLE: ${INSTAPAY_HANDLE:-congrats@instapay}
+      # Optional: transactional email for password reset (falls back to logging).
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      EMAIL_FROM: ${EMAIL_FROM:-}
+    volumes:
+      - congrats-data:/app/.data
+    restart: unless-stopped
+
+volumes:
+  congrats-data:

@@ -1,0 +1,113 @@
+{
+  "nav": {
+    "occasions": "Occasions",
+    "how": "How it works",
+    "pricing": "Pricing",
+    "faq": "FAQ",
+    "start": "Create yours",
+    "openDashboard": "My dashboard"
+  },
+  "hero": {
+    "eyebrow": "Animated greetings, made personal",
+    "title": "Send a moment they'll never forget",
+    "subtitle": "Craft a step-by-step animated congratulations — their name, your photos, your words — and share it with a single link.",
+    "ctaPrimary": "Create yours free",
+    "ctaSecondary": "See a live demo",
+    "trust": "No app to install · Works on every phone · Arabic & English",
+    "demoLabel": "Live preview",
+    "demoRecipient": "Layla"
+  },
+  "occasions": {
+    "title": "An experience for every occasion",
+    "subtitle": "Pick a beautifully animated template and make it yours in minutes.",
+    "items": {
+      "anniversary": "Anniversary",
+      "valentine": "Valentine's",
+      "proposal": "Proposal",
+      "eid": "Eid",
+      "birthday": "Birthday",
+      "graduation": "Graduation",
+      "newborn": "New baby",
+      "wedding": "Wedding"
+    }
+  },
+  "how": {
+    "title": "How it works",
+    "subtitle": "Three simple steps from idea to a link worth sharing.",
+    "steps": {
+      "pick": {
+        "title": "Pick a template",
+        "body": "Choose from animated designs built for the moment you're celebrating."
+      },
+      "personalize": {
+        "title": "Make it personal",
+        "body": "Add their name, your photos and your own words to every scene — with a live preview."
+      },
+      "share": {
+        "title": "Share the link",
+        "body": "Publish and send a private link over WhatsApp. They tap once and the magic plays."
+      }
+    }
+  },
+  "pricing": {
+    "title": "Simple, honest pricing",
+    "subtitle": "Start free. Upgrade only when a premium template makes it extra special.",
+    "free": {
+      "name": "Free",
+      "price": "0 EGP",
+      "tagline": "For everyday celebrations",
+      "features": [
+        "Selected free templates",
+        "Personalize name, text & photos",
+        "Shareable private link",
+        "Arabic & English"
+      ],
+      "cta": "Start for free"
+    },
+    "premium": {
+      "name": "Premium",
+      "price": "from 49 EGP",
+      "tagline": "For the moments that matter most",
+      "badge": "Most loved",
+      "features": [
+        "All premium animated templates",
+        "Music & richer scenes",
+        "Pay securely via InstaPay",
+        "Unlocks after quick approval"
+      ],
+      "cta": "Browse premium"
+    }
+  },
+  "faq": {
+    "title": "Frequently asked questions",
+    "items": {
+      "q1": {
+        "q": "How do recipients open it?",
+        "a": "You get a private link. Send it over WhatsApp or anywhere — they tap it and the animated experience plays right in their browser. Nothing to install."
+      },
+      "q2": {
+        "q": "How does payment work for premium templates?",
+        "a": "We show you an InstaPay number. You transfer the amount, upload a screenshot and reference, and once our team confirms it your link unlocks automatically."
+      },
+      "q3": {
+        "q": "Can I use Arabic?",
+        "a": "Yes. Every template works fully in Arabic (right-to-left) and English, including fonts and animations."
+      },
+      "q4": {
+        "q": "Can I edit after publishing?",
+        "a": "Your experiences live in your dashboard. You can keep drafts, duplicate ideas, and manage your shareable links any time."
+      }
+    }
+  },
+  "footer": {
+    "tagline": "Personalized animated greetings for life's best moments.",
+    "rights": "All rights reserved.",
+    "links": "Quick links",
+    "legal": "Legal",
+    "privacy": "Privacy Policy",
+    "terms": "Terms of Service",
+    "refunds": "Refund Policy",
+    "contact": "Contact",
+    "made": "Made with care in Egypt"
+  }
+}

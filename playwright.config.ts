@@ -1,0 +1,58 @@
+import { defineConfig, devices } from '@playwright/test';
+
+/**
+ * E2E config for the Congrats Next.js 15 app.
+ *
+ * IMPORTANT: PGlite (the in-process Postgres at .data/pglite) can only be opened
+ * by ONE Next.js process at a time. Playwright OWNS the single dev server here
+ * (reuseExistingServer: false) on a fixed port (3100). Do NOT start another
+ * `next dev` against this repo while the suite runs.
+ */
+const PORT = 3100;
+const BASE_URL = `http://localhost:${PORT}`;
+
+export default defineConfig({
+  testDir: './e2e',
+  // Run serially: there is a single shared PGlite-backed dev server + DB.
+  fullyParallel: false,
+  workers: 1,
+  forbidOnly: !!process.env.CI,
+  retries: 0,
+  reporter: [['list']],
+  timeout: 60_000,
+  expect: { timeout: 15_000 },
+
+  use: {
+    baseURL: BASE_URL,
+    headless: true,
+    trace: 'on-first-retry',
+    screenshot: 'only-on-failure',
+    actionTimeout: 15_000,
+    navigationTimeout: 30_000,
+  },
+
+  projects: [
+    {
+      name: 'chromium',
+      use: { ...devices['Desktop Chrome'] },
+    },
+  ],
+
+  webServer: {
+    // Seed a dedicated e2e database (fresh admin with a known password + full
+    // template catalog), then start the dev server. Fixed port so baseURL is
+    // deterministic; AUTH_URL aligned so Auth.js v5 redirect URLs match.
+    command: `npm run db:seed && next dev -p ${PORT}`,
+    url: BASE_URL,
+    reuseExistingServer: false,
+    timeout: 180_000,
+    env: {
+      AUTH_URL: BASE_URL,
+      NEXTAUTH_URL: BASE_URL,
+      AUTH_SECRET: 'e2e-test-secret-not-used-in-prod-000000000000',
+      PGLITE_PATH: '.data/pglite-e2e',
+      // The seeded admin uses the same password the e2e login helper submits.
+      SEED_ADMIN_PASSWORD: 'e2e-password-123',
+    },
+  },
+});

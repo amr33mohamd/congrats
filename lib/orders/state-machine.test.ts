@@ -14,6 +14,7 @@ function makeEffects(): OrderEffects & { calls: string[] } {
     calls,
     persistOrder: vi.fn(async (_id, patch) => {
       calls.push(`persist:${patch.status}`);
+      return true;
     }),
     setExperienceUnlocked: vi.fn(async (_id, v) => {
       calls.push(`unlock:${v}`);
