@@ -2,8 +2,10 @@ import type { Metadata } from 'next';
 import { setRequestLocale } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import { LegalLayout } from '@/components/marketing/LegalLayout';
+import { OwnerName, SupportContact } from '@/components/marketing/LegalBits';
+import { marketingMetadata, site } from '@/lib/site';
 
-const UPDATED = '18 July 2026';
+const UPDATED = '28 September 2026';
 
 export async function generateMetadata({
   params,
@@ -12,27 +14,28 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   const isAr = locale === 'ar';
-  return {
-    title: isAr ? 'شروط الخدمة | Congrats' : 'Terms of Service | Congrats',
+  return marketingMetadata({
+    locale: isAr ? 'ar' : 'en',
+    path: '/terms',
+    title: isAr ? 'شروط الخدمة' : 'Terms of Service',
     description: isAr
       ? 'الشروط التي تحكم استخدامك لـ Congrats: الاستخدام المقبول والملكية الفكرية وشروط الدفع والمسؤولية.'
       : 'The terms that govern your use of Congrats: acceptable use, ownership, payment terms, and liability.',
-  };
+  });
 }
 
 function EnglishBody() {
   return (
     <>
       <p>
-        These Terms of Service (&ldquo;Terms&rdquo;) govern your use of Congrats, operated by{' '}
-        <strong>[Company/Owner Name]</strong>. By creating an account, purchasing a template, or using the
+        These Terms of Service (&ldquo;Terms&rdquo;) govern your use of Congrats, operated by <OwnerName />. By creating an account, purchasing a template, or using the
         service, you agree to these Terms.
       </p>
 
       <h2>The service</h2>
       <p>
-        Congrats lets you build, purchase, and share premium animated greeting cards. Some templates are free
-        and others are paid. Features and pricing may change over time.
+        Congrats lets you build, purchase, and share animated greeting cards and one-page invitations. Some
+        templates are free and others are paid. Features and pricing may change over time.
       </p>
 
       <h2>Acceptable use</h2>
@@ -56,8 +59,7 @@ function EnglishBody() {
       <p>
         When you purchase a paid template, you receive a personal, non-exclusive, non-transferable licence to use
         the resulting greeting for personal, non-commercial purposes. The templates, designs, animations, and
-        underlying software remain the intellectual property of <strong>[Company/Owner Name]</strong> and its
-        licensors. You may not resell, sublicense, or redistribute the templates themselves.
+        underlying software remain the intellectual property of <OwnerName /> and its licensors. You may not resell, sublicense, or redistribute the templates themselves.
       </p>
 
       <h2>Payment terms</h2>
@@ -77,21 +79,21 @@ function EnglishBody() {
 
       <h2>Limitation of liability</h2>
       <p>
-        To the maximum extent permitted by law, <strong>[Company/Owner Name]</strong> shall not be liable for any
+        To the maximum extent permitted by law, <OwnerName /> shall not be liable for any
         indirect, incidental, or consequential damages arising from your use of the service. Our total liability
         for any claim is limited to the amount you paid for the order giving rise to the claim.
       </p>
 
       <h2>Governing law</h2>
       <p>
-        These Terms are governed by the laws of <strong>[governing jurisdiction: Egypt]</strong>, and any
+        These Terms are governed by the laws of <strong>{site.governingLaw.en}</strong>, and any
         disputes shall be subject to the courts of that jurisdiction.
       </p>
 
       <h2>Changes to these Terms</h2>
       <p>
         We may update these Terms from time to time. Continued use of Congrats after changes take effect means you
-        accept the updated Terms. Questions? Email <a href="mailto:[support email]">[support email]</a>.
+        accept the updated Terms. Questions? Contact us via <SupportContact locale="en" />.
       </p>
     </>
   );
@@ -101,15 +103,14 @@ function ArabicBody() {
   return (
     <>
       <p>
-        تحكم شروط الخدمة هذه (&laquo;الشروط&raquo;) استخدامك لـ Congrats، التي تُدار بواسطة{' '}
-        <strong>[Company/Owner Name]</strong>. بإنشائك حساباً أو شرائك قالباً أو استخدامك للخدمة، فإنك توافق على
+        تحكم شروط الخدمة هذه (&laquo;الشروط&raquo;) استخدامك لـ Congrats، التي تُدار بواسطة <OwnerName />. بإنشائك حساباً أو شرائك قالباً أو استخدامك للخدمة، فإنك توافق على
         هذه الشروط.
       </p>
 
       <h2>الخدمة</h2>
       <p>
-        تتيح لك Congrats إنشاء بطاقات تهنئة متحركة مميزة وشراءها ومشاركتها. بعض القوالب مجانية وبعضها مدفوع. وقد
-        تتغيّر الميزات والأسعار بمرور الوقت.
+        تتيح لك Congrats إنشاء بطاقات تهنئة متحركة ودعوات من صفحة واحدة وشراءها ومشاركتها. بعض القوالب مجانية
+        وبعضها مدفوع. وقد تتغيّر الميزات والأسعار بمرور الوقت.
       </p>
 
       <h2>الاستخدام المقبول</h2>
@@ -132,8 +133,7 @@ function ArabicBody() {
       <h2>ترخيص القالب</h2>
       <p>
         عند شرائك قالباً مدفوعاً، تحصل على ترخيص شخصي غير حصري وغير قابل للتحويل لاستخدام بطاقة التهنئة الناتجة
-        لأغراض شخصية غير تجارية. وتظل القوالب والتصاميم والرسوم المتحركة والبرمجيات الأساسية ملكية فكرية لـ{' '}
-        <strong>[Company/Owner Name]</strong> ومرخّصيها. ولا يجوز لك إعادة بيع القوالب نفسها أو الترخيص من الباطن
+        لأغراض شخصية غير تجارية. وتظل القوالب والتصاميم والرسوم المتحركة والبرمجيات الأساسية ملكية فكرية لـ<OwnerName /> ومرخّصيها. ولا يجوز لك إعادة بيع القوالب نفسها أو الترخيص من الباطن
         لها أو إعادة توزيعها.
       </p>
 
@@ -152,21 +152,21 @@ function ArabicBody() {
 
       <h2>حدود المسؤولية</h2>
       <p>
-        إلى أقصى حد يسمح به القانون، لن تكون <strong>[Company/Owner Name]</strong> مسؤولة عن أي أضرار غير مباشرة أو
+        إلى أقصى حد يسمح به القانون، لن تكون <OwnerName /> مسؤولة عن أي أضرار غير مباشرة أو
         عرضية أو تبعية تنشأ عن استخدامك للخدمة. وتقتصر مسؤوليتنا الإجمالية عن أي مطالبة على المبلغ الذي دفعته مقابل
         الطلب موضوع المطالبة.
       </p>
 
       <h2>القانون الحاكم</h2>
       <p>
-        تخضع هذه الشروط لقوانين <strong>[governing jurisdiction: Egypt]</strong>، وتخضع أي نزاعات لاختصاص محاكم تلك
+        تخضع هذه الشروط لقوانين <strong>{site.governingLaw.ar}</strong>، وتخضع أي نزاعات لاختصاص محاكم تلك
         الجهة.
       </p>
 
       <h2>التغييرات على هذه الشروط</h2>
       <p>
         قد نحدّث هذه الشروط من وقت لآخر. واستمرارك في استخدام Congrats بعد سريان التغييرات يعني قبولك للشروط المحدّثة.
-        لأي استفسار، راسلنا على <a href="mailto:[support email]">[support email]</a>.
+        لأي استفسار، تواصل معنا عبر <SupportContact locale="ar" />.
       </p>
     </>
   );

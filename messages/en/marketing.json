@@ -6,17 +6,16 @@
     "faq": "FAQ",
     "start": "Create yours",
     "openDashboard": "My dashboard",
-    "templates": "Templates"
+    "templates": "Templates",
+    "invitations": "Invitations"
   },
   "hero": {
-    "eyebrow": "Animated greetings, made personal",
+    "eyebrow": "Animated greetings & wedding invitations",
     "title": "Send a moment they'll never forget",
-    "subtitle": "Craft a step-by-step animated congratulations — their name, your photos, your words — and share it with a single link.",
+    "subtitle": "An animated card that unfolds as they scroll — their name, your photos, your words — shared with a single link.",
     "ctaPrimary": "Create yours free",
-    "ctaSecondary": "See a live demo",
-    "trust": "No app to install · Works on every phone · Arabic & English",
-    "demoLabel": "Live preview",
-    "demoRecipient": "Layla"
+    "ctaSecondary": "Browse templates",
+    "trust": "No app to install · Opens right in the browser · Arabic & English"
   },
   "occasions": {
     "title": "An experience for every occasion",
@@ -29,8 +28,10 @@
       "birthday": "Birthday",
       "graduation": "Graduation",
       "newborn": "New baby",
-      "wedding": "Wedding"
-    }
+      "wedding": "Wedding",
+      "invitation": "Wedding invitation"
+    },
+    "cta": "See all templates"
   },
   "how": {
     "title": "How it works",
@@ -42,17 +43,17 @@
       },
       "personalize": {
         "title": "Make it personal",
-        "body": "Add their name, your photos and your own words to every scene — with a live preview."
+        "body": "Add their name, your photos and your own words — and watch a live preview as you type."
       },
       "share": {
         "title": "Share the link",
-        "body": "Publish and send a private link over WhatsApp. They tap once and the magic plays."
+        "body": "Publish and send the link over WhatsApp or anywhere. They tap it and the card plays in their browser."
       }
     }
   },
   "pricing": {
     "title": "Simple, honest pricing",
-    "subtitle": "Start free. Upgrade only when a premium template makes it extra special.",
+    "subtitle": "Start free. Pay once, per card, only when you pick a premium design.",
     "free": {
       "name": "Free",
       "price": "0 EGP",
@@ -71,12 +72,12 @@
       "tagline": "For the moments that matter most",
       "badge": "Most loved",
       "features": [
-        "All premium animated templates",
-        "Music & richer scenes",
-        "Pay securely via InstaPay",
-        "Unlocks after quick approval"
+        "Ornamented premium designs with richer scenes",
+        "One-page wedding invitations with RSVP on WhatsApp & directions",
+        "Pay by InstaPay — one-time, per card",
+        "Unlocks once we confirm your payment"
       ],
-      "cta": "Browse premium"
+      "cta": "Browse premium designs"
     }
   },
   "faq": {
@@ -88,15 +89,23 @@
       },
       "q2": {
         "q": "How does payment work for premium templates?",
-        "a": "We show you an InstaPay number. You transfer the amount, upload a screenshot and reference, and once our team confirms it your link unlocks automatically."
+        "a": "We show you an InstaPay number. You transfer the amount, upload a screenshot and reference, and once our team confirms it your link unlocks."
       },
       "q3": {
         "q": "Can I use Arabic?",
-        "a": "Yes. Every template works fully in Arabic (right-to-left) and English, including fonts and animations."
+        "a": "Yes. Templates come in Arabic (right-to-left, with Arabic display fonts) and in English — pick the language of the card when you choose its design."
       },
       "q4": {
         "q": "Can I edit after publishing?",
-        "a": "Your experiences live in your dashboard. You can keep drafts, duplicate ideas, and manage your shareable links any time."
+        "a": "Yes. Your cards live in your dashboard, and changes you save show up on the same link — no need to send a new one."
+      },
+      "q5": {
+        "q": "How do guests RSVP to a wedding invitation?",
+        "a": "The invitation has an RSVP button that opens WhatsApp with a reply already written, addressed to the number you set. Replies land in your chats — there's no separate form to check."
+      },
+      "q6": {
+        "q": "Can I see a template before paying?",
+        "a": "Yes. Every template in the gallery is a live preview of the real design, and you can build and preview your whole card before you pay for a premium one."
       }
     }
   },
@@ -109,17 +118,114 @@
     "terms": "Terms of Service",
     "refunds": "Refund Policy",
     "contact": "Contact",
-    "made": "Made with care in Egypt"
+    "made": "Made with care in Egypt",
+    "templates": "All templates",
+    "occasionsTitle": "Occasions"
   },
   "templates": {
     "title": "Handcrafted animated templates",
-    "subtitle": "Free to start · Pay only for the premium ones · Switch template any time while editing",
-    "hint": "Hover a card to watch it play",
+    "subtitle": "Free to start · Pay only for the premium ones · Preview everything before you pay",
+    "hint": "Hover or focus a card to watch it play",
     "all": "All occasions",
     "popular": "Popular",
     "free": "Free",
     "sampleName": "Layla",
     "cta": "Create yours free",
-    "empty": "No templates in this collection yet."
+    "empty": "No templates in this collection yet.",
+    "byOccasion": "Browse by occasion",
+    "backToAll": "All templates",
+    "metaTitle": "Animated greeting card & invitation templates",
+    "metaDescription": "Browse animated greeting templates and one-page wedding invitations — birthdays, weddings, graduation, Eid and more — in Arabic and English. Personalize and send as a link.",
+    "moreHeading": "Other occasions"
+  },
+  "invitations": {
+    "eyebrow": "New",
+    "title": "Wedding invitations, on one elegant page",
+    "subtitle": "Everything your guests need in a single link — designed to be read on a phone and saved to the chat.",
+    "features": {
+      "families": {
+        "title": "Families & names",
+        "body": "Both families' names, set with the care of a printed card."
+      },
+      "event": {
+        "title": "Date & time",
+        "body": "The day, the time and the hall, laid out so no one has to ask twice."
+      },
+      "venue": {
+        "title": "Directions",
+        "body": "One tap opens the venue in the guest's maps app."
+      },
+      "rsvp": {
+        "title": "RSVP on WhatsApp",
+        "body": "Guests reply with a prefilled WhatsApp message — straight to you."
+      },
+      "gift": {
+        "title": "Gift details",
+        "body": "Optional transfer details guests can copy in one tap."
+      },
+      "styles": {
+        "title": "Arabic & English styles",
+        "body": "Several art directions, each in Arabic and English."
+      }
+    },
+    "cta": "See invitation designs",
+    "previewLabel": "Live preview of an invitation template",
+    "sampleGuest": "Ahmed"
+  },
+  "landing": {
+    "birthday": {
+      "title": "Animated birthday card you send as a link",
+      "h1": "Animated birthday cards, sent as a link",
+      "description": "Make a personalized animated birthday card with their name and your photos online, free — then send it as a link on WhatsApp. No app needed.",
+      "intro": "Add their name, your photos and a message of your own, preview it live, and send one link. It opens right in their phone's browser."
+    },
+    "wedding": {
+      "title": "Animated wedding congratulations card",
+      "h1": "Animated wedding congratulations cards",
+      "description": "Send the couple an animated wedding congratulations card with your photos and wishes — personalized online and shared as a single link.",
+      "intro": "Better than the fortieth \"congrats\" in the group chat: a card with the couple's names, your photos and your wishes."
+    },
+    "invitation": {
+      "title": "Online wedding invitation with RSVP on WhatsApp",
+      "h1": "Wedding invitations on one elegant page",
+      "description": "Create a one-page digital wedding invitation in Arabic or English: families, date and time, venue directions, RSVP on WhatsApp and gift details — shared as one link.",
+      "intro": "Families, date, venue with directions, RSVP on WhatsApp and optional gift details — everything your guests need, in one link."
+    },
+    "eid": {
+      "title": "Animated Eid greeting card",
+      "h1": "Animated Eid greeting cards",
+      "description": "Send an animated Eid Mubarak greeting with their name and your message — personalized online in Arabic or English and shared as a link.",
+      "intro": "An Eid greeting that feels personal: their name, your words, and a card that plays in their browser."
+    },
+    "graduation": {
+      "title": "Online graduation card maker",
+      "h1": "Animated graduation cards",
+      "description": "Celebrate a graduate with an animated graduation card — their name, your photos and a message — made online and sent as a link.",
+      "intro": "Mark the milestone with their name, the photos that tell the story, and a message they will keep."
+    },
+    "newborn": {
+      "title": "Newborn congratulations card online",
+      "h1": "Newborn congratulations cards",
+      "description": "Welcome a new baby with an animated congratulations card and photos — personalized online in Arabic or English and shared as a link.",
+      "intro": "Welcome the little one with the baby's name, a few photos and your warmest wishes for the family."
+    },
+    "anniversary": {
+      "title": "Personalized anniversary card online",
+      "h1": "Personalized anniversary cards",
+      "description": "Make a personalized animated anniversary card with your photos and your story — online, in Arabic or English, and sent as a link.",
+      "intro": "Tell your story in a few scenes: your photos, the dates that matter and the words you mean."
+    },
+    "valentine": {
+      "title": "Animated Valentine's card with photos",
+      "h1": "Animated Valentine's cards",
+      "description": "Send an animated Valentine's card with their name and your photos — personalized online and shared as a single link.",
+      "intro": "Their name, your photos and a few honest words — a card made for one person."
+    },
+    "proposal": {
+      "title": "Animated proposal card",
+      "h1": "Animated proposal cards",
+      "description": "Ask the question with an animated proposal card — your photos, your story, and the big moment at the end — sent as a private link.",
+      "intro": "Build up to the question scene by scene, with your photos and your story, and send it as a private link."
+    }
   }
 }

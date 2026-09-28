@@ -1,8 +1,10 @@
 import type { Metadata } from 'next';
 import { setRequestLocale } from 'next-intl/server';
 import { LegalLayout } from '@/components/marketing/LegalLayout';
+import { OwnerName, SupportContact } from '@/components/marketing/LegalBits';
+import { marketingMetadata, site } from '@/lib/site';
 
-const UPDATED = '18 July 2026';
+const UPDATED = '28 September 2026';
 
 export async function generateMetadata({
   params,
@@ -11,12 +13,14 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   const isAr = locale === 'ar';
-  return {
-    title: isAr ? 'سياسة الاسترداد والدفع | Congrats' : 'Refund & Payment Policy | Congrats',
+  return marketingMetadata({
+    locale: isAr ? 'ar' : 'en',
+    path: '/refunds',
+    title: isAr ? 'سياسة الاسترداد والدفع' : 'Refund & Payment Policy',
     description: isAr
       ? 'كيفية الدفع عبر InstaPay ومراجعة الطلبات يدوياً ومتى تُمنح المبالغ المستردّة وكيفية طلبها.'
       : 'How InstaPay payments, manual order review, and refunds work at Congrats — and how to request one.',
-  };
+  });
 }
 
 function EnglishBody() {
@@ -24,8 +28,7 @@ function EnglishBody() {
     <>
       <p>
         This Refund &amp; Payment Policy explains how payments work at Congrats, how we review orders, and when
-        refunds are and are not available. It applies to all paid templates sold by{' '}
-        <strong>[Company/Owner Name]</strong>.
+        refunds are and are not available. It applies to all paid templates sold by <OwnerName />.
       </p>
 
       <h2>How payment works (InstaPay)</h2>
@@ -39,7 +42,7 @@ function EnglishBody() {
         <li>You submit a screenshot or reference of the completed transfer as proof of payment.</li>
         <li>
           Our team <strong>manually reviews and approves</strong> your payment, usually within{' '}
-          <strong>[review window, e.g. 24 hours]</strong>.
+          <strong>{site.reviewWindow.en}</strong>.
         </li>
         <li>Once approved, your paid greeting is unlocked and delivered.</li>
       </ol>
@@ -86,7 +89,10 @@ function EnglishBody() {
       </p>
 
       <h2>How to request a refund</h2>
-      <p>Email <a href="mailto:[support email]">[support email]</a> within <strong>[refund window, e.g. 7 days]</strong> of your purchase and include:</p>
+      <p>
+        Contact us via <SupportContact locale="en" /> within <strong>{site.refundWindow.en}</strong> of your
+        purchase and include:
+      </p>
       <ul>
         <li>The email address on your account.</li>
         <li>Your order or reference number.</li>
@@ -94,15 +100,14 @@ function EnglishBody() {
         <li>A short description of the problem.</li>
       </ul>
       <p>
-        We aim to respond within <strong>[response time, e.g. 2 business days]</strong>. Approved refunds are
+        We aim to respond within <strong>{site.responseTime.en}</strong>. Approved refunds are
         returned via InstaPay to the account you paid from, typically within{' '}
-        <strong>[refund processing time, e.g. 5&ndash;7 business days]</strong>.
+        <strong>{site.refundProcessing.en}</strong>.
       </p>
 
       <h2>Questions</h2>
       <p>
-        For anything about payments or refunds, contact us at{' '}
-        <a href="mailto:[support email]">[support email]</a>.
+        For anything about payments or refunds, contact us via <SupportContact locale="en" />.
       </p>
     </>
   );
@@ -113,8 +118,7 @@ function ArabicBody() {
     <>
       <p>
         توضّح سياسة الاسترداد والدفع هذه كيف تتم عمليات الدفع في Congrats، وكيف نراجع الطلبات، ومتى تُتاح المبالغ
-        المستردّة ومتى لا تُتاح. وتنطبق على جميع القوالب المدفوعة التي تبيعها{' '}
-        <strong>[Company/Owner Name]</strong>.
+        المستردّة ومتى لا تُتاح. وتنطبق على جميع القوالب المدفوعة التي تبيعها <OwnerName />.
       </p>
 
       <h2>كيف يتم الدفع (InstaPay)</h2>
@@ -128,7 +132,7 @@ function ArabicBody() {
         <li>ترسل لقطة شاشة أو الرقم المرجعي للتحويل المكتمل كإثبات للدفع.</li>
         <li>
           يقوم فريقنا <strong>بمراجعة الدفعة والموافقة عليها يدوياً</strong>، عادةً خلال{' '}
-          <strong>[مدة المراجعة، مثلاً 24 ساعة]</strong>.
+          <strong>{site.reviewWindow.ar}</strong>.
         </li>
         <li>بمجرد الموافقة، يتم فتح بطاقة التهنئة المدفوعة وتسليمها لك.</li>
       </ol>
@@ -173,8 +177,8 @@ function ArabicBody() {
 
       <h2>كيفية طلب الاسترداد</h2>
       <p>
-        راسلنا على <a href="mailto:[support email]">[support email]</a> خلال{' '}
-        <strong>[مدة الاسترداد، مثلاً 7 أيام]</strong> من تاريخ الشراء، مع تضمين ما يلي:
+        تواصل معنا عبر <SupportContact locale="ar" /> خلال{' '}
+        <strong>{site.refundWindow.ar}</strong> من تاريخ الشراء، مع تضمين ما يلي:
       </p>
       <ul>
         <li>البريد الإلكتروني المسجّل في حسابك.</li>
@@ -183,15 +187,14 @@ function ArabicBody() {
         <li>وصف موجز للمشكلة.</li>
       </ul>
       <p>
-        نسعى للرد خلال <strong>[مدة الرد، مثلاً يومَي عمل]</strong>. وتُعاد المبالغ المستردّة الموافق عليها عبر
+        نسعى للرد خلال <strong>{site.responseTime.ar}</strong>. وتُعاد المبالغ المستردّة الموافق عليها عبر
         InstaPay إلى الحساب الذي دفعت منه، عادةً خلال{' '}
-        <strong>[مدة معالجة الاسترداد، مثلاً 5&ndash;7 أيام عمل]</strong>.
+        <strong>{site.refundProcessing.ar}</strong>.
       </p>
 
       <h2>الاستفسارات</h2>
       <p>
-        لأي أمر يخص الدفع أو الاسترداد، تواصل معنا على{' '}
-        <a href="mailto:[support email]">[support email]</a>.
+        لأي أمر يخص الدفع أو الاسترداد، تواصل معنا عبر <SupportContact locale="ar" />.
       </p>
     </>
   );
