@@ -33,9 +33,10 @@ async function upsertCategory(
  * template from the gallery/picker. Idempotent: already-archived rows are left
  * alone, so a re-seed reports 0.
  *
- * NB: this also archives published templates an admin created in the admin UI
- * (they are not in the catalog either). Set SEED_ARCHIVE_UNLISTED=0 to skip it
- * on a database where admins author templates directly.
+ * NB: this would also archive published templates an admin created in the
+ * admin UI (they are not in the catalog either), and the seed runs on EVERY
+ * container boot. It is therefore OPT-IN: it only runs when
+ * SEED_ARCHIVE_UNLISTED=1 (a deliberate one-off after retiring catalog slugs).
  */
 export async function archiveUnlistedTemplates(
   db: Awaited<ReturnType<typeof getDb>>,
@@ -113,29 +114,38 @@ export async function seed() {
     [adminRow] = await db.insert(adminUsers).values({ userId: admin.id, role: 'superadmin' }).returning();
   }
 
-  // Templates — upsert on slug. New rows are inserted; existing rows have their
-  // catalog-owned fields (definition, thumbnail, titles, pricing) refreshed so
-  // edits to the content catalog flow into the DB on re-seed. Identity columns
-  // (id, created_by) and user data are never touched.
+  // Templates — upsert on slug. New rows are inserted with the catalog's
+  // pricing + status. Existing rows only get their CODE-owned content
+  // (definition, thumbnail, titles, category, locale) refreshed so catalog
+  // edits flow in on re-seed. Pricing (isPaid/pricePiastres/currency) and
+  // status are ADMIN-owned once a row exists: the seed runs on every boot and
+  // must not revert a price change or un-archive a template made in the admin
+  // UI. Identity columns (id, created_by) and user data are never touched.
   let inserted = 0;
   let updated = 0;
   for (const t of TEMPLATE_CATALOG) {
     const existing = await db.select({ id: templates.id }).from(templates).where(eq(templates.slug, t.slug)).limit(1);
-    const fields = {
+    const contentFields = {
       categoryId: catRows[t.category] ?? null,
       titleEn: t.titleEn,
       titleAr: t.titleAr,
       locale: t.locale,
       direction: t.direction,
+      thumbnailUrl: t.thumbnailUrl ?? null,
+      definition: t.definition,
+    };
+    const fields = {
+      ...contentFields,
       isPaid: t.isPaid,
       pricePiastres: t.pricePiastres,
       currency: t.currency,
-      thumbnailUrl: t.thumbnailUrl ?? null,
-      definition: t.definition,
       status: 'published' as const,
     };
     if (existing[0]) {
-      await db.update(templates).set({ ...fields, updatedAt: new Date() }).where(eq(templates.id, existing[0].id));
+      await db
+        .update(templates)
+        .set({ ...contentFields, updatedAt: new Date() })
+        .where(eq(templates.id, existing[0].id));
       updated += 1;
     } else {
       await db.insert(templates).values({ slug: t.slug, ...fields, createdBy: adminRow.id });
@@ -144,7 +154,7 @@ export async function seed() {
   }
 
   const archived =
-    process.env.SEED_ARCHIVE_UNLISTED === '0'
+    process.env.SEED_ARCHIVE_UNLISTED !== '1'
       ? []
       : await archiveUnlistedTemplates(
           db,

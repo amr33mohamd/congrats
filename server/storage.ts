@@ -48,15 +48,48 @@ export interface StorageAdapter {
   exists(bucket: StorageBucket, key: string): Promise<boolean>;
 }
 
+/**
+ * Throws unless `key` is a plain relative key: no `..` segments, no
+ * backslashes, no NUL bytes, no absolute path and no empty segments.
+ */
+export function assertSafeStorageKey(key: string): void {
+  if (
+    typeof key !== 'string' ||
+    key.length === 0 ||
+    key.length > 512 ||
+    key.includes('\\') ||
+    key.includes('\0') ||
+    key.startsWith('/') ||
+    key.split('/').some((seg) => seg === '' || seg === '.' || seg === '..')
+  ) {
+    throw new Error('invalid storage key');
+  }
+}
+
+/** Strict shape of every key this app mints: `<uid>/<scope>/<fileId>.<ext>`. */
+const MEDIA_KEY_RE = /^[A-Za-z0-9_-]+\/[A-Za-z0-9_-]+\/[A-Za-z0-9_-]+\.(jpg|png|webp|gif)$/;
+
+/** True when `key` has exactly the shape minted by experienceMediaKey/paymentProofKey for `userId`. */
+export function isWellFormedMediaKey(key: string, userId: string): boolean {
+  return MEDIA_KEY_RE.test(key) && key.startsWith(`${userId}/`);
+}
+
 /* ───────────────────── Local-disk dev adapter ─────────────────────── */
 
 export class LocalDiskStorageAdapter implements StorageAdapter {
   constructor(private readonly root: string = process.env.LOCAL_STORAGE_ROOT ?? '.data/uploads') {}
 
   private resolve(bucket: StorageBucket, key: string): string {
-    // Guard against path traversal in keys.
-    const safeKey = key.replace(/\.\.(\/|\\)/g, '');
-    return path.join(process.cwd(), this.root, bucket, safeKey);
+    // Guard against path traversal: reject suspicious keys outright, then
+    // verify the resolved path is strictly inside the bucket directory.
+    // (Never "sanitize" by stripping — `....//` collapses back into `../`.)
+    assertSafeStorageKey(key);
+    const base = path.resolve(process.cwd(), this.root, bucket);
+    const full = path.resolve(base, key);
+    if (!full.startsWith(base + path.sep)) {
+      throw new Error('invalid storage key');
+    }
+    return full;
   }
 
   async put(input: PutObjectInput): Promise<StoredObject> {

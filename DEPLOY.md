@@ -42,6 +42,8 @@ On boot the container automatically:
 | `AUTH_TRUST_HOST` | `true` behind a platform proxy. |
 | `SEED_ADMIN_EMAIL` | Default `admin@congrats.dev`. Use your own. |
 | `SEED_ADMIN_PASSWORD` | Your admin login password. Auto-generated + logged once if unset. |
+| `TRUSTED_PROXY_HOPS` | Default `1`. Number of reverse proxies in front of the app; rate limits key on the X-Forwarded-For entry this far from the right. Ignored on Fly (uses `Fly-Client-IP`). Set `0` if the app is exposed with no proxy. |
+| `SEED_ARCHIVE_UNLISTED` | Unset by default. Set to `1` for a single boot to archive published templates whose slug left the code catalog (also archives admin-created templates). The boot-time seed otherwise only refreshes catalog *content* (definition, titles, thumbnail); prices and publish status of existing templates are owned by the admin UI and are never reverted. |
 
 ### Optional (a boot warning is printed for each one left unset)
 

@@ -85,7 +85,7 @@ export default async function OccasionLandingPage({
       <SiteHeader isAuthed={Boolean(session)} overDark />
       <main className="pt-24">
         <div className="mx-auto max-w-7xl px-token-4 pb-20">
-          <nav aria-label="Breadcrumb" className="text-center text-sm text-white/45">
+          <nav aria-label={t('breadcrumbLabel')} className="text-center text-sm text-white/45">
             <Link href="/templates" className="transition-colors hover:text-white">
               {t('backToAll')}
             </Link>

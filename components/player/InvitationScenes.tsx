@@ -222,13 +222,37 @@ export function EventScene(p: SceneRenderPropsLike) {
 const pill =
   'mt-token-6 inline-flex items-center gap-token-2 rounded-pill px-token-6 py-token-3 text-sm font-semibold transition-transform duration-[var(--motion-base)] hover:scale-[1.03] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2';
 
+/** Google hosts: google.com, google.<cc>, google.com.<cc>, google.co.<cc> (optionally www./maps.). */
+const GOOGLE_HOST_RE = /^(?:www\.|maps\.)?google\.(?:com|[a-z]{2}|com\.[a-z]{2}|co\.[a-z]{2})$/;
+
+/**
+ * True only for an https URL whose HOST is exactly a Google Maps host — parsed
+ * with URL, never prefix-matched, so `maps.app.goo.gl.evil.com` is rejected.
+ */
+export function safeMapsUrl(given: string): boolean {
+  if (!given) return false;
+  let u: URL;
+  try {
+    u = new URL(given.trim());
+  } catch {
+    return false;
+  }
+  if (u.protocol !== 'https:' || u.username || u.password || u.port) return false;
+  const host = u.hostname.toLowerCase();
+  if (host === 'maps.app.goo.gl') return true;
+  if (host === 'goo.gl') return u.pathname.startsWith('/maps');
+  if (host === 'maps.google.com') return true;
+  if (GOOGLE_HOST_RE.test(host)) return u.pathname.startsWith('/maps');
+  return false;
+}
+
 /** Venue — the address, plus a directions link that opens the phone's maps. */
 export function VenueScene(p: SceneRenderPropsLike) {
   const c = colors(p);
   const address = t(p, 'address');
   const given = t(p, 'mapUrl');
   // Only ever link to a real maps URL; otherwise search the address.
-  const href = /^https:\/\/(maps\.app\.goo\.gl|(www\.)?google\.[a-z.]+\/maps|goo\.gl\/maps)/i.test(given)
+  const href = safeMapsUrl(given)
     ? given
     : address
       ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`

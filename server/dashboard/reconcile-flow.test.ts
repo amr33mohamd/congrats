@@ -270,4 +270,24 @@ describe('upload byte checks', () => {
     expect(await storage.exists('payment-proofs', badKey)).toBe(false);
     await storage.remove('payment-proofs', goodKey);
   });
+
+  it('confirmMedia rejects traversal keys before touching storage', async () => {
+    const storage = getStorage();
+    const canary = `${ctxA.user.id}/order/canary.png`;
+    await storage.put({ bucket: 'payment-proofs', key: canary, data: Buffer.from('not-an-image') });
+    for (const key of [
+      `${ctxA.user.id}/....//....//....//....//package.json`,
+      `${ctxA.user.id}/../${ctxA.user.id}/order/canary.png`,
+      `${ctxA.user.id}/order/../order/canary.png`,
+      `${ctxA.user.id}//order/canary.png`,
+    ]) {
+      await expect(
+        confirmMedia(ctxA, { bucket: 'payment-proofs', key, mime: 'image/png', bytes: 10 }),
+      ).rejects.toThrow(/does not belong|forbidden/i);
+    }
+    // The repo's package.json must still be there.
+    const { existsSync } = await import('node:fs');
+    expect(existsSync(`${process.cwd()}/package.json`)).toBe(true);
+    await storage.remove('payment-proofs', canary);
+  });
 });

@@ -7,7 +7,9 @@
     "start": "Create yours",
     "openDashboard": "My dashboard",
     "templates": "Templates",
-    "invitations": "Invitations"
+    "invitations": "Invitations",
+    "primaryLabel": "Primary",
+    "mobileLabel": "Mobile menu"
   },
   "hero": {
     "eyebrow": "Animated greetings & wedding invitations",
@@ -136,7 +138,8 @@
     "backToAll": "All templates",
     "metaTitle": "Animated greeting card & invitation templates",
     "metaDescription": "Browse animated greeting templates and one-page wedding invitations — birthdays, weddings, graduation, Eid and more — in Arabic and English. Personalize and send as a link.",
-    "moreHeading": "Other occasions"
+    "moreHeading": "Other occasions",
+    "breadcrumbLabel": "Breadcrumb"
   },
   "invitations": {
     "eyebrow": "New",

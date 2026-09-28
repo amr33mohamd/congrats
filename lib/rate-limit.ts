@@ -32,11 +32,34 @@ export function rateLimit(key: string, limit: number, windowMs: number): RateLim
   return { ok: true, remaining: limit - existing.count, retryAfterSec: 0 };
 }
 
-/** Best-effort client IP from common proxy headers (falls back to 'local'). */
+/**
+ * Client IP for rate-limit keys. Never trusts the LEFT-most X-Forwarded-For
+ * entry: clients can send any XFF they like and proxies only append to it.
+ *
+ *  - On Fly.io (FLY_APP_NAME set) the edge sets `Fly-Client-IP` itself.
+ *  - Otherwise we take the entry TRUSTED_PROXY_HOPS positions from the right
+ *    (default 1 = the address seen by the single reverse proxy in front of
+ *    the app, e.g. Render's). Set TRUSTED_PROXY_HOPS=0 when the app is exposed
+ *    directly with no proxy: XFF is then ignored entirely.
+ *  - Falls back to `x-real-ip` (only when hops > 0) and then 'local'.
+ */
 export function clientIp(req: Request): string {
+  if (process.env.FLY_APP_NAME) {
+    const fly = req.headers.get('fly-client-ip')?.trim();
+    if (fly) return fly;
+  }
+  const rawHops = Number.parseInt(process.env.TRUSTED_PROXY_HOPS ?? '1', 10);
+  const hops = Number.isFinite(rawHops) && rawHops >= 0 ? rawHops : 1;
+  if (hops === 0) return 'local';
   const fwd = req.headers.get('x-forwarded-for');
-  if (fwd) return fwd.split(',')[0]!.trim();
-  return req.headers.get('x-real-ip') ?? 'local';
+  if (fwd) {
+    const parts = fwd
+      .split(',')
+      .map((p) => p.trim())
+      .filter(Boolean);
+    if (parts.length > 0) return parts[Math.max(0, parts.length - hops)]!;
+  }
+  return req.headers.get('x-real-ip')?.trim() || 'local';
 }
 
 // Periodically drop expired buckets so the Map can't grow without bound.

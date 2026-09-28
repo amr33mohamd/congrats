@@ -17,6 +17,7 @@ import {
   getStorage,
   experienceMediaKey,
   paymentProofKey,
+  isWellFormedMediaKey,
   type StorageBucket,
 } from '@/server/storage';
 import type { Media } from '@/db/schema';
@@ -167,7 +168,9 @@ export async function confirmMedia(ctx: UserContext, input: ConfirmMediaInput): 
   assertSize(input.bytes);
 
   // Defensive: the key MUST live under the caller's userId prefix.
-  if (!input.key.startsWith(`${ctx.user.id}/`)) {
+  // Strict shape check BEFORE any storage call: rejects traversal tricks
+  // like `<uid>/....//....//file` that a prefix check alone lets through.
+  if (!isWellFormedMediaKey(input.key, ctx.user.id)) {
     throw DashboardError.forbidden('key does not belong to the current user');
   }
 

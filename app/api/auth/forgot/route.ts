@@ -29,6 +29,9 @@ export async function POST(req: Request) {
     if (!limit.ok) throw DashboardError.validation(`Too many attempts. Try again in ${limit.retryAfterSec}s.`);
 
     const { email, locale } = await readJson(req, ForgotSchema);
+    // Per-recipient cap as well, so rotating source IPs can't mail-bomb one
+    // inbox. Silently succeed (same response) to avoid an existence oracle.
+    if (!rateLimit(`forgot-email:${email}`, 3, 15 * 60_000).ok) return json({ ok: true });
     const db = await getDb();
     const found = await db.select({ id: users.id, email: users.email }).from(users).where(eq(users.email, email)).limit(1);
     const user = found[0];

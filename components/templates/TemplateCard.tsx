@@ -81,7 +81,7 @@ export function TemplateCard({
       <div className="pointer-events-none absolute top-2 end-2 z-20 flex flex-row-reverse gap-1">
         <span
           className={`rounded-pill px-2 py-1 text-[11px] font-semibold leading-4 backdrop-blur-md ${
-            data.isPaid ? 'bg-brand/90 text-white' : 'bg-white/85 text-ink'
+            data.isPaid ? 'bg-brand/90 text-white' : 'bg-white/85 text-neutral-900'
           }`}
         >
           {data.priceLabel}

@@ -6,8 +6,16 @@ import { SiteFooter } from '@/components/marketing/SiteFooter';
 import { SupportContact } from '@/components/marketing/LegalBits';
 import { legalDetailsComplete } from '@/lib/site';
 
+/** Formats an ISO date for the locale; falls back to the raw string if unparsable. */
+export function formatUpdated(iso: string, locale: string): string {
+  const d = new Date(`${iso}T00:00:00Z`);
+  if (Number.isNaN(d.getTime())) return iso;
+  return new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }).format(d);
+}
+
 type LegalLayoutProps = {
   title: string;
+  /** ISO date (YYYY-MM-DD); formatted per locale. */
   updated: string;
   children: ReactNode;
 };
@@ -30,7 +38,7 @@ export async function LegalLayout({ title, updated, children }: LegalLayoutProps
         <article className="mx-auto max-w-3xl px-token-4 py-token-8 md:py-token-12">
           <h1 className="font-heading text-3xl font-bold text-ink md:text-4xl">{title}</h1>
           <p className="mt-token-2 text-sm text-muted">
-            {isAr ? `آخر تحديث: ${updated}` : `Last updated: ${updated}`}
+            {isAr ? `آخر تحديث: ${formatUpdated(updated, 'ar-EG')}` : `Last updated: ${formatUpdated(updated, 'en-GB')}`}
           </p>
           {/* Stays up until the operator's legal name, email and address are
               configured (lib/site.ts) — without them these policies name no one

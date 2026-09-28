@@ -85,7 +85,7 @@ export function OverviewClient() {
         </h2>
         <Link
           href="/admin/queue"
-          className="inline-flex items-center gap-token-2 rounded-pill bg-brand px-token-6 py-token-3 text-sm font-medium text-white shadow-[var(--shadow-card)] transition-colors hover:bg-brand-strong"
+          className="inline-flex items-center gap-token-2 rounded-pill bg-brand px-token-6 py-token-3 text-sm font-medium text-white shadow-[var(--shadow-card)] transition-colors hover:bg-brand-hover"
         >
           {t('overview.goToQueue')} →
         </Link>

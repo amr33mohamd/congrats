@@ -72,7 +72,7 @@ export function SiteHeader({
           Congrats
         </Link>
 
-        <nav className="hidden items-center gap-token-6 md:flex" aria-label="Primary">
+        <nav className="hidden items-center gap-token-6 md:flex" aria-label={t('primaryLabel')}>
           <Link
             href="/templates"
             className={cn(
@@ -147,7 +147,7 @@ export function SiteHeader({
 
       {open ? (
         <div className="border-t border-border bg-surface px-token-4 py-token-4 md:hidden">
-          <nav className="flex flex-col gap-token-1" aria-label="Mobile">
+          <nav className="flex flex-col gap-token-1" aria-label={t('mobileLabel')}>
             <Link
               href="/templates"
               onClick={() => setOpen(false)}

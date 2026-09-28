@@ -4,7 +4,7 @@ import { LegalLayout } from '@/components/marketing/LegalLayout';
 import { Operator, SupportContact, PostalClause } from '@/components/marketing/LegalBits';
 import { marketingMetadata, site } from '@/lib/site';
 
-const UPDATED = '28 September 2026';
+const UPDATED = '2026-09-28';
 
 export async function generateMetadata({
   params,

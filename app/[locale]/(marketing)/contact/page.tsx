@@ -4,7 +4,7 @@ import { Link } from '@/i18n/navigation';
 import { LegalLayout } from '@/components/marketing/LegalLayout';
 import { marketingMetadata, site, supportWhatsappHref } from '@/lib/site';
 
-const UPDATED = '28 September 2026';
+const UPDATED = '2026-09-28';
 
 export async function generateMetadata({
   params,
