@@ -13,11 +13,13 @@ Pick the EN or AR version per recipient (or send both stacked for a bilingual li
 2. I made something — and I'd love you to try it
 3. A better way to say "happy birthday" (I built it)
 4. Congrats is live 🎉
+5. Getting married? Your invitation, in one link
 
 **Arabic**
 1. أخيراً عملت الحاجة اللي كنت بتكلم عنها
 2. عملت حاجة حبيت أوريهالك 🎉
 3. طريقة أحلى تبعت بيها التهاني — جرّبها
+4. هتتجوز؟ دعوة فرحك في لينك واحد 🤍
 
 ---
 
@@ -35,6 +37,12 @@ Pick the EN or AR version per recipient (or send both stacked for a bilingual li
 > and it turns all of that into a little **animated greeting** that plays like a
 > story. Then you get one link to send. Whoever opens it just taps and watches,
 > on any phone, no app needed.
+>
+> And if you (or someone you know) is getting married: Congrats also makes
+> **wedding invitations** you send as one WhatsApp link — both families, the
+> date with a countdown, your photos, the venue opening straight in Google Maps,
+> and RSVPs that come to you on WhatsApp. Here's one I made:
+> [demo invitation link]
 >
 > I built it because I was tired of celebrating the people I love with three
 > emojis in a group chat. This takes about a minute and lands completely
@@ -68,6 +76,10 @@ Pick the EN or AR version per recipient (or send both stacked for a bilingual li
 > عيد ميلاد، فرح، عيد، تخرّج، مولود جديد — والموقع بيحوّلها كلها لـ**تهنئة متحركة**
 > بتتفتح قدامه زي القصة. وبعدها بتاخد لينك واحد تبعتهوله. اللي يفتحه بس بيدوس
 > ويتفرّج، على أي موبايل، من غير أي تطبيق.
+>
+> ولو إنت أو حد تعرفه هيتجوز: Congrats كمان بيعمل **دعوات فرح** بتتبعت لينك واحد على
+> الواتساب — أسامي العيلتين، الميعاد وعدّ تنازلي، صوركم، اللوكيشن بيفتح على الخريطة
+> على طول، وتأكيد الحضور بيوصلكم واتساب. دي واحدة عملتها: [demo invitation link]
 >
 > عملتها لأني زهقت إني أهنّي أقرب الناس ليا بتلات إيموجي في جروب. دي بتاخد دقيقة
 > وإحساسها مختلف تماماً.

@@ -5,7 +5,75 @@ reaction. Text-on-screen carries the story (most people watch muted). Hook in th
 first 1.5 seconds or they scroll. Use a trending, upbeat/emotional audio.
 
 Post the same video to both Reels and TikTok; put the link in bio + "link in bio"
-sticker.
+sticker. Link in bio → `[templates URL]` (the live gallery) with
+`?utm_source=tiktok` / `?utm_source=instagram`.
+
+**Music on screen recordings:** only use the platform's own licensed sound library
+over your clip, or a track you licensed for the app (`public/audio/`). Don't
+screen-record a card that plays unlicensed music.
+
+**Privacy:** only record invitations you made yourself or where the couple agreed
+in writing; blur phone numbers and bank/gift details.
+
+Invitation videos (A–E) are the priority — they sell the product that makes the
+money. Card videos (1–3) are for Eid, Love Day and birthdays.
+
+---
+
+## Invitation video A — "The aunt test" (directions)
+
+**Length:** ~20s · **Vibe:** funny, relatable, Egyptian.
+
+| Time | On screen | Text overlay |
+| --- | --- | --- |
+| 0-2s | Family WhatsApp group, a blurry photo of a printed invitation, then «هي القاعة فين بالظبط؟» ×3 | «كل فرح نفس السؤال 😅» |
+| 2-6s | Tap the Congrats link → the seal opens, music starts | «ابعتي دي بدالها» |
+| 6-12s | Smooth scroll: families → date → countdown → couple photo | «كل حاجة في لينك واحد» |
+| 12-16s | Tap «الاتجاهات» → Google Maps opens with the route | «خالتك هتوصل لوحدها» |
+| 16-20s | Tap RSVP → WhatsApp opens with the prefilled reply | «وتأكيد الحضور بيوصلك واتساب 🤍» · end card: logo + gallery link |
+
+## Invitation video B — "Open the seal" (ASMR / aesthetic)
+
+**Length:** ~12s. Close-up screen recording on a dark background, no talking.
+The seal opening, the names settling in, one slow scroll to the date. Overlay:
+**«أول ما الضيف يفتحها…»**. Caption asks: «أنهي ستايل يشبهكم؟» (drives comments).
+
+## Invitation video C — "Print vs link"
+
+**Length:** ~15s. Split screen. Left: printed card photographed on a table, sent
+in WhatsApp (compressed, tilted). Right: the Congrats invitation playing.
+Overlay: **«نفس الفرح… دعوة أشيك»** then **«والمطبوع؟ اطبعوا ٢٠ للكبار بس»** — we're a
+complement to print, not an enemy of the print shop.
+
+## Invitation video D — "10 minutes" (build)
+
+**Length:** ~30s, sped up. Timer in the corner. Pick a style in the live gallery →
+type the names and families → pick the date → paste the Google Maps link → add 3
+photos → preview. Overlay at the end: **«١٠ دقايق. من غير مطبعة ولا انتظار.»**
+
+## Invitation video E — style reveals (series of 5)
+
+One post per art direction — Ivory Arch, Baroque Noir, Sage Garden, Blue
+Porcelain, Qasr Gold. 8–10s each, one slow scroll, trending audio. Overlay: the
+style's Arabic name + «لو فرحك [شتوي / في جنينة / كلاسيك]…».
+
+### Invitation captions
+
+**AR**
+> دعوة فرحكم في لينك واحد 🤍 أسامي العيلتين، الميعاد، عدّ تنازلي، اللوكيشن بيفتح على
+> الخريطة، وتأكيد الحضور على الواتساب. بتعملوها بنفسكم في ١٠ دقايق — اللينك في البايو.
+>
+> `#دعوة_فرح #دعوات_زفاف #دعوة_الكترونية #كتب_كتاب #عروسة #تجهيزات_الفرح #فرح_مصري`
+
+**EN**
+> Your wedding invitation, in one beautiful link. Families, date, countdown, the
+> venue in Maps, RSVP on WhatsApp — made by you in 10 minutes. Link in bio.
+>
+> `#weddinginvitation #egyptwedding #bridetobe #digitalinvitation #weddingegypt #katbketab`
+
+---
+
+# Greeting-card videos
 
 ---
 

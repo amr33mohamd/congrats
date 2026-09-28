@@ -8,6 +8,8 @@ needed, but you can drop the URL in a comment if you want to protect reach).
 
 ## Founder launch post (long)
 
+*(Illustrative story — replace it with your own real one before posting.)*
+
 > A year ago, my best friend got married while living on the other side of the
 > world. I couldn't be there.
 >
@@ -23,9 +25,11 @@ needed, but you can drop the URL in a comment if you want to protect reach).
 >
 > Today I'm launching **Congrats** to fix exactly that.
 >
-> Congrats turns a name, a few photos, and your own words into a step-by-step
-> **animated greeting** — for birthdays, weddings, Eid, graduations, a new baby,
-> and more. You build it in about a minute, and you share it as a single link.
+> Congrats makes **one-page animated wedding invitations** — the families, the
+> date with a countdown, the couple's photos, venue directions that open in Google
+> Maps, and RSVP straight to the couple's WhatsApp — and turns a name, a few
+> photos and your own words into an **animated greeting** for birthdays, Eid,
+> graduations, a new baby and more. You build it in about a minute, and you share it as a single link.
 > Whoever receives it just taps and watches it unfold on their phone. No app, no
 > sign-up, no friction.
 >

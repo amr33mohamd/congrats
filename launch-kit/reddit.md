@@ -53,15 +53,24 @@ greeting you send as a link (bilingual EN/Arabic)
 > text animates in, photos fade, confetti at the end. You share it as a single
 > link and it plays on any phone, no app or signup for whoever opens it.
 >
+> The part people ended up caring most about: **wedding invitations**. It's one
+> scrolling page — the guest taps a seal, music starts, then families, date with a
+> countdown, photos, venue (one tap opens Google Maps) and an RSVP button that
+> messages the couple on WhatsApp. The whole thing is one continuous card with
+> sections that reveal as you scroll, which was fun to get smooth on cheap phones.
+>
 > A few things I went deep on:
 > - **Proper bilingual + RTL.** It's Arabic-first, and the Arabic templates use
 >   phrases people actually say, not translated English. Getting animation timing
 >   to feel right in both LTR and RTL was more work than I expected.
 > - **Payments that fit the region.** Premium templates are paid via InstaPay
 >   (I'm in Egypt); tons of templates are free.
-> - Built on Next.js, framer-motion for the animation, all mobile-first.
+> - Built on Next.js, framer-motion for the animation (plus a small three.js hero on
+>   the landing page), all mobile-first. The template gallery renders every template
+>   live instead of using screenshots.
 >
-> Here's a finished one so you can see the output without signing up: [demo experience link]
+> Here's a finished invitation so you can see the output without signing up: [demo invitation link]
+> (and a birthday card: [demo experience link])
 >
 > Would genuinely love feedback on the build flow — where does it feel slow or
 > confusing? And what occasion should I add a template for next?
