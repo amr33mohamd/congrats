@@ -10,26 +10,28 @@ Fill in `[bracketed]` items before submitting. Review everything; this is a draf
 
 ## Tagline (≤60 characters)
 
-> Turn a name and a few photos into an animated greeting
+> Arabic-first wedding invitations you send as one link
 
-*(58 chars. Alternatives, all under 60:)*
-- `Send a greeting they'll actually remember — as a link` (52)
-- `Animated congratulations cards, sent as one link` (48)
-- `Make an animated card in 60 seconds, share the link` (51)
+*(53 chars. Alternatives, all under 60:)*
+- `Animated wedding invitations and cards, sent as a link` (54)
+- `One-page wedding invitations with maps and WhatsApp RSVP` (56)
+- `Beautiful Arabic invitations & greetings, no app needed` (55)
 
 ## Description (~260 characters)
 
-> Congrats turns a name, a few photos, and your words into a step-by-step
-> animated greeting — birthday, wedding, Eid, graduation and more — that you
-> share as one link. Bilingual (English + Arabic), works on any phone, no
-> install. Free templates, premium via InstaPay.
+> Congrats makes animated one-page wedding invitations — families, countdown,
+> photos, venue directions, WhatsApp RSVP, gift details — and animated greeting
+> cards for birthdays, Eid and more. Arabic-first with full RTL. Share one link;
+> it opens on any phone.
 
-*(258 chars.)*
+*(≈255 chars — recount after editing.)*
 
 ---
 
 ## Maker's first comment (post immediately, then pin it)
 
+> *(Illustrative — replace the story below with your own real one.)*
+>
 > Hey Product Hunt 👋
 >
 > I'm [your name], and I built Congrats because I was tired of watching real
@@ -47,6 +49,13 @@ Fill in `[bracketed]` items before submitting. Review everything; this is a draf
 > end — that unfolds like a little story. Then you get one link. Send it on
 > WhatsApp, and they watch it on whatever phone they have. No app, no sign-up for
 > the person receiving it.
+>
+> Then couples started asking for the same thing for their **wedding
+> invitations** — so the flagship is now a one-page animated invitation: the
+> guest taps a seal, the music starts, and they scroll through the families, the
+> date with a countdown, photos, the venue (one tap opens Google Maps) and an RSVP
+> button that messages the couple on WhatsApp. Five art directions, Arabic and
+> English.
 >
 > Two things I cared about a lot:
 >
@@ -66,25 +75,18 @@ Fill in `[bracketed]` items before submitting. Review everything; this is a draf
 
 ## Gallery / screenshot shot-list (capture 5-6 of these)
 
-Shoot on a phone frame where possible — this is a mobile-first product and PH
-viewers should feel that. Keep GIFs under ~3MB so they load.
+Shoot in a phone frame — this is a mobile-first product. Keep GIFs under ~3MB.
 
-1. **Hero GIF (the payoff).** A finished birthday card playing: name bounces in,
-   two photos fade in, confetti fires. This is your thumbnail — make it the most
-   beautiful one.
-2. **The build flow (3-shot or GIF).** Someone typing the recipient's name →
-   dropping in a photo → typing a short message. Show how fast and simple it is.
-3. **The share moment.** The "your link is ready" screen, then the link being
-   pasted into a WhatsApp chat. Communicates "it's just a link."
-4. **Template gallery.** A grid of occasions: birthday, wedding, Eid,
-   graduation, newborn, anniversary. Shows range at a glance.
-5. **Arabic / RTL card.** A full Arabic card playing (e.g. "مبروك المولود" or
-   "كل سنة وإنت طيب"). This is your differentiator — feature it prominently.
-6. **On real phones.** The same card open on two different cheap Android phones
-   side by side, to prove "works on every phone, no install."
-
-*(Optional 7th: a short before/after — a plain "HBD 🎉" text bubble vs. the
-Congrats card — the emotional contrast is the whole pitch.)*
+1. **Hero GIF — the invitation opening.** Seal taps open, names settle in over the
+   Qasr Gold or Ivory Arch art. This is the thumbnail.
+2. **The scroll.** One continuous scroll: families → date → countdown → couple
+   photos → venue.
+3. **The useful bits.** Tap "Directions" → Google Maps; tap RSVP → WhatsApp with
+   a prefilled reply. Shows it's a page, not a video.
+4. **Five styles.** The live `/templates` gallery with all five invitation
+   directions playing side by side.
+5. **Arabic ↔ English.** The same invitation in Arabic (RTL) and English.
+6. **Greeting cards.** A birthday or Eid card playing — the range beyond weddings.
 
 ---
 

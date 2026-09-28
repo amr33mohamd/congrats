@@ -8,11 +8,11 @@ announcement and the demo tweet.
 
 ## Launch announcement tweet (pin this)
 
-> "Happy birthday 🎉" deserves better.
+> Wedding invitations, but as one beautiful link.
 >
-> Congrats turns a name + a few photos into an animated greeting you send as one
-> link. Birthday, wedding, Eid, graduation — bilingual (EN + عربي), works on any
-> phone, no install.
+> Congrats makes animated one-page invitations — families, countdown, photos,
+> venue in Google Maps, RSVP on WhatsApp — plus animated cards for birthdays,
+> Eid and graduations. Arabic-first (full RTL) + English. Any phone, no install.
 >
 > Live today 👇 [site URL]
 >
@@ -20,10 +20,11 @@ announcement and the demo tweet.
 
 **Arabic version (post as its own tweet or QT):**
 
-> "كل سنة وإنت طيب" تستاهل أحلى من رسالة واتساب عادية 🎉
+> دعوة فرحك… في لينك واحد يفرّح الكل 🤍
 >
-> Congrats بيحوّل اسم الشخص وكام صورة لتهنئة متحركة تبعتها كـ لينك واحد — عيد
-> ميلاد، فرح، عيد، تخرّج. عربي وإنجليزي، بيشتغل على أي موبايل، من غير تطبيق.
+> Congrats بيعمل دعوات فرح متحركة من صفحة واحدة — العيلتين، الميعاد وعدّ تنازلي،
+> الصور، اللوكيشن على الخريطة، وتأكيد الحضور على الواتساب — وكمان تهاني متحركة لأعياد
+> الميلاد والعيد والتخرّج. عربي وإنجليزي، على أي موبايل، من غير تطبيق.
 >
 > نزلنا النهاردة 👇 [site URL]
 
@@ -44,7 +45,16 @@ announcement and the demo tweet.
 > Making something more personal means fighting a video editor for an hour. Most
 > people give up and send the emoji.
 
-**3 — solution**
+**3a — the invitation**
+> The flagship: wedding invitations.
+>
+> Guest taps a seal → music starts → one scroll through the families, the date
+> with a countdown, the couple's photos, the venue (one tap → Google Maps), RSVP
+> straight to the couple's WhatsApp, and gift details.
+>
+> [attach invitation GIF / demo invitation link]
+
+**3 — solution (cards)**
 > Congrats does the hard part.
 >
 > Pick an occasion → type their name → drop in a few photos + your message. It

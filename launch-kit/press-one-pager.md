@@ -1,67 +1,81 @@
 # Congrats — One-Pager
 
-*For press, partners, and anyone who needs the facts fast. Fill in `[placeholders]`.*
+*For press, partners (planners, venues, photographers), and anyone who needs the
+facts fast. Fill in `[placeholders]`. Keep numbers honest — only quote figures
+from your own dashboard.*
 
 ---
 
 ## What it is
 
-**Congrats** is a web app for creating **step-by-step animated greetings** and
-sharing them as a single link. You choose an occasion, type the recipient's name,
-add a few photos and your own message, and Congrats turns it into an animated card
-that unfolds like a short story — text that arrives, photos that fade in, confetti
-at the end. The recipient just taps the link and watches it play on any phone, with
-no app to install and no sign-up.
+**Congrats** is an Arabic-first web app for **animated wedding invitations** and
+**animated greeting cards**, each shared as a single link.
+
+A Congrats wedding invitation is one elegant page that opens from WhatsApp. The
+guest taps a seal to open it — the music starts — and scrolls through the
+invitation: the two families, the ceremony and reception times, a live countdown
+to the day, the couple's photos, the venue with a one-tap button that opens
+directions in Google Maps, an RSVP button that messages the couple on WhatsApp,
+and the couple's gift details. The couple builds it themselves in about ten
+minutes.
+
+Greeting cards use the same engine for birthdays, Eid, graduations, newborns,
+anniversaries, valentines, proposals and wedding congratulations: a name, a few
+photos and your own words become a short animated story.
 
 ## Who it's for
 
-People in Egypt and the wider Arab world who want a more personal, memorable way to
-send congratulations than a plain WhatsApp text — plus gift-givers and anyone
-celebrating a friend or family member's big moment.
+- **Couples in Egypt** (and Arabic speakers everywhere) who invite family and
+  friends on WhatsApp and want something that looks as good as a printed card —
+  and actually tells the guest how to get there.
+- **Wedding planners, venues and photographers** who want to offer couples a
+  modern invitation as part of their service.
+- Anyone who wants to send more than "كل سنة وانت طيب 🎉".
 
-## Why now
+## Why it's different
 
-Real celebrations increasingly happen over messaging apps, where they get flattened
-into a few emojis. The tools to do better (video editors, design apps) are slow,
-desktop-oriented, and rarely built for Arabic or right-to-left layouts. Congrats
-makes "personal" take a minute instead of an hour, is Arabic-first, and settles
-payments through **InstaPay** — the way people in Egypt actually pay online.
-
-## Key features
-
-- **Step-by-step animated greetings** across occasions: birthday, wedding,
-  anniversary, valentine, proposal, Eid, graduation, newborn.
-- **Personalized** with the recipient's name, the sender's photos, and their words.
-- **Share as one link** — opens on any phone, no install, no account for the recipient.
-- **Genuinely bilingual (English + Arabic) with full RTL** — Arabic templates use
-  natural, native phrasing, not translations.
-- **Mobile-first**, works on low-end and high-end phones alike.
-- **Free templates** plus **premium templates**.
+- **Arabic first, not translated.** Right-to-left layouts, Arabic calligraphic
+  type, and wording written the way Egyptian families actually phrase invitations.
+- **A page, not a video.** Guests can tap the map, tap RSVP, copy the gift details
+  — things a video invitation or a photo of a printed card can't do.
+- **Five art directions** — Ivory Arch, Baroque Noir, Sage Garden, Blue Porcelain,
+  Qasr Gold — each in Arabic and English.
+- **See it before you pay.** The template gallery plays every design live.
+- **Local payment.** Paid templates are paid by **InstaPay** in EGP.
+- **No app, no account for guests.** Works on any phone browser.
 
 ## Pricing
 
-- **Free templates** available to everyone.
-- **Premium templates** paid via **InstaPay** in **EGP**. *(Insert current premium
-  price/tiers here: [e.g. EGP __ per premium card].)*
+- Many greeting-card templates are **free**.
+- Paid greeting cards: **49–79 EGP**.
+- Wedding invitations: **[invitation price] EGP**, one-time, unlimited guests.
+- Partner packs for planners: **[partner pack price]** — contact us.
 
 ## Availability
 
-Live now at **[site URL]**. Works in any modern mobile or desktop browser.
+Live at **[site URL]** — gallery at **[site URL]/ar/templates**. Works in any
+modern mobile or desktop browser.
 
-## Founder contact
+## Contact
 
-- **[your name]**, Founder
-- **[your email]**
-- Web: **[site URL]** · X: **[your X handle]** · Product Hunt: **[Product Hunt URL]**
+- **[your name]**, Founder — **[support email]** · WhatsApp **[WhatsApp Business number]**
+- Web **[site URL]** · Instagram **[@handle]** · TikTok **[@handle]**
 
 ---
 
 ## Boilerplate — About Congrats
 
-> Congrats is a bilingual web app that turns a name, a few photos, and a personal
-> message into an animated greeting shared as a single link. Built mobile-first and
-> Arabic-first for Egypt and the Arab world, Congrats lets anyone celebrate
-> birthdays, weddings, Eid, graduations and more in a way that feels personal —
-> without editing software, an app download, or an account for the recipient. Free
-> templates are available to everyone, with premium templates paid via InstaPay.
-> Learn more at [site URL].
+**English**
+> Congrats is an Arabic-first web app for animated wedding invitations and
+> greeting cards shared as a single link. Couples build a one-page invitation —
+> families, date, countdown, photos, venue directions, WhatsApp RSVP and gift
+> details — in minutes, and guests open it on any phone with no app. The same
+> engine powers personalised animated cards for birthdays, Eid, graduations,
+> newborns and more. Built in Egypt, paid via InstaPay. Learn more at [site URL].
+
+**Arabic**
+> Congrats منصة عربية لدعوات الأفراح والتهاني المتحركة، بتتبعت لينك واحد. العروسين
+> بيعملوا دعوة من صفحة واحدة — أسماء العيلتين، الميعاد، عدّ تنازلي، الصور، اتجاهات
+> القاعة على الخريطة، تأكيد الحضور على الواتساب، وتفاصيل الهدية — في دقايق، والضيوف
+> بيفتحوها من أي موبايل من غير تطبيق. ونفس المنصة بتعمل تهاني متحركة لأعياد الميلاد
+> والعيد والتخرّج والمولود وغيرها. صُنعت في مصر، والدفع بإنستاباي. [site URL]
