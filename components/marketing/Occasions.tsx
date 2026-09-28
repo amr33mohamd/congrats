@@ -9,6 +9,10 @@ import { Link } from '@/i18n/navigation';
  *
  * Every entry is verified to resolve — two of the originals had rotted to 404
  * and one was a duplicate of another occasion.
+ *
+ * Each tile opens that occasion's landing page (real templates, live previews)
+ * rather than the dashboard: a visitor who hasn't signed up yet wants to see
+ * the designs first, and the links give search engines a path to those pages.
  */
 const items = [
   { key: 'anniversary', photo: '1518621736915-f3b1c41bfd00', tint: '#7A1E3A' },
@@ -41,7 +45,7 @@ export async function Occasions() {
           {items.map((item, i) => (
             <Link
               key={item.key}
-              href="/dashboard"
+              href={`/templates/${item.key}`}
               className="group relative flex aspect-[4/5] items-end overflow-hidden rounded-2xl shadow-[var(--shadow-card)] transition-all duration-[var(--motion-slow)] ease-emphasized hover:-translate-y-1.5 hover:shadow-[var(--shadow-pop)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
               style={{ backgroundColor: item.tint }}
             >
@@ -68,6 +72,15 @@ export async function Occasions() {
               </span>
             </Link>
           ))}
+        </div>
+
+        <div className="mt-token-8 flex justify-center">
+          <Link
+            href="/templates"
+            className="rounded-pill border border-border bg-surface px-token-6 py-token-3 text-sm font-semibold text-ink transition-colors hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+          >
+            {t('cta')}
+          </Link>
         </div>
       </div>
     </section>

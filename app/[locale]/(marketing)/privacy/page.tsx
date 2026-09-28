@@ -1,8 +1,10 @@
 import type { Metadata } from 'next';
 import { setRequestLocale } from 'next-intl/server';
 import { LegalLayout } from '@/components/marketing/LegalLayout';
+import { Operator, SupportContact, PostalClause } from '@/components/marketing/LegalBits';
+import { marketingMetadata, site } from '@/lib/site';
 
-const UPDATED = '18 July 2026';
+const UPDATED = '28 September 2026';
 
 export async function generateMetadata({
   params,
@@ -11,20 +13,21 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   const isAr = locale === 'ar';
-  return {
-    title: isAr ? 'سياسة الخصوصية | Congrats' : 'Privacy Policy | Congrats',
+  return marketingMetadata({
+    locale: isAr ? 'ar' : 'en',
+    path: '/privacy',
+    title: isAr ? 'سياسة الخصوصية' : 'Privacy Policy',
     description: isAr
       ? 'كيف تجمع Congrats بياناتك وتستخدمها وتحميها — البريد الإلكتروني والصور المرفوعة ولقطات الدفع.'
       : 'How Congrats collects, uses, and protects your data — emails, uploaded photos, and payment screenshots.',
-  };
+  });
 }
 
 function EnglishBody() {
   return (
     <>
       <p>
-        This Privacy Policy explains how <strong>[Company/Owner Name]</strong> (&ldquo;Congrats,&rdquo;
-        &ldquo;we,&rdquo; &ldquo;us&rdquo;) collects, uses, and protects your information when you use our
+        This Privacy Policy explains how <Operator locale="en" /> collects, uses, and protects your information when you use our
         website and services to create and share animated greeting cards.
       </p>
 
@@ -88,8 +91,7 @@ function EnglishBody() {
       <h2>Your rights</h2>
       <p>
         You may request access to, correction of, or deletion of your personal data at any time. To do so,
-        contact us at <a href="mailto:[support email]">[support email]</a>. We will respond within a reasonable
-        period.
+        contact us via <SupportContact locale="en" />. We aim to respond within {site.responseTime.en}.
       </p>
 
       <h2>Children</h2>
@@ -106,8 +108,8 @@ function EnglishBody() {
 
       <h2>Contact</h2>
       <p>
-        Questions about your privacy? Email us at <a href="mailto:[support email]">[support email]</a>, or write
-        to us at [business address].
+        Questions about your privacy? Contact us via <SupportContact locale="en" />
+        <PostalClause locale="en" />.
       </p>
     </>
   );
@@ -117,8 +119,7 @@ function ArabicBody() {
   return (
     <>
       <p>
-        توضّح سياسة الخصوصية هذه كيف تقوم <strong>[Company/Owner Name]</strong> (&laquo;Congrats&raquo;، &laquo;نحن&raquo;)
-        بجمع معلوماتك واستخدامها وحمايتها عند استخدامك لموقعنا وخدماتنا لإنشاء بطاقات تهنئة متحركة ومشاركتها.
+        توضّح سياسة الخصوصية هذه كيف تقوم <Operator locale="ar" /> بجمع معلوماتك واستخدامها وحمايتها عند استخدامك لموقعنا وخدماتنا لإنشاء بطاقات تهنئة متحركة ومشاركتها.
       </p>
 
       <h2>المعلومات التي نجمعها</h2>
@@ -177,8 +178,7 @@ function ArabicBody() {
 
       <h2>حقوقك</h2>
       <p>
-        يمكنك في أي وقت طلب الاطّلاع على بياناتك الشخصية أو تصحيحها أو حذفها. للقيام بذلك، تواصل معنا على{' '}
-        <a href="mailto:[support email]">[support email]</a>. وسنرد عليك خلال فترة معقولة.
+        يمكنك في أي وقت طلب الاطّلاع على بياناتك الشخصية أو تصحيحها أو حذفها. للقيام بذلك، تواصل معنا عبر <SupportContact locale="ar" />. ونسعى للرد خلال {site.responseTime.ar}.
       </p>
 
       <h2>الأطفال</h2>
@@ -195,8 +195,8 @@ function ArabicBody() {
 
       <h2>التواصل</h2>
       <p>
-        لديك استفسار بخصوص خصوصيتك؟ راسلنا على <a href="mailto:[support email]">[support email]</a>، أو عبر
-        العنوان: [business address].
+        لديك استفسار بخصوص خصوصيتك؟ تواصل معنا عبر <SupportContact locale="ar" />
+        <PostalClause locale="ar" />.
       </p>
     </>
   );

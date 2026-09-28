@@ -3,6 +3,8 @@ import { getLocale } from 'next-intl/server';
 import { getSession } from '@/lib/auth';
 import { SiteHeader } from '@/components/marketing/SiteHeader';
 import { SiteFooter } from '@/components/marketing/SiteFooter';
+import { SupportContact } from '@/components/marketing/LegalBits';
+import { legalDetailsComplete } from '@/lib/site';
 
 type LegalLayoutProps = {
   title: string;
@@ -30,11 +32,16 @@ export async function LegalLayout({ title, updated, children }: LegalLayoutProps
           <p className="mt-token-2 text-sm text-muted">
             {isAr ? `آخر تحديث: ${updated}` : `Last updated: ${updated}`}
           </p>
-          <p className="mt-token-4 rounded-lg border border-border bg-surface px-token-4 py-token-3 text-sm italic text-muted">
-            {isAr
-              ? 'هذا نموذج مبدئي — يُرجى مراجعته مع مختص قانوني قبل الإطلاق.'
-              : 'This is a starting template — review with a legal professional before launch.'}
-          </p>
+          {/* Stays up until the operator's legal name, email and address are
+              configured (lib/site.ts) — without them these policies name no one
+              a customer could actually hold to them. */}
+          {legalDetailsComplete() ? null : (
+            <p className="mt-token-4 rounded-lg border border-border bg-surface px-token-4 py-token-3 text-sm italic text-muted">
+              {isAr
+                ? 'هذا نموذج مبدئي — يُرجى مراجعته مع مختص قانوني قبل الإطلاق.'
+                : 'This is a starting template — review with a legal professional before launch.'}
+            </p>
+          )}
 
           <div
             className={[
@@ -52,10 +59,10 @@ export async function LegalLayout({ title, updated, children }: LegalLayoutProps
           </div>
 
           <p className="mt-token-12 text-sm text-muted">
-            {isAr ? 'لأي استفسار بخصوص هذه الصفحة، تواصل معنا على' : 'Questions about this page? Contact us at'}{' '}
-            <a href="mailto:[support email]" className="font-medium text-brand underline hover:text-brand-strong">
-              [support email]
-            </a>
+            {isAr ? 'لأي استفسار بخصوص هذه الصفحة، تواصل معنا عبر' : 'Questions about this page? Contact us via'}{' '}
+            <span className="font-medium text-brand underline [&_a]:text-brand hover:text-brand-strong">
+              <SupportContact locale={isAr ? 'ar' : 'en'} />
+            </span>
             .
           </p>
         </article>

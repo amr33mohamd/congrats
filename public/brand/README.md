@@ -34,6 +34,23 @@ The mono mark inherits `currentColor`, so you can recolor it in CSS:
 
 Primary gradient: `linear-gradient(135deg, #F0436E → #AE1F44)`.
 
+### The product ships dark
+
+The site and app UI sit on near-black, so on screen the mark is usually placed
+on these surfaces rather than on cream (the light values above remain for print
+and anything that has to stay on paper — see `.light` in `app/globals.css`):
+
+| Token       | Hex       | Use                                  |
+| ----------- | --------- | ------------------------------------ |
+| Surface 2   | `#0C0A0B` | Page background, OG card, PWA splash |
+| Surface     | `#1A1518` | Cards, footer, panels                |
+| Border      | `#30292D` | Hairlines on dark                    |
+| Ink (dark)  | `#F7F4F5` | Text on dark                         |
+| Muted       | `#9E9498` | Secondary text on dark               |
+
+The social-share card is generated in code (`components/marketing/og-card.tsx`)
+from these tokens — there is no PNG to keep in sync.
+
 ## Typography
 
 - **Headings / wordmark:** Fredoka (fallback Poppins) — friendly, rounded.

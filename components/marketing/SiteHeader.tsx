@@ -3,15 +3,19 @@
 import * as React from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import { Link, usePathname } from '@/i18n/navigation';
-import { Button } from '@/components/ui';
 import { cn } from '@/components/ui/cn';
 
 const sections = [
-  { id: 'occasions', key: 'occasions' },
+  { id: 'invitations', key: 'invitations' },
   { id: 'how', key: 'how' },
   { id: 'pricing', key: 'pricing' },
   { id: 'faq', key: 'faq' },
 ] as const;
+
+// Primary CTAs are styled links rather than <Link><Button>, which nests a
+// button inside an anchor (invalid HTML, two tab stops for one action).
+const PRIMARY_SM = 'h-9 items-center justify-center rounded-pill bg-brand px-3 text-sm font-medium text-white shadow-[var(--shadow-card)] transition-colors hover:bg-brand-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2';
+const PRIMARY_FULL = 'mt-token-2 inline-flex h-11 w-full items-center justify-center rounded-pill bg-brand px-5 text-base font-medium text-white transition-colors hover:bg-brand-hover';
 
 export function SiteHeader({
   isAuthed = false,
@@ -36,6 +40,10 @@ export function SiteHeader({
   }, []);
 
   const otherLocale = locale === 'ar' ? 'en' : 'ar';
+  // Section links are home-page anchors. Elsewhere (gallery, legal pages) a
+  // bare `#id` scrolls nowhere, so route back to home with the hash instead.
+  const onHome = pathname === '/';
+  const sectionHref = (id: string) => (onHome ? `#${id}` : { pathname: '/', hash: id });
   // Over the hero the bar is transparent on near-black, so everything in it has
   // to flip to white; once the page scrolls it lands on the light surface again.
   const onDark = overDark && !scrolled;
@@ -75,16 +83,16 @@ export function SiteHeader({
             {t('templates')}
           </Link>
           {sections.map((s) => (
-            <a
+            <Link
               key={s.id}
-              href={`#${s.id}`}
+              href={sectionHref(s.id)}
               className={cn(
                 'text-sm font-medium transition-colors',
                 onDark ? 'text-white/75 hover:text-white' : 'text-muted hover:text-ink',
               )}
             >
               {t(s.key)}
-            </a>
+            </Link>
           ))}
         </nav>
 
@@ -103,10 +111,8 @@ export function SiteHeader({
             {otherLocale === 'ar' ? 'ع' : 'EN'}
           </Link>
           {isAuthed ? (
-            <Link href="/dashboard" className="hidden sm:block">
-              <Button size="sm" variant="primary">
-                {tc('dashboard')}
-              </Button>
+            <Link href="/dashboard" className={cn('hidden sm:inline-flex', PRIMARY_SM)}>
+              {tc('dashboard')}
             </Link>
           ) : (
             <>
@@ -119,10 +125,8 @@ export function SiteHeader({
               >
                 {tc('login')}
               </Link>
-              <Link href="/login" className="hidden sm:block">
-                <Button size="sm" variant="primary">
-                  {t('start')}
-                </Button>
+              <Link href="/login" className={cn('hidden sm:inline-flex', PRIMARY_SM)}>
+                {t('start')}
               </Link>
             </>
           )}
@@ -132,7 +136,7 @@ export function SiteHeader({
               'inline-flex h-10 w-10 items-center justify-center rounded-md transition-colors md:hidden',
               onDark ? 'text-white' : 'text-ink',
             )}
-            aria-label="Menu"
+            aria-label={locale === 'ar' ? 'القائمة' : 'Menu'}
             aria-expanded={open}
             onClick={() => setOpen((v) => !v)}
           >
@@ -152,18 +156,18 @@ export function SiteHeader({
               {t('templates')}
             </Link>
             {sections.map((s) => (
-              <a
+              <Link
                 key={s.id}
-                href={`#${s.id}`}
+                href={sectionHref(s.id)}
                 onClick={() => setOpen(false)}
                 className="rounded-md px-token-3 py-token-2 text-base font-medium text-ink hover:bg-surface-2"
               >
                 {t(s.key)}
-              </a>
+              </Link>
             ))}
             {isAuthed ? (
-              <Link href="/dashboard" onClick={() => setOpen(false)} className="mt-token-2">
-                <Button className="w-full">{tc('dashboard')}</Button>
+              <Link href="/dashboard" onClick={() => setOpen(false)} className={PRIMARY_FULL}>
+                {tc('dashboard')}
               </Link>
             ) : (
               <>
@@ -174,8 +178,8 @@ export function SiteHeader({
                 >
                   {tc('login')}
                 </Link>
-                <Link href="/login" onClick={() => setOpen(false)} className="mt-token-2">
-                  <Button className="w-full">{t('start')}</Button>
+                <Link href="/login" onClick={() => setOpen(false)} className={PRIMARY_FULL}>
+                  {t('start')}
                 </Link>
               </>
             )}

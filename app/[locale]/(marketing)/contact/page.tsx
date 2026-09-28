@@ -2,8 +2,9 @@ import type { Metadata } from 'next';
 import { setRequestLocale } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import { LegalLayout } from '@/components/marketing/LegalLayout';
+import { marketingMetadata, site, supportWhatsappHref } from '@/lib/site';
 
-const UPDATED = '18 July 2026';
+const UPDATED = '28 September 2026';
 
 export async function generateMetadata({
   params,
@@ -12,33 +13,81 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   const isAr = locale === 'ar';
-  return {
-    title: isAr ? 'التواصل والدعم | Congrats' : 'Contact & Support | Congrats',
+  return marketingMetadata({
+    locale: isAr ? 'ar' : 'en',
+    path: '/contact',
+    title: isAr ? 'التواصل والدعم' : 'Contact & Support',
     description: isAr
       ? 'كيفية التواصل مع فريق دعم Congrats، وأوقات الرد المتوقّعة، وما ينبغي تضمينه في رسالتك.'
       : 'How to reach the Congrats support team, expected response times, and what to include in your message.',
-  };
+  });
+}
+
+/**
+ * The contact channels that are actually configured, one line each. Nothing is
+ * printed for an unset channel — a contact page listing a fake address is
+ * worse than a short one.
+ */
+function Channels({ locale }: { locale: 'ar' | 'en' }) {
+  const isAr = locale === 'ar';
+  const wa = supportWhatsappHref();
+  const lines: React.ReactNode[] = [];
+
+  if (site.supportEmail) {
+    lines.push(
+      <p key="email">
+        {isAr ? 'البريد الإلكتروني: ' : 'Email: '}
+        <a href={`mailto:${site.supportEmail}`}>{site.supportEmail}</a>
+      </p>,
+    );
+  }
+  if (wa) {
+    lines.push(
+      <p key="wa">
+        {isAr ? 'واتساب: ' : 'WhatsApp: '}
+        <a href={wa} target="_blank" rel="noopener noreferrer" dir="ltr">
+          {site.supportWhatsapp}
+        </a>
+      </p>,
+    );
+  }
+  if (site.companyName || site.businessAddress) {
+    const who = [site.companyName, site.businessAddress].filter(Boolean).join(isAr ? '، ' : ', ');
+    lines.push(
+      <p key="op">
+        {isAr ? 'تُدار الخدمة بواسطة: ' : 'Operated by: '}
+        <strong>{who}</strong>
+      </p>,
+    );
+  }
+
+  if (lines.length === 0) {
+    return (
+      <p>
+        {isAr
+          ? 'سننشر بيانات التواصل المباشر هنا قريبًا.'
+          : 'Direct contact details will be published here shortly.'}
+      </p>
+    );
+  }
+  return <>{lines}</>;
 }
 
 function EnglishBody() {
   return (
     <>
       <p>
-        Need help with an order, a payment, or your greeting? We&rsquo;re happy to help. The fastest way to reach
-        us is by email.
+        Need help with an order, a payment, or your greeting or invitation? We&rsquo;re happy to help.
       </p>
 
       <h2>Contact us</h2>
-      <p>
-        Email: <a href="mailto:[support email]">[support email]</a>
-      </p>
-      <p>Operated by <strong>[Company/Owner Name]</strong>, [business address].</p>
+      <Channels locale="en" />
 
       <h2>Response time</h2>
       <p>
-        We typically reply within <strong>[response time, e.g. 1&ndash;2 business days]</strong>. Payment reviews
-        and order approvals are usually handled within <strong>[review window, e.g. 24 hours]</strong>. Requests
-        sent on weekends or holidays may take a little longer.
+        We typically reply within <strong>{site.responseTime.en}</strong>. Payment reviews and order approvals
+        are usually handled within <strong>{site.reviewWindow.en}</strong>. Requests sent on weekends or holidays
+        may take a little longer.
       </p>
 
       <h2>What to include</h2>
@@ -53,7 +102,7 @@ function EnglishBody() {
       <h2>Refunds and payments</h2>
       <p>
         For questions about a payment or to request a refund, please review our{' '}
-        <Link href="/refunds">Refund &amp; Payment Policy</Link> first, then email us with the details above.
+        <Link href="/refunds">Refund &amp; Payment Policy</Link> first, then contact us with the details above.
       </p>
     </>
   );
@@ -62,22 +111,16 @@ function EnglishBody() {
 function ArabicBody() {
   return (
     <>
-      <p>
-        هل تحتاج مساعدة بخصوص طلب أو دفعة أو بطاقة تهنئة؟ يسعدنا مساعدتك. وأسرع وسيلة للتواصل معنا هي البريد
-        الإلكتروني.
-      </p>
+      <p>هل تحتاج مساعدة بخصوص طلب أو دفعة أو بطاقة تهنئة أو دعوة؟ يسعدنا مساعدتك.</p>
 
       <h2>تواصل معنا</h2>
-      <p>
-        البريد الإلكتروني: <a href="mailto:[support email]">[support email]</a>
-      </p>
-      <p>تُدار الخدمة بواسطة <strong>[Company/Owner Name]</strong>، [business address].</p>
+      <Channels locale="ar" />
 
       <h2>وقت الرد</h2>
       <p>
-        نرد عادةً خلال <strong>[مدة الرد، مثلاً يوم إلى يومَي عمل]</strong>. وتُعالَج مراجعات الدفع والموافقات على
-        الطلبات عادةً خلال <strong>[مدة المراجعة، مثلاً 24 ساعة]</strong>. وقد تستغرق الطلبات المرسلة في العطلات
-        الأسبوعية أو الرسمية وقتاً أطول قليلاً.
+        نرد عادةً خلال <strong>{site.responseTime.ar}</strong>. وتُعالَج مراجعات الدفع والموافقات على الطلبات عادةً
+        خلال <strong>{site.reviewWindow.ar}</strong>. وقد تستغرق الطلبات المرسلة في العطلات الأسبوعية أو الرسمية
+        وقتاً أطول قليلاً.
       </p>
 
       <h2>ما ينبغي تضمينه</h2>
@@ -92,7 +135,7 @@ function ArabicBody() {
       <h2>الاسترداد والدفع</h2>
       <p>
         للاستفسار عن دفعة أو لطلب استرداد، يُرجى الاطّلاع أولاً على{' '}
-        <Link href="/refunds">سياسة الاسترداد والدفع</Link>، ثم راسلنا مع التفاصيل المذكورة أعلاه.
+        <Link href="/refunds">سياسة الاسترداد والدفع</Link>، ثم تواصل معنا مع التفاصيل المذكورة أعلاه.
       </p>
     </>
   );
