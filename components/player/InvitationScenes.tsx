@@ -4,6 +4,7 @@ import * as React from 'react';
 import { motion } from 'framer-motion';
 import { applyTokens, type SceneRenderPropsLike } from './invitation-types';
 import { cssFamily } from '@/lib/fonts';
+import { readableOn } from './color';
 
 /**
  * The invitation sections of a one-page card: families, events, venue, RSVP,
@@ -25,10 +26,14 @@ function t(p: SceneRenderPropsLike, key: string): string {
 function colors(p: SceneRenderPropsLike) {
   const s: Partial<NonNullable<SceneRenderPropsLike['scene']['style']>> = p.scene.style ?? {};
   const base = p.theme.textColor ?? '#FFFFFF';
+  const accent = s.headingColor ?? p.theme.accent ?? base;
   return {
-    accent: s.headingColor ?? p.theme.accent ?? base,
+    accent,
     text: s.bodyColor ?? base,
     heading: cssFamily(s.headingFont ?? p.theme.fontHeading),
+    // Label on an accent-filled button. `palette[0]` (the ground) was used
+    // before, which on the light paper styles put cream text on a light gold.
+    onAccent: /^#[0-9a-f]{3,8}$/i.test(accent) ? readableOn(accent, p.theme.palette ?? []) : '#000',
   };
 }
 
@@ -130,7 +135,12 @@ export function FamiliesScene(p: SceneRenderPropsLike) {
   return (
     <Shell>
       <Reveal p={p}>
-        <SectionHeading p={p} text={t(p, 'heading')} />
+        {/*
+          The invitation templates store this title under `familiesHeading`
+          (every saved card has it there); `heading` is the generic key. Read
+          both, or the title silently never renders.
+        */}
+        <SectionHeading p={p} text={t(p, 'familiesHeading') || t(p, 'heading')} />
       </Reveal>
       <Reveal p={p} delay={0.15}>
         <div className="grid grid-cols-[1fr_1px_1fr] items-start gap-token-4">
@@ -161,9 +171,16 @@ export function EventScene(p: SceneRenderPropsLike) {
   const d = raw ? new Date(raw) : null;
   const valid = d && !Number.isNaN(d.getTime());
   const locale = isAr(p) ? 'ar-EG' : 'en-GB';
-  const day = valid ? new Intl.NumberFormat(locale).format(d!.getDate()) : '';
-  const month = valid ? new Intl.DateTimeFormat(locale, { month: 'long' }).format(d!) : '';
-  const year = valid ? new Intl.NumberFormat(locale, { useGrouping: false }).format(d!.getFullYear()) : '';
+  // A bare `2027-06-18` parses as UTC midnight; read it back in UTC too, or a
+  // guest west of Greenwich sees the day before.
+  const utc = /^\d{4}-\d{2}-\d{2}$/.test(raw.trim());
+  const day = valid ? new Intl.NumberFormat(locale).format(utc ? d!.getUTCDate() : d!.getDate()) : '';
+  const month = valid
+    ? new Intl.DateTimeFormat(locale, { month: 'long', ...(utc ? { timeZone: 'UTC' } : {}) }).format(d!)
+    : '';
+  const year = valid
+    ? new Intl.NumberFormat(locale, { useGrouping: false }).format(utc ? d!.getUTCFullYear() : d!.getFullYear())
+    : '';
 
   return (
     <Shell>
@@ -177,7 +194,7 @@ export function EventScene(p: SceneRenderPropsLike) {
           </p>
         ) : null}
         {t(p, 'when') ? (
-          <p className="mt-token-1 text-sm tracking-wide" style={{ color: c.text, opacity: 0.8 }}>
+          <p className={`mt-token-1 text-sm ${isAr(p) ? '' : 'tracking-wide'}`} style={{ color: c.text, opacity: 0.8 }}>
             {t(p, 'when')}
           </p>
         ) : null}
@@ -230,7 +247,7 @@ export function VenueScene(p: SceneRenderPropsLike) {
             rel="noopener noreferrer"
             onClick={(e) => e.stopPropagation()}
             className={pill}
-            style={{ background: c.accent, color: p.theme.palette?.[0] ?? '#000', outlineColor: c.accent }}
+            style={{ background: c.accent, color: c.onAccent, outlineColor: c.accent }}
           >
             <span aria-hidden>📍</span>
             {isAr(p) ? 'الموقع على الخريطة' : 'Get directions'}
@@ -268,7 +285,7 @@ export function RsvpScene(p: SceneRenderPropsLike) {
             rel="noopener noreferrer"
             onClick={(e) => e.stopPropagation()}
             className={pill}
-            style={{ background: c.accent, color: p.theme.palette?.[0] ?? '#000', outlineColor: c.accent }}
+            style={{ background: c.accent, color: c.onAccent, outlineColor: c.accent }}
           >
             {isAr(p) ? 'تأكيد الحضور' : 'Confirm attendance'}
           </a>
@@ -312,7 +329,7 @@ export function GiftScene(p: SceneRenderPropsLike) {
               type="button"
               onClick={copy}
               className="rounded-pill px-token-3 py-token-1 text-xs font-semibold"
-              style={{ background: c.accent, color: p.theme.palette?.[0] ?? '#000' }}
+              style={{ background: c.accent, color: c.onAccent }}
             >
               {copied ? (isAr(p) ? 'تم النسخ' : 'Copied') : isAr(p) ? 'نسخ' : 'Copy'}
             </button>

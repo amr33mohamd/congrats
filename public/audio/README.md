@@ -5,9 +5,17 @@ Templates declare a `music` key in `definition.theme.music` (e.g.
 50% volume once the recipient taps to open the card.
 
 **No audio ships with this repo — you must add licensed tracks yourself.**
-A missing file is handled gracefully: the music control simply doesn't appear.
 
-Drop files here named exactly after the key:
+## Adding a track
+
+1. Drop the file here, named exactly after the key (table below).
+2. Add the key to `SHIPPED_TRACKS` in `lib/audio.ts`.
+
+Both steps are needed. The Player only requests files listed in
+`SHIPPED_TRACKS`, so a template whose track has not shipped renders no audio
+element and no music control — nothing is fetched, so nothing 404s in the
+console. A unit test (`tests/template-contract.qa.test.ts`) fails if a listed
+key has no file here.
 
 | File | Used by |
 | --- | --- |
@@ -21,8 +29,10 @@ Drop files here named exactly after the key:
 | `triumphant-soft.mp3` | graduation |
 | `lullaby-soft.mp3` | newborn |
 
+Keep files small (128 kbps mono/stereo MP3, well under 2 MB): they stream on
+mobile data the moment a card is opened.
+
 Licensing: these play publicly on every shared card, so they need a licence that
 covers public performance/synchronisation — production music libraries
 (Artlist, Epidemic Sound, Musicbed) or genuinely royalty-free sources. Do not
-use commercial chart music; the reference site does, and that is a liability you
-do not want to inherit.
+use commercial chart music.

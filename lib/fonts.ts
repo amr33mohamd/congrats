@@ -58,6 +58,17 @@ export function cssFamily(name?: string): string {
   return `'${name}', ${fallback}`;
 }
 
+/**
+ * CSS font-family for a card's running text. The template's own body face
+ * leads (it is loaded with the display faces), then the app's bundled body
+ * font, so a slow or blocked font CDN degrades to our own type rather than
+ * the OS default.
+ */
+export function bodyFamily(name?: string): string {
+  if (!name || !isKnownFont(name)) return `var(--font-body), ${SYSTEM_FALLBACK}`;
+  return `'${name}', var(--font-body), ${SYSTEM_FALLBACK}`;
+}
+
 /** Known family? (so we only request fonts Google can actually serve from our list). */
 export function isKnownFont(name?: string): boolean {
   return Boolean(name && name in FONT_WEIGHTS);

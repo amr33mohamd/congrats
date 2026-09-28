@@ -78,7 +78,7 @@ export function TemplateCard({
       <TemplateStage experience={data.experience} sceneIndex={sceneIndex} animate={engaged} />
 
       {/* price + popularity, pinned to the end edge so RTL mirrors correctly */}
-      <div className="pointer-events-none absolute top-2 inset-inline-end-2 z-20 flex flex-row-reverse gap-1">
+      <div className="pointer-events-none absolute top-2 end-2 z-20 flex flex-row-reverse gap-1">
         <span
           className={`rounded-pill px-2 py-1 text-[11px] font-semibold leading-4 backdrop-blur-md ${
             data.isPaid ? 'bg-brand/90 text-white' : 'bg-white/85 text-ink'
