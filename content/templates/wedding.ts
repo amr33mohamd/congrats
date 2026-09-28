@@ -1,18 +1,203 @@
 /**
- * WEDDING — two native templates (engine v2, art-directed).
+ * WEDDING (congratulations) — one card from a guest to the couple.
  *
- * EN "Two Hearts" (paid): an editorial, floral wedding piece — ivory + sage +
- *     champagne gold. Cormorant Garamond serif with a Great Vibes script accent
- *     over light ivory and dark floral-image scenes; petals + glow + sparkles,
- *     graceful blurIn / rise / float / kenBurns / shimmer motion. A cover photo,
- *     the-couple reveal, a love quote, a gallery, a countdown to the day, a
- *     handwritten blessing letter, a gift, and a luminous finale.
- * AR "مبروك الزواج" (paid): native Arabic wedding congratulations — Amiri /
- *     Tajawal, RTL, the spoken "ألف مبروك / بالرفاء والبنين" warmth, same luxe
- *     ivory-and-gold floral direction.
+ * Distinct from `invitation.ts`, which is the invitation the couple sends.
+ * Ivory paper, sage and champagne gold, a botanical wreath at the two ends:
+ *   cover → a letter to the two of you → the couple (photo) → a line to keep →
+ *   moments (gallery) → the countdown to the day → a gift for the new home →
+ *   sign-off.
+ *
+ * EN "Two Hearts" (paid) — Cormorant Garamond over Montserrat.
+ * AR "مبروك الزواج" (paid) — Amiri over Tajawal; the traditional
+ *   "بالرفاء والبنين" next to warm Egyptian wishes.
+ *
+ * `{recipient}` is the couple ("Omar & Nour"). The accent is a deeper gold
+ * than the palette's champagne so it reads on ivory. Scene ids are unchanged
+ * from before the one-page rewrite — only the order and copy moved.
  */
+import type { TemplateDefinitionInput } from '@/lib/template-contract';
 import type { CatalogTemplate } from './_helpers';
 import { PRICE } from './_helpers';
+import { LABEL, PLAIN, date, enter, frame, photo, text, theme, type Loc, type Look } from './_card';
+
+const IVORY: Omit<Look, 'fontHeading' | 'fontBody'> = {
+  palette: ['#FBF8F2', '#7C8A6B', '#3B4A36', '#C9A24B'],
+  ground: ['#FBF8F2', '#F2F1E8', '#FBF8F2'],
+  accent: '#9E7C2F',
+  ink: '#3B4A36',
+  headingInk: '#3B4A36',
+  music: 'wedding-strings',
+  ornament: 'wreath',
+  angle: 180,
+  ambient: { effect: 'petals', intensity: 'low' },
+};
+
+const LOOK: Record<Loc, Look> = {
+  en: { ...IVORY, fontHeading: 'Cormorant Garamond', fontBody: 'Montserrat' },
+  ar: { ...IVORY, fontHeading: 'Amiri', fontBody: 'Tajawal' },
+};
+
+const IDS = {
+  en: { letter: 'blessing', photo: 'the-couple', quote: 'vow', gallery: 'gallery', countdown: 'countdown', gift: 'gift' },
+  ar: { letter: 'doaa', photo: 'el-3roosain', quote: 'doaa-quote', gallery: 'maaak-bas', countdown: 'tanazol', gift: 'hadiya' },
+} as const;
+
+const COPY = {
+  en: {
+    heading: 'Congratulations, {recipient}',
+    sub: 'Two hearts, one beautiful story.',
+    dear: 'To the two of you,',
+    letter:
+      'Watching you find each other has been one of the loveliest things. May your home be full of laughter, your arguments short and your mornings slow. Here’s to a marriage that keeps choosing love, every single day.',
+    sign: 'With all our love',
+    caption: 'The two of you',
+    quote: 'Whatever our souls are made of, yours and mine are the same.',
+    quoteBy: 'and so it begins',
+    galleryTitle: 'Moments we’ll never forget',
+    countdown: 'Counting down to forever',
+    countdownNote: 'We’ll be the ones crying in the second row.',
+    giftTitle: 'A gift for your new home',
+    giftNote: 'Something small to start your forever with.',
+    finale: 'Wishing you forever, {recipient}',
+    finaleBody: 'A lifetime of happiness, together.',
+  },
+  ar: {
+    heading: 'ألف مبروك يا {recipient}',
+    sub: 'قلبين بقوا حكاية واحدة',
+    dear: 'للعروسين الحلوين،',
+    letter:
+      'فرحتنا بيكم ملهاش وصف. ربنا يعمر بيتكم بالضحك والبركة، ويجعل خناقاتكم قصيّرة وصباحاتكم هادية، ويجمع بينكم دايماً في خير.',
+    sign: 'بكل حبنا',
+    caption: 'أحلى اتنين',
+    quote: 'وجعل بينكم مودّة ورحمة',
+    quoteBy: 'سورة الروم',
+    galleryTitle: 'لحظات مش هننساها',
+    countdown: 'باقي على الفرح',
+    countdownNote: 'وإحنا أول ناس هنعيّط في الصف التاني',
+    giftTitle: 'هدية لبيتكم الجديد',
+    giftNote: 'حاجة بسيطة على بداية العمر',
+    finale: 'بالرفاء والبنين يا {recipient}',
+    finaleBody: 'وعمر طويل مليان فرح',
+  },
+} satisfies Record<Loc, Record<string, string>>;
+
+function definition(loc: Loc): TemplateDefinitionInput {
+  const look = LOOK[loc];
+  const c = COPY[loc];
+  const id = IDS[loc];
+  const t = (key: string, label: readonly [string, string], value: string, opts?: Parameters<typeof text>[4]) =>
+    text(loc, key, label, value, opts);
+
+  return {
+    version: 1,
+    locale: loc,
+    direction: loc === 'ar' ? 'rtl' : 'ltr',
+    theme: theme(look),
+    scenes: [
+      {
+        id: 'cover',
+        type: 'Cover',
+        transitionIn: enter('blurIn', 1300),
+        holdMs: 4500,
+        ornament: frame(look),
+        style: { headingSize: 'xl', headingColor: look.headingInk, bodyColor: look.accent, imageStyle: 'arch' },
+        slots: [
+          t('heading', LABEL.coverHeading, c.heading, { required: true, maxLen: 48, animation: 'blurIn' }),
+          t('subheading', LABEL.coverSub, c.sub, { maxLen: 60 }),
+          photo('coverImage', LABEL.coverPhoto, { aspect: '1:1' }),
+        ],
+      },
+      {
+        id: id.letter,
+        type: 'Letter',
+        transitionIn: enter('rise', 1000),
+        holdMs: 6000,
+        ornament: PLAIN,
+        slots: [
+          t('heading', LABEL.letterOpening, c.dear, { maxLen: 40 }),
+          t('message', LABEL.letterBody, c.letter, { required: true, maxLen: 420 }),
+          t('signoff', LABEL.letterSign, c.sign, { maxLen: 40 }),
+        ],
+      },
+      {
+        id: id.photo,
+        type: 'PhotoReveal',
+        transitionIn: enter('rise', 1100),
+        holdMs: 4600,
+        ornament: PLAIN,
+        style: { imageStyle: 'arch', headingColor: look.accent, headingSize: 'md' },
+        slots: [
+          photo('image', LABEL.photo, { aspect: '3:4' }),
+          t('caption', LABEL.caption, c.caption, { maxLen: 50, animation: 'rise' }),
+        ],
+      },
+      {
+        id: id.quote,
+        type: 'Quote',
+        transitionIn: enter('blurIn', 1200),
+        holdMs: 5000,
+        ornament: PLAIN,
+        style: { headingColor: look.headingInk, bodyColor: look.accent, headingSize: 'lg' },
+        slots: [
+          t('message', LABEL.quote, c.quote, { required: true, maxLen: 180 }),
+          t('attribution', LABEL.quoteBy, c.quoteBy, { maxLen: 40 }),
+        ],
+      },
+      {
+        id: id.gallery,
+        type: 'Gallery',
+        transitionIn: enter('rise', 850),
+        holdMs: 5200,
+        ornament: PLAIN,
+        style: { imageStyle: 'ornate', headingSize: 'md', headingColor: look.accent },
+        slots: [
+          t('heading', LABEL.galleryTitle, c.galleryTitle, { maxLen: 36 }),
+          photo('gallery', LABEL.gallery, { aspect: '3:4', max: 6 }),
+        ],
+      },
+      {
+        id: id.countdown,
+        type: 'Countdown',
+        transitionIn: enter('rise', 900),
+        holdMs: 4500,
+        ornament: PLAIN,
+        style: { headingColor: look.accent, bodyColor: look.ink, headingSize: 'md' },
+        slots: [
+          t('lead', LABEL.countdownTitle, c.countdown, { maxLen: 44 }),
+          date('targetDate', LABEL.countdownDate),
+          t('body', LABEL.countdownNote, c.countdownNote, { maxLen: 80 }),
+        ],
+      },
+      {
+        id: id.gift,
+        type: 'GiftReveal',
+        transitionIn: enter('glow', 1000),
+        holdMs: 4500,
+        ornament: PLAIN,
+        decoration: { effect: 'petals', intensity: 'low', emoji: '💐' },
+        style: { headingColor: look.headingInk, bodyColor: look.accent, headingSize: 'lg', imageStyle: 'rounded' },
+        slots: [
+          t('heading', LABEL.giftTitle, c.giftTitle, { required: true, maxLen: 40 }),
+          t('body', LABEL.giftNote, c.giftNote, { maxLen: 100 }),
+          photo('image', LABEL.giftPhoto, { aspect: '1:1' }),
+        ],
+      },
+      {
+        id: 'finale',
+        type: 'Finale',
+        transitionIn: enter('glow', 1200),
+        holdMs: 6000,
+        ornament: frame(look),
+        decoration: { effect: 'petals', intensity: 'medium' },
+        style: { headingSize: 'lg', headingColor: look.headingInk, bodyColor: look.accent },
+        slots: [
+          t('heading', LABEL.finaleHeading, c.finale, { required: true, maxLen: 48, animation: 'glow' }),
+          t('body', LABEL.finaleBody, c.finaleBody, { maxLen: 100 }),
+        ],
+      },
+    ],
+  };
+}
 
 export const weddingEn: CatalogTemplate = {
   slug: 'wedding-two-hearts-en',
@@ -29,190 +214,7 @@ export const weddingEn: CatalogTemplate = {
   thumbnailUrl:
     'https://images.unsplash.com/photo-1519225421980-715cb0215aed?auto=format&fit=crop&w=800&q=70',
   mvp: false,
-  definition: {
-    version: 1,
-    locale: 'en',
-    direction: 'ltr',
-    theme: {
-      palette: ['#FBF8F2', '#7C8A6B', '#3B4A36', '#C9A24B'],
-      fontHeading: 'Cormorant Garamond',
-      fontBody: 'Montserrat',
-      accent: '#C9A24B',
-      ornament: { kind: 'wreath', opacity: 0.5, scale: 1 },
-      music: 'wedding-strings',
-      textColor: '#3B4A36',
-      decoration: { effect: 'petals', intensity: 'low' },
-    },
-    scenes: [
-      {
-        id: 'cover',
-        type: 'Cover',
-        layout: 'centered-photo',
-        transitionIn: { preset: 'blurIn', durationMs: 1300, delayMs: 0 },
-        holdMs: 4600,
-        background: {
-          type: 'gradient',
-          colors: ['#FBF8F2', '#EFEADD', '#DCE0CE'],
-          angle: 165,
-          pattern: 'noise',
-        },
-        decoration: { effect: 'petals', intensity: 'medium', color: '#C9A24B' },
-        style: {
-          headingSize: '2xl',
-          headingFont: 'Great Vibes',
-          headingColor: '#3B4A36',
-          bodyColor: '#7C8A6B',
-          textPosition: 'center',
-        },
-        slots: [
-          { key: 'heading', type: 'text', editable: true, required: true, maxLen: 48, defaultEn: 'Congratulations, {recipient}', animation: 'blurIn' },
-          { key: 'subheading', type: 'text', editable: true, required: false, maxLen: 60, defaultEn: 'Two hearts, one beautiful story.', animation: 'rise' },
-          { key: 'coverImage', type: 'image', editable: true, required: false, aspect: '3:4', min: 0, max: 1, animation: 'kenBurns' },
-        ],
-      },
-      {
-        id: 'the-couple',
-        type: 'PhotoReveal',
-        layout: 'full-bleed',
-        transitionIn: { preset: 'kenBurns', durationMs: 1400, delayMs: 0 },
-        holdMs: 5000,
-        background: {
-          type: 'image',
-          imageUrl: 'https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?auto=format&fit=crop&w=1200&q=70',
-          colors: ['#3B4A36', '#2A331F'],
-          overlay: 'linear-gradient(180deg, rgba(43,51,31,0.30), rgba(43,51,31,0.66))',
-          kenBurns: true,
-        },
-        decoration: { effect: 'glow', intensity: 'low', color: '#C9A24B' },
-        style: { imageStyle: 'polaroid', headingColor: '#FFFFFF', bodyColor: '#FBF8F2', headingFont: 'Great Vibes' },
-        slots: [
-          { key: 'image', type: 'image', editable: true, required: true, aspect: '4:5', min: 1, max: 1, animation: 'float' },
-          { key: 'caption', type: 'text', editable: true, required: false, maxLen: 50, defaultEn: 'Better, together', animation: 'shimmer' },
-        ],
-      },
-      {
-        id: 'vow',
-        type: 'Quote',
-        transitionIn: { preset: 'blurIn', durationMs: 1500, delayMs: 0 },
-        holdMs: 5400,
-        background: {
-          type: 'radial',
-          colors: ['#FFFFFF', '#F2EEE0', '#DCE0CE'],
-        },
-        decoration: { effect: 'sparkles', intensity: 'low', color: '#C9A24B' },
-        style: {
-          headingSize: 'xl',
-          headingFont: 'Great Vibes',
-          headingColor: '#3B4A36',
-          bodyColor: '#7C8A6B',
-        },
-        slots: [
-          { key: 'message', type: 'text', editable: true, required: true, maxLen: 180, defaultEn: 'Whatever our souls are made of, yours and mine are the same.', animation: 'blurIn' },
-          { key: 'attribution', type: 'text', editable: true, required: false, maxLen: 40, defaultEn: '— and so it begins', animation: 'rise' },
-        ],
-      },
-      {
-        id: 'gallery',
-        type: 'Gallery',
-        layout: 'grid',
-        transitionIn: { preset: 'rise', durationMs: 900, delayMs: 0 },
-        holdMs: 5000,
-        background: {
-          type: 'image',
-          imageUrl: 'https://images.unsplash.com/photo-1490818387583-1baba5e638af?auto=format&fit=crop&w=1200&q=70',
-          colors: ['#7C8A6B', '#3B4A36'],
-          overlay: 'linear-gradient(180deg, rgba(43,51,31,0.62), rgba(43,51,31,0.80))',
-        },
-        decoration: { effect: 'petals', intensity: 'low', color: '#FBF8F2' },
-        style: { imageStyle: 'card', headingSize: 'md', headingColor: '#FBF8F2', bodyColor: '#FBF8F2' },
-        slots: [
-          { key: 'heading', type: 'text', editable: true, required: false, maxLen: 30, defaultEn: 'The two of you', animation: 'rise' },
-          { key: 'gallery', type: 'image', editable: true, required: true, min: 2, max: 6, aspect: '1:1', animation: 'float' },
-        ],
-      },
-      {
-        id: 'countdown',
-        type: 'Countdown',
-        transitionIn: { preset: 'glow', durationMs: 1000, delayMs: 0 },
-        holdMs: 4400,
-        background: {
-          type: 'image',
-          imageUrl: 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1200&q=70',
-          colors: ['#3B4A36', '#2A331F'],
-          overlay: 'linear-gradient(180deg, rgba(43,51,31,0.35), rgba(43,51,31,0.72))',
-          kenBurns: true,
-        },
-        decoration: { effect: 'glow', intensity: 'medium', color: '#C9A24B' },
-        style: { headingColor: '#C9A24B', headingSize: 'lg', bodyColor: '#FBF8F2', headingFont: 'Great Vibes' },
-        slots: [
-          { key: 'lead', type: 'text', editable: true, required: false, maxLen: 40, defaultEn: 'Counting down to forever', animation: 'shimmer' },
-          { key: 'targetDate', type: 'date', editable: true, required: false },
-        ],
-      },
-      {
-        id: 'blessing',
-        type: 'Letter',
-        transitionIn: { preset: 'rise', durationMs: 1200, delayMs: 0 },
-        holdMs: 5400,
-        background: {
-          type: 'gradient',
-          colors: ['#FBF8F2', '#F2EEE0'],
-          angle: 160,
-          pattern: 'noise',
-        },
-        decoration: { effect: 'petals', intensity: 'low', color: '#C9A24B' },
-        style: {
-          textAlign: 'start',
-          headingFont: 'Great Vibes',
-          headingColor: '#3B4A36',
-          bodyColor: '#5A6B49',
-          headingSize: 'lg',
-        },
-        slots: [
-          { key: 'heading', type: 'text', editable: true, required: false, maxLen: 40, defaultEn: 'A little blessing', animation: 'rise' },
-          { key: 'message', type: 'text', editable: true, required: true, maxLen: 180, defaultEn: 'May your life together overflow with love, laughter, and endless tiny joys.', animation: 'blurIn' },
-        ],
-      },
-      {
-        id: 'gift',
-        type: 'GiftReveal',
-        layout: 'centered',
-        transitionIn: { preset: 'float', durationMs: 1000, delayMs: 0 },
-        holdMs: 4600,
-        background: {
-          type: 'gradient',
-          colors: ['#DCE0CE', '#7C8A6B', '#3B4A36'],
-          angle: 200,
-        },
-        decoration: { effect: 'sparkles', intensity: 'low', color: '#C9A24B' },
-        style: { headingColor: '#FBF8F2', bodyColor: '#FBF8F2', headingFont: 'Great Vibes' },
-        slots: [
-          { key: 'heading', type: 'text', editable: true, required: true, maxLen: 40, defaultEn: 'With love, a gift', animation: 'glow' },
-          { key: 'body', type: 'text', editable: true, required: false, maxLen: 100, defaultEn: 'A small token for the start of everything.', animation: 'rise' },
-          { key: 'image', type: 'image', editable: true, required: false, aspect: '1:1', min: 0, max: 1, animation: 'float' },
-        ],
-      },
-      {
-        id: 'finale',
-        type: 'Finale',
-        transitionIn: { preset: 'shimmer', durationMs: 1200, delayMs: 0 },
-        holdMs: 6000,
-        background: {
-          type: 'image',
-          imageUrl: 'https://images.unsplash.com/photo-1522413452208-996ff3f3e740?auto=format&fit=crop&w=1200&q=70',
-          colors: ['#3B4A36', '#2A331F'],
-          overlay: 'linear-gradient(180deg, rgba(43,51,31,0.42), rgba(43,51,31,0.78))',
-          kenBurns: true,
-        },
-        decoration: { effect: 'petals', intensity: 'high', color: '#C9A24B' },
-        style: { headingSize: '2xl', headingColor: '#FFFFFF', bodyColor: '#FBF8F2', headingFont: 'Great Vibes' },
-        slots: [
-          { key: 'heading', type: 'text', editable: true, required: true, maxLen: 48, defaultEn: 'Wishing you forever, {recipient}', animation: 'shimmer' },
-          { key: 'body', type: 'text', editable: true, required: false, maxLen: 90, defaultEn: 'With all our love.', animation: 'rise' },
-        ],
-      },
-    ],
-  },
+  definition: definition('en'),
 };
 
 export const weddingAr: CatalogTemplate = {
@@ -230,185 +232,5 @@ export const weddingAr: CatalogTemplate = {
   thumbnailUrl:
     'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=800&q=70',
   mvp: false,
-  definition: {
-    version: 1,
-    locale: 'ar',
-    direction: 'rtl',
-    theme: {
-      palette: ['#FBF8F2', '#7C8A6B', '#3B4A36', '#C9A24B'],
-      fontHeading: 'Amiri',
-      fontBody: 'Tajawal',
-      accent: '#C9A24B',
-      ornament: { kind: 'wreath', opacity: 0.5, scale: 1 },
-      music: 'wedding-strings',
-      textColor: '#3B4A36',
-      decoration: { effect: 'petals', intensity: 'low' },
-    },
-    scenes: [
-      {
-        id: 'cover',
-        type: 'Cover',
-        layout: 'centered-photo',
-        transitionIn: { preset: 'blurIn', durationMs: 1300, delayMs: 0 },
-        holdMs: 4600,
-        background: {
-          type: 'gradient',
-          colors: ['#FBF8F2', '#EFEADD', '#DCE0CE'],
-          angle: 165,
-          pattern: 'noise',
-        },
-        decoration: { effect: 'petals', intensity: 'medium', color: '#C9A24B' },
-        style: {
-          headingSize: '2xl',
-          headingColor: '#3B4A36',
-          bodyColor: '#7C8A6B',
-          textPosition: 'center',
-        },
-        slots: [
-          { key: 'heading', type: 'text', editable: true, required: true, maxLen: 48, defaultAr: 'ألف مبروك يا {recipient}', animation: 'blurIn' },
-          { key: 'subheading', type: 'text', editable: true, required: false, maxLen: 60, defaultAr: 'قلبين بقوا حكاية واحدة', animation: 'rise' },
-          { key: 'coverImage', type: 'image', editable: true, required: false, aspect: '3:4', min: 0, max: 1, animation: 'kenBurns' },
-        ],
-      },
-      {
-        id: 'el-3roosain',
-        type: 'PhotoReveal',
-        layout: 'full-bleed',
-        transitionIn: { preset: 'kenBurns', durationMs: 1400, delayMs: 0 },
-        holdMs: 5000,
-        background: {
-          type: 'image',
-          imageUrl: 'https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?auto=format&fit=crop&w=1200&q=70',
-          colors: ['#3B4A36', '#2A331F'],
-          overlay: 'linear-gradient(180deg, rgba(43,51,31,0.30), rgba(43,51,31,0.66))',
-          kenBurns: true,
-        },
-        decoration: { effect: 'glow', intensity: 'low', color: '#C9A24B' },
-        style: { imageStyle: 'polaroid', headingColor: '#FFFFFF', bodyColor: '#FBF8F2' },
-        slots: [
-          { key: 'image', type: 'image', editable: true, required: true, aspect: '4:5', min: 1, max: 1, animation: 'float' },
-          { key: 'caption', type: 'text', editable: true, required: false, maxLen: 50, defaultAr: 'مع بعض أحلى', animation: 'shimmer' },
-        ],
-      },
-      {
-        id: 'doaa-quote',
-        type: 'Quote',
-        transitionIn: { preset: 'blurIn', durationMs: 1500, delayMs: 0 },
-        holdMs: 5400,
-        background: {
-          type: 'radial',
-          colors: ['#FFFFFF', '#F2EEE0', '#DCE0CE'],
-        },
-        decoration: { effect: 'sparkles', intensity: 'low', color: '#C9A24B' },
-        style: {
-          headingSize: 'xl',
-          headingColor: '#3B4A36',
-          bodyColor: '#7C8A6B',
-        },
-        slots: [
-          { key: 'message', type: 'text', editable: true, required: true, maxLen: 180, defaultAr: 'وجعل بينكم مودّة ورحمة', animation: 'blurIn' },
-          { key: 'attribution', type: 'text', editable: true, required: false, maxLen: 40, defaultAr: 'وكل الحب اللي بيكمّل العمر', animation: 'rise' },
-        ],
-      },
-      {
-        id: 'maaak-bas',
-        type: 'Gallery',
-        layout: 'grid',
-        transitionIn: { preset: 'rise', durationMs: 900, delayMs: 0 },
-        holdMs: 5000,
-        background: {
-          type: 'image',
-          imageUrl: 'https://images.unsplash.com/photo-1490818387583-1baba5e638af?auto=format&fit=crop&w=1200&q=70',
-          colors: ['#7C8A6B', '#3B4A36'],
-          overlay: 'linear-gradient(180deg, rgba(43,51,31,0.62), rgba(43,51,31,0.80))',
-        },
-        decoration: { effect: 'petals', intensity: 'low', color: '#FBF8F2' },
-        style: { imageStyle: 'card', headingSize: 'md', headingColor: '#FBF8F2', bodyColor: '#FBF8F2' },
-        slots: [
-          { key: 'heading', type: 'text', editable: true, required: false, maxLen: 30, defaultAr: 'إنتوا الاتنين', animation: 'rise' },
-          { key: 'gallery', type: 'image', editable: true, required: true, min: 2, max: 6, aspect: '1:1', animation: 'float' },
-        ],
-      },
-      {
-        id: 'tanazol',
-        type: 'Countdown',
-        transitionIn: { preset: 'glow', durationMs: 1000, delayMs: 0 },
-        holdMs: 4400,
-        background: {
-          type: 'image',
-          imageUrl: 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1200&q=70',
-          colors: ['#3B4A36', '#2A331F'],
-          overlay: 'linear-gradient(180deg, rgba(43,51,31,0.35), rgba(43,51,31,0.72))',
-          kenBurns: true,
-        },
-        decoration: { effect: 'glow', intensity: 'medium', color: '#C9A24B' },
-        style: { headingColor: '#C9A24B', headingSize: 'lg', bodyColor: '#FBF8F2' },
-        slots: [
-          { key: 'lead', type: 'text', editable: true, required: false, maxLen: 40, defaultAr: 'باقي على الفرح', animation: 'shimmer' },
-          { key: 'targetDate', type: 'date', editable: true, required: false },
-        ],
-      },
-      {
-        id: 'doaa',
-        type: 'Letter',
-        transitionIn: { preset: 'rise', durationMs: 1200, delayMs: 0 },
-        holdMs: 5400,
-        background: {
-          type: 'gradient',
-          colors: ['#FBF8F2', '#F2EEE0'],
-          angle: 160,
-          pattern: 'noise',
-        },
-        decoration: { effect: 'petals', intensity: 'low', color: '#C9A24B' },
-        style: {
-          textAlign: 'start',
-          headingColor: '#3B4A36',
-          bodyColor: '#5A6B49',
-          headingSize: 'lg',
-        },
-        slots: [
-          { key: 'heading', type: 'text', editable: true, required: false, maxLen: 40, defaultAr: 'دعوة من القلب', animation: 'rise' },
-          { key: 'message', type: 'text', editable: true, required: true, maxLen: 180, defaultAr: 'ربنا يتمّم بخير ويعمر بيتكم بالحب والضحك والسعادة', animation: 'blurIn' },
-        ],
-      },
-      {
-        id: 'hadiya',
-        type: 'GiftReveal',
-        layout: 'centered',
-        transitionIn: { preset: 'float', durationMs: 1000, delayMs: 0 },
-        holdMs: 4600,
-        background: {
-          type: 'gradient',
-          colors: ['#DCE0CE', '#7C8A6B', '#3B4A36'],
-          angle: 200,
-        },
-        decoration: { effect: 'sparkles', intensity: 'low', color: '#C9A24B' },
-        style: { headingColor: '#FBF8F2', bodyColor: '#FBF8F2' },
-        slots: [
-          { key: 'heading', type: 'text', editable: true, required: true, maxLen: 40, defaultAr: 'هدية من القلب', animation: 'glow' },
-          { key: 'body', type: 'text', editable: true, required: false, maxLen: 100, defaultAr: 'حاجة بسيطة على بداية العمر', animation: 'rise' },
-          { key: 'image', type: 'image', editable: true, required: false, aspect: '1:1', min: 0, max: 1, animation: 'float' },
-        ],
-      },
-      {
-        id: 'finale',
-        type: 'Finale',
-        transitionIn: { preset: 'shimmer', durationMs: 1200, delayMs: 0 },
-        holdMs: 6000,
-        background: {
-          type: 'image',
-          imageUrl: 'https://images.unsplash.com/photo-1522413452208-996ff3f3e740?auto=format&fit=crop&w=1200&q=70',
-          colors: ['#3B4A36', '#2A331F'],
-          overlay: 'linear-gradient(180deg, rgba(43,51,31,0.42), rgba(43,51,31,0.78))',
-          kenBurns: true,
-        },
-        decoration: { effect: 'petals', intensity: 'high', color: '#C9A24B' },
-        style: { headingSize: '2xl', headingColor: '#FFFFFF', bodyColor: '#FBF8F2' },
-        slots: [
-          { key: 'heading', type: 'text', editable: true, required: true, maxLen: 48, defaultAr: 'بالرفاء والبنين يا {recipient}', animation: 'shimmer' },
-          { key: 'body', type: 'text', editable: true, required: false, maxLen: 90, defaultAr: 'وعمر طويل مليان فرح', animation: 'rise' },
-        ],
-      },
-    ],
-  },
+  definition: definition('ar'),
 };

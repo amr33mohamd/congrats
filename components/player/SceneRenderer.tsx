@@ -8,12 +8,17 @@ import {
   type BoundMedia,
   type SceneDef,
   type SceneStyle,
+  type SceneType,
   type TemplateTheme,
   type Direction,
 } from '@/lib/template-contract';
 import { getVariants, typewriterChild, resolveScenePreset } from '@/lib/animation-presets';
 import { cssFamily } from '@/lib/fonts';
-import { FamiliesScene, EventScene, VenueScene, RsvpScene, GiftScene } from './InvitationScenes';
+import { FamiliesScene, EventScene, VenueScene, RsvpScene, GiftScene, Flourish } from './InvitationScenes';
+import { hexLuminance, readableOn } from './color';
+
+// Re-exported: the Player and the gallery stage pick gate/sheet ink with these.
+export { hexLuminance, readableOn };
 
 export interface SceneRenderProps {
   scene: SceneDef;
@@ -48,6 +53,24 @@ function dateValue(scene: SceneDef, step: BoundStep, recipient: string): string 
   const slot = scene.slots.find((s) => s.type === 'date');
   if (!slot) return '';
   return applyTokens(step.text?.[slot.key] ?? '', recipient).trim();
+}
+
+/**
+ * A date slot as the reader should see it ("12 March 2026" / "١٢ مارس ٢٠٢٦").
+ * Date-only values (`2026-03-12`) are formatted in UTC so the day never slips
+ * by one for a reader west of Greenwich.
+ */
+function formatDate(raw: string, direction: Direction): string {
+  if (!raw) return '';
+  const d = new Date(raw);
+  if (Number.isNaN(d.getTime())) return '';
+  const dateOnly = /^\d{4}-\d{2}-\d{2}$/.test(raw);
+  return new Intl.DateTimeFormat(direction === 'rtl' ? 'ar-EG' : 'en-GB', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    ...(dateOnly ? { timeZone: 'UTC' } : {}),
+  }).format(d);
 }
 
 function sceneImages(scene: SceneDef, step: BoundStep): BoundMedia[] {
@@ -134,43 +157,39 @@ function frameClass(style: Resolved['imageStyle']): string {
   }
 }
 
-/** Relative luminance of a hex colour, 0 (black) → 1 (white). */
-export function hexLuminance(hex: string): number {
-  const h = hex.replace('#', '');
-  const n = h.length === 3 ? h.split('').map((c) => c + c).join('') : h.slice(0, 6);
-  const [r, g, b] = [0, 2, 4].map((i) => parseInt(n.slice(i, i + 2), 16) / 255);
-  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
-}
-
-/**
- * Pick the palette entry that reads best on `on`. Scenes that paint their own
- * panel (the letter card, the open gate) previously used `text-ink`, which is
- * an APP token — once the product went dark, `ink` became near-white and those
- * panels rendered white-on-white.
- */
-export function readableOn(on: string, palette: string[]): string {
-  const target = hexLuminance(on) > 0.5;
-  const candidates = palette.filter((c) => /^#[0-9a-f]{3,8}$/i.test(c));
-  let best = target ? '#1A1418' : '#FFFFFF';
-  let bestGap = 0;
-  for (const c of candidates) {
-    const gap = Math.abs(hexLuminance(c) - hexLuminance(on));
-    if (gap > bestGap) { bestGap = gap; best = c; }
-  }
-  return bestGap > 0.35 ? best : target ? '#1A1418' : '#FFFFFF';
-}
-
 /* ───────────────────────────── shared bits ──────────────────────────────── */
 
 function sceneInPreset(scene: SceneDef) {
   return resolveScenePreset(scene.transitionIn?.preset);
 }
 
+/**
+ * A soft shadow lifts LIGHT type off a dark or photographic ground; under dark
+ * ink on paper the same shadow just reads as a smudge.
+ */
+function liftFor(color: string, strong = true): string {
+  if (!/^#[0-9a-f]{3,8}$/i.test(color) || hexLuminance(color) < 0.5) return '';
+  return strong ? 'drop-shadow-[0_2px_12px_rgba(0,0,0,0.25)]' : 'drop-shadow-[0_1px_8px_rgba(0,0,0,0.2)]';
+}
+
+/**
+ * The small flourish that opens a mid-card section, so expressive sections
+ * share the invitation sections' rhythm and the card reads as one designed
+ * piece rather than a stack of unrelated blocks.
+ */
+function SectionRule({ theme, r }: { theme: TemplateTheme; r: Resolved }) {
+  return (
+    <div className="mb-token-4 w-full opacity-80">
+      <Flourish color={r.accent} art={theme.art?.divider} width={132} />
+    </div>
+  );
+}
+
 function Heading({ text, r }: { text: string; r: Resolved }) {
   if (!text) return null;
   return (
     <h1
-      className="font-bold leading-[1.08] drop-shadow-[0_2px_12px_rgba(0,0,0,0.25)] [text-wrap:balance] [overflow-wrap:anywhere]"
+      className={`font-bold leading-[1.15] ${liftFor(r.headingColor)} [text-wrap:balance] [overflow-wrap:anywhere]`}
       style={{ color: r.headingColor, fontSize: r.headingSize, fontFamily: r.headingFamily }}
     >
       {text}
@@ -182,7 +201,7 @@ function Body({ text, r }: { text: string; r: Resolved }) {
   if (!text) return null;
   return (
     <p
-      className="mt-token-3 max-w-prose text-lg leading-relaxed drop-shadow-[0_1px_8px_rgba(0,0,0,0.2)] md:text-xl [overflow-wrap:anywhere]"
+      className={`mt-token-3 max-w-prose whitespace-pre-line text-lg leading-relaxed ${liftFor(r.textColor, false)} md:text-xl [overflow-wrap:anywhere]`}
       style={{ color: r.textColor, opacity: 0.95 }}
     >
       {text}
@@ -204,20 +223,40 @@ function TypewriterHeading({
   active: boolean;
 }) {
   const variants = getVariants('typewriter', { direction, reducedMotion });
+  // Arabic is a joined script: splitting a word into per-letter elements
+  // breaks the joins in several engines (Safari especially), so letters render
+  // in their isolated forms. RTL types in word by word instead.
+  const pieces = text.split(/(\s+)/).filter(Boolean);
   return (
     <motion.h1
-      className="font-bold leading-[1.08] drop-shadow-[0_2px_12px_rgba(0,0,0,0.25)] [overflow-wrap:anywhere]"
+      className={`font-bold leading-[1.15] ${liftFor(r.headingColor)} [overflow-wrap:anywhere]`}
       style={{ color: r.headingColor, fontSize: r.headingSize, fontFamily: r.headingFamily }}
       variants={variants}
       initial="hidden"
       animate={active ? 'visible' : 'hidden'}
       aria-label={text}
     >
-      {text.split('').map((ch, i) => (
-        <motion.span key={i} variants={typewriterChild} aria-hidden>
-          {ch === ' ' ? ' ' : ch}
-        </motion.span>
-      ))}
+      {pieces.map((piece, i) =>
+        /^\s+$/.test(piece) ? (
+          // A real space between words, so the heading still wraps at word
+          // boundaries instead of breaking mid-word.
+          <span key={i} aria-hidden>
+            {' '}
+          </span>
+        ) : direction === 'rtl' ? (
+          <motion.span key={i} variants={typewriterChild} aria-hidden>
+            {piece}
+          </motion.span>
+        ) : (
+          <span key={i} aria-hidden className="whitespace-nowrap">
+            {piece.split('').map((ch, j) => (
+              <motion.span key={j} variants={typewriterChild}>
+                {ch}
+              </motion.span>
+            ))}
+          </span>
+        ),
+      )}
     </motion.h1>
   );
 }
@@ -268,39 +307,32 @@ function Frame({ r, children }: { r: Resolved; children: React.ReactNode }) {
 
 /* ───────────────────────── scene-type switch ────────────────────────────── */
 
+/**
+ * One renderer per scene type. A `Record` over `SceneType` rather than a
+ * switch with a default: adding a type to the contract without a renderer is
+ * then a compile error, instead of that scene silently rendering as text.
+ */
+export const SCENE_RENDERERS: Record<SceneType, (p: SceneRenderProps) => React.ReactElement | null> = {
+  Cover: CoverScene,
+  PhotoReveal: PhotoRevealScene,
+  TextReveal: TextRevealScene,
+  Countdown: CountdownScene,
+  Gallery: GalleryScene,
+  GiftReveal: GiftRevealScene,
+  Finale: FinaleScene,
+  Quote: QuoteScene,
+  Letter: LetterScene,
+  Families: FamiliesScene,
+  Event: EventScene,
+  Venue: VenueScene,
+  Rsvp: RsvpScene,
+  Gift: GiftScene,
+};
+
 export function SceneRenderer(props: SceneRenderProps) {
-  switch (props.scene.type) {
-    case 'Cover':
-      return <CoverScene {...props} />;
-    case 'PhotoReveal':
-      return <PhotoRevealScene {...props} />;
-    case 'TextReveal':
-      return <TextRevealScene {...props} />;
-    case 'Countdown':
-      return <CountdownScene {...props} />;
-    case 'Gallery':
-      return <GalleryScene {...props} />;
-    case 'GiftReveal':
-      return <GiftRevealScene {...props} />;
-    case 'Finale':
-      return <FinaleScene {...props} />;
-    case 'Quote':
-      return <QuoteScene {...props} />;
-    case 'Letter':
-      return <LetterScene {...props} />;
-    case 'Families':
-      return <FamiliesScene {...props} />;
-    case 'Event':
-      return <EventScene {...props} />;
-    case 'Venue':
-      return <VenueScene {...props} />;
-    case 'Rsvp':
-      return <RsvpScene {...props} />;
-    case 'Gift':
-      return <GiftScene {...props} />;
-    default:
-      return <TextRevealScene {...props} />;
-  }
+  // Unknown types can still arrive from an older definition stored in the DB.
+  const Render = SCENE_RENDERERS[props.scene.type] ?? TextRevealScene;
+  return <Render {...props} />;
 }
 
 /* ───────────────────────────── scenes ───────────────────────────────────── */
@@ -352,7 +384,9 @@ function PhotoRevealScene(p: SceneRenderProps) {
           initial="hidden"
           animate={p.active ? 'visible' : 'hidden'}
           exit="exit"
-          className={`mb-token-6 max-h-[58vh] w-auto max-w-[86vw] ${frameClass(r.imageStyle)}`}
+          // Sized against the SECTION (cqw), not the window: in the builder's
+          // phone frame `58vh` is the browser's height, far taller than the phone.
+          className={`mb-token-6 max-h-[min(58vh,112cqw)] w-auto max-w-[86cqw] ${frameClass(r.imageStyle)}`}
         />
       ) : null}
       <TextStack blocks={blocks} r={r} direction={p.direction} reducedMotion={p.reducedMotion} active={p.active} />
@@ -363,9 +397,14 @@ function PhotoRevealScene(p: SceneRenderProps) {
 function TextRevealScene(p: SceneRenderProps) {
   const r = resolveStyle(p.scene, p.theme);
   const blocks = textBlocks(p.scene, p.step, p.recipientName);
+  // A date slot here is a fact in the list ("born 12 March"), so it is shown
+  // formatted as the last line rather than silently dropped.
+  const date = formatDate(dateValue(p.scene, p.step, p.recipientName), p.direction);
   return (
     <Frame r={r}>
+      <SectionRule theme={p.theme} r={r} />
       <TextStack blocks={blocks} r={r} direction={p.direction} reducedMotion={p.reducedMotion} active={p.active} typewriter />
+      {date ? <Body text={date} r={r} /> : null}
     </Frame>
   );
 }
@@ -379,8 +418,10 @@ function CountdownScene(p: SceneRenderProps) {
     if (!target) return;
     const tick = () => {
       const diff = new Date(target).getTime() - Date.now();
-      if (Number.isNaN(diff)) return setRemaining(null);
-      const clamped = Math.max(0, diff);
+      // Invalid or already passed: a row of "00" tiles reads as broken, so the
+      // section keeps just its words.
+      if (Number.isNaN(diff) || diff <= 0) return setRemaining(null);
+      const clamped = diff;
       setRemaining({
         d: Math.floor(clamped / 86400000),
         h: Math.floor((clamped % 86400000) / 3600000),
@@ -394,6 +435,7 @@ function CountdownScene(p: SceneRenderProps) {
 
   return (
     <Frame r={r}>
+      <SectionRule theme={p.theme} r={r} />
       <TextStack blocks={blocks} r={r} direction={p.direction} reducedMotion={p.reducedMotion} active={p.active} />
       {remaining ? (
         <div className="mt-token-6 flex gap-token-4">
@@ -402,8 +444,14 @@ function CountdownScene(p: SceneRenderProps) {
             { v: remaining.h, l: p.direction === 'rtl' ? 'ساعة' : 'hrs' },
             { v: remaining.m, l: p.direction === 'rtl' ? 'دقيقة' : 'min' },
           ].map((u) => (
-            <div key={u.l} className="flex min-w-[4.5rem] flex-col items-center rounded-xl bg-white/12 px-token-3 py-token-2 backdrop-blur-sm">
-              <span className="font-heading text-4xl font-bold tabular-nums" style={{ color: r.headingColor }}>
+            <div
+              key={u.l}
+              className="flex min-w-[4.5rem] flex-col items-center rounded-xl px-token-3 py-token-2"
+              // Tinted from the template accent: a white/12 tile vanished on
+              // the light paper palettes.
+              style={{ background: `color-mix(in srgb, ${r.accent} 14%, transparent)`, boxShadow: `inset 0 0 0 1px color-mix(in srgb, ${r.accent} 40%, transparent)` }}
+            >
+              <span className="text-4xl font-bold tabular-nums" style={{ color: r.headingColor, fontFamily: r.headingFamily }}>
                 {/* Same numerals as the rest of the card — Arabic-Indic in RTL. */}
                 {new Intl.NumberFormat(p.direction === 'rtl' ? 'ar-EG' : 'en-GB', { minimumIntegerDigits: 2 }).format(u.v)}
               </span>
@@ -460,6 +508,7 @@ function GalleryScene(p: SceneRenderProps) {
     return (
       <Frame r={r}>
         <div className="flex flex-col items-center gap-token-4">
+          <SectionRule theme={p.theme} r={r} />
           <TextStack blocks={blocks} r={r} direction={p.direction} reducedMotion active={p.active} />
           <div className="grid w-full max-w-lg gap-token-3" style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
             {images.map((img, i) => (
@@ -479,9 +528,10 @@ function GalleryScene(p: SceneRenderProps) {
   return (
     <Frame r={r}>
       <div className="flex w-full flex-col items-center gap-token-4">
+        <SectionRule theme={p.theme} r={r} />
         <TextStack blocks={blocks} r={r} direction={p.direction} reducedMotion={p.reducedMotion} active={p.active} />
 
-        <div className="relative h-[46cqw] max-h-[52vh] w-full max-w-md" style={{ perspective: 1200 }}>
+        <div className="relative h-[46cqw] max-h-[min(52vh,60cqw)] w-full max-w-md" style={{ perspective: 1200 }}>
           {images.map((img, i) => {
             // Shortest signed distance around the ring.
             let d = i - index;
@@ -525,8 +575,12 @@ function GiftRevealScene(p: SceneRenderProps) {
     reducedMotion: p.reducedMotion,
   });
   const blocks = textBlocks(p.scene, p.step, p.recipientName);
+  // The sender's own photo of the gift, when they add one, IS the reveal; the
+  // emoji is only the stand-in until then.
+  const image = sceneImages(p.scene, p.step)[0];
   return (
     <Frame r={r}>
+      <SectionRule theme={p.theme} r={r} />
       <motion.div
         className={`flex flex-col ${alignItems[r.align]}`}
         style={{ perspective: 1000 }}
@@ -535,9 +589,18 @@ function GiftRevealScene(p: SceneRenderProps) {
         animate={p.active ? 'visible' : 'hidden'}
         exit="exit"
       >
-        <div className="mb-token-6 text-7xl" aria-hidden>
-          {p.scene.decoration?.emoji ?? '🎁'}
-        </div>
+        {image ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={image.url}
+            alt=""
+            className={`mb-token-6 aspect-square w-[min(60cqw,260px)] ${frameClass(r.imageStyle)}`}
+          />
+        ) : (
+          <div className="mb-token-6 text-7xl" aria-hidden>
+            {p.scene.decoration?.emoji ?? '🎁'}
+          </div>
+        )}
         <TextStack blocks={blocks} r={r} direction={p.direction} reducedMotion={p.reducedMotion} active={p.active} />
       </motion.div>
     </Frame>
@@ -581,19 +644,25 @@ function QuoteScene(p: SceneRenderProps) {
         animate={p.active ? 'visible' : 'hidden'}
         exit="exit"
       >
-        <span aria-hidden className="font-heading text-7xl leading-none opacity-40" style={{ color: r.headingColor }}>
-          “
+        <span aria-hidden className="text-7xl leading-none opacity-40" style={{ color: r.headingColor, fontFamily: r.headingFamily }}>
+          {p.direction === 'rtl' ? '”' : '“'}
         </span>
         {quote ? (
           <p
-            className="font-heading font-semibold italic leading-snug [text-wrap:balance]"
+            // No synthetic italic or letter-spacing in Arabic: slanting a
+            // joined script and spacing its letters apart both break it.
+            className={`font-semibold leading-snug [text-wrap:balance] ${p.direction === 'rtl' ? '' : 'italic'}`}
             style={{ color: r.headingColor, fontSize: r.headingSize, fontFamily: r.headingFamily }}
           >
             {quote.value}
           </p>
         ) : null}
         {rest.map((b) => (
-          <p key={b.key} className="mt-token-4 text-base uppercase tracking-[0.2em]" style={{ color: r.textColor, opacity: 0.85 }}>
+          <p
+            key={b.key}
+            className={`mt-token-4 text-base ${p.direction === 'rtl' ? '' : 'uppercase tracking-[0.2em]'}`}
+            style={{ color: r.textColor, opacity: 0.85 }}
+          >
             — {b.value}
           </p>
         ))}
@@ -617,6 +686,11 @@ function LetterScene(p: SceneRenderProps) {
   const paper =
     [...palette].sort((a, b) => hexLuminance(b) - hexLuminance(a))[0] ?? '#F7F2E8';
   const letterInk = readableOn(paper, palette);
+  // Sign in the accent only when it actually reads on the sheet — a pastel
+  // accent (the newborn peach) on cream paper would all but disappear.
+  const accentReads =
+    /^#[0-9a-f]{3,8}$/i.test(r.accent) && Math.abs(hexLuminance(r.accent) - hexLuminance(paper)) > 0.3;
+  const signInk = accentReads ? r.accent : letterInk;
   return (
     <Frame r={r}>
       <motion.div
@@ -636,11 +710,27 @@ function LetterScene(p: SceneRenderProps) {
             {heading.value}
           </p>
         ) : null}
-        {body.map((b) => (
-          <p key={b.key} className="mt-token-3 text-lg leading-relaxed" style={{ color: letterInk, opacity: 0.82 }}>
-            {b.value}
-          </p>
-        ))}
+        {body.map((b) =>
+          b.key === 'signoff' ? (
+            // The signature closes the sheet, set in the display face at the
+            // end edge the way a handwritten letter is signed.
+            <p
+              key={b.key}
+              className="mt-token-6 whitespace-pre-line text-end text-xl font-semibold"
+              style={{ fontFamily: r.headingFamily, color: signInk }}
+            >
+              {b.value}
+            </p>
+          ) : (
+            <p
+              key={b.key}
+              className="mt-token-3 whitespace-pre-line text-lg leading-relaxed"
+              style={{ color: letterInk, opacity: 0.82 }}
+            >
+              {b.value}
+            </p>
+          ),
+        )}
       </motion.div>
     </Frame>
   );

@@ -1,18 +1,204 @@
 /**
- * PROPOSAL — two native templates.
+ * PROPOSAL — one card that builds, section by section, to the question.
  *
- * EN "Will You Marry Me" (paid, MVP): a cinematic night-sky proposal — midnight
- *     navy + champagne gold + ivory. Stars and sparkles drift over deep radial
- *     skies, a starry-sky PhotoReveal and city-lights gallery set the scene, a
- *     ring GiftReveal glows, the big question lands as a stylized Quote, and the
- *     whole thing closes on a fireworks Finale. Cormorant Garamond + Montserrat,
- *     slow cinematic holds, heavy kenBurns / blurIn / glow / float.
- * AR "اتجوزيني" (paid): same breath-holding night-sky drama, fully native —
- *     Reem Kufi display, Tajawal body, RTL, warm عامية ("تتجوزيني؟") that lands
- *     like a real spoken proposal under the stars.
+ * Midnight navy and champagne gold under a starfield, a monogram crest at the
+ * two ends:
+ *   cover → the letter → where it started (photo) → every step (gallery) →
+ *   what I promise → the ring → the question → forever.
+ *
+ * EN "Will You Marry Me?" (paid, MVP) — Cormorant Garamond over Montserrat.
+ * AR "اتجوزيني؟" (paid) — Reem Kufi over Tajawal, Egyptian Arabic, to her.
+ *
+ * The question is kept for last on purpose: the whole card is the run-up.
+ * Scene ids that existed before the one-page rewrite are kept; `promises` is
+ * new, and the old countdown was dropped (a proposal has no date to count to).
  */
+import type { TemplateDefinitionInput } from '@/lib/template-contract';
 import type { CatalogTemplate } from './_helpers';
 import { PRICE } from './_helpers';
+import { LABEL, PLAIN, enter, frame, photo, text, theme, type Loc, type Look } from './_card';
+
+const NIGHT: Omit<Look, 'fontHeading' | 'fontBody'> = {
+  palette: ['#0E1A33', '#E7C36B', '#F6F1E7', '#243A66'],
+  ground: ['#0E1A33', '#172849', '#0E1A33'],
+  accent: '#E7C36B',
+  ink: '#F6F1E7',
+  headingInk: '#F6F1E7',
+  music: 'cinematic-swell',
+  ornament: 'monogram',
+  pattern: 'noise',
+  ambient: { effect: 'stars', intensity: 'low', color: '#E7C36B' },
+};
+
+const LOOK: Record<Loc, Look> = {
+  en: { ...NIGHT, fontHeading: 'Cormorant Garamond', fontBody: 'Montserrat' },
+  ar: { ...NIGHT, fontHeading: 'Reem Kufi', fontBody: 'Tajawal' },
+};
+
+const IDS = {
+  en: { letter: 'truth', photo: 'journey', gallery: 'us', ring: 'the-ring', question: 'the-question' },
+  ar: { letter: 'haqiqa', photo: 'rehletna', gallery: 'ehna', ring: 'el-khatem', question: 'el-soaal' },
+} as const;
+
+const COPY = {
+  en: {
+    heading: '{recipient}, there’s something I need to say',
+    sub: 'Just stay with me until the end.',
+    dear: 'Before I ask…',
+    letter:
+      'I’ve rehearsed this a hundred times, and every version starts the same way: with you. I’ve pictured every ordinary tomorrow — quiet mornings, long drives, growing old — and you’re in every single one of them.',
+    sign: 'My whole heart',
+    caption: 'From the very first night, I knew.',
+    galleryTitle: 'Every step that led here',
+    promise1: 'I promise to choose you, every single day.',
+    promise2: 'To laugh with you, and hold you when it’s hard.',
+    promise3: 'To build a home that feels like us.',
+    ringTitle: 'I had this made for you',
+    ringNote: 'It was always going to be you.',
+    question: 'Will you marry me, {recipient}?',
+    questionBy: 'and stay mine forever',
+    finale: 'Forever starts now.',
+    finaleBody: 'I can’t wait to spend my whole life with you — beneath every star.',
+  },
+  ar: {
+    heading: 'يا {recipient}.. في كلمة لازم أقولهالك',
+    sub: 'خليكي معايا لحد الآخر',
+    dear: 'قبل ما أسألك..',
+    letter:
+      'قلت الكلام ده في دماغي مية مرة، وكل مرة كان بيبدأ بيكي. تخيّلت كل بكرة عادي.. الصبح الهادي، والسكة الطويلة، وإننا نكبر مع بعض.. ولقيتك في كله.',
+    sign: 'من كل قلبي',
+    caption: 'من أول ليلة.. وأنا متأكد',
+    galleryTitle: 'كل خطوة وصّلتنا لهنا',
+    promise1: 'أوعدك أختارك كل يوم من جديد',
+    promise2: 'أضحك معاكي، وأبقى جنبك في الصعب قبل الحلو',
+    promise3: 'ونبني بيت شبهنا',
+    ringTitle: 'عملته مخصوص علشانك',
+    ringNote: 'من الأول وقلبي عارف إنها إنتِ',
+    question: 'تتجوزيني يا {recipient}؟',
+    questionBy: 'وتفضلي ليّا للأبد',
+    finale: 'العمر كله يبدأ من دلوقتي',
+    finaleBody: 'مش قادر أستنى أعيش حياتي كلها معاكي.. تحت كل نجمة',
+  },
+} satisfies Record<Loc, Record<string, string>>;
+
+function definition(loc: Loc): TemplateDefinitionInput {
+  const look = LOOK[loc];
+  const c = COPY[loc];
+  const id = IDS[loc];
+  const t = (key: string, label: readonly [string, string], value: string, opts?: Parameters<typeof text>[4]) =>
+    text(loc, key, label, value, opts);
+
+  return {
+    version: 1,
+    locale: loc,
+    direction: loc === 'ar' ? 'rtl' : 'ltr',
+    theme: theme(look),
+    scenes: [
+      {
+        id: 'cover',
+        type: 'Cover',
+        transitionIn: enter('blurIn', 1400),
+        holdMs: 4500,
+        ornament: frame(look, 0.7),
+        decoration: { effect: 'stars', intensity: 'medium', color: look.accent },
+        style: { headingSize: 'lg', headingColor: look.headingInk, bodyColor: look.accent },
+        slots: [
+          t('heading', LABEL.coverHeading, c.heading, { required: true, maxLen: 56, animation: 'blurIn' }),
+          t('subheading', LABEL.coverSub, c.sub, { maxLen: 60, animation: 'fade' }),
+        ],
+      },
+      {
+        id: id.letter,
+        type: 'Letter',
+        transitionIn: enter('rise', 1000),
+        holdMs: 6000,
+        ornament: PLAIN,
+        slots: [
+          t('heading', LABEL.letterOpening, c.dear, { maxLen: 40 }),
+          t('message', LABEL.letterBody, c.letter, { required: true, maxLen: 420 }),
+          t('signoff', LABEL.letterSign, c.sign, { maxLen: 40 }),
+        ],
+      },
+      {
+        id: id.photo,
+        type: 'PhotoReveal',
+        transitionIn: enter('rise', 1100),
+        holdMs: 4600,
+        ornament: PLAIN,
+        style: { imageStyle: 'arch', headingColor: look.accent, headingSize: 'md' },
+        slots: [
+          photo('image', LABEL.photo, { aspect: '3:4' }),
+          t('caption', LABEL.caption, c.caption, { maxLen: 56, animation: 'rise' }),
+        ],
+      },
+      {
+        id: id.gallery,
+        type: 'Gallery',
+        transitionIn: enter('rise', 850),
+        holdMs: 5200,
+        ornament: PLAIN,
+        style: { imageStyle: 'ornate', headingSize: 'md', headingColor: look.accent },
+        slots: [
+          t('heading', LABEL.galleryTitle, c.galleryTitle, { maxLen: 36 }),
+          photo('gallery', LABEL.gallery, { aspect: '3:4', max: 6 }),
+        ],
+      },
+      {
+        id: 'promises',
+        type: 'TextReveal',
+        transitionIn: enter('rise'),
+        holdMs: 5000,
+        ornament: PLAIN,
+        style: { headingColor: look.headingInk, bodyColor: look.accent, headingSize: 'md' },
+        slots: [
+          t('line1', LABEL.line1, c.promise1, { required: true, maxLen: 60 }),
+          t('line2', LABEL.line2, c.promise2, { maxLen: 60 }),
+          t('line3', LABEL.line3, c.promise3, { maxLen: 60 }),
+        ],
+      },
+      {
+        id: id.ring,
+        type: 'GiftReveal',
+        transitionIn: enter('glow', 1100),
+        holdMs: 4600,
+        ornament: PLAIN,
+        decoration: { effect: 'glow', intensity: 'medium', color: look.accent, emoji: '💍' },
+        style: { headingColor: look.headingInk, bodyColor: look.accent, headingSize: 'lg', imageStyle: 'circle' },
+        slots: [
+          t('heading', LABEL.giftTitle, c.ringTitle, { required: true, maxLen: 40 }),
+          t('body', LABEL.giftNote, c.ringNote, { maxLen: 110 }),
+          photo('image', LABEL.giftPhoto, { aspect: '1:1' }),
+        ],
+      },
+      {
+        id: id.question,
+        type: 'Quote',
+        transitionIn: enter('blurIn', 1400),
+        holdMs: 5500,
+        ornament: PLAIN,
+        decoration: { effect: 'sparkles', intensity: 'medium', color: look.accent },
+        style: { headingColor: look.accent, bodyColor: look.ink, headingSize: 'xl' },
+        slots: [
+          t('message', ['The question', 'السؤال'], c.question, { required: true, maxLen: 120 }),
+          t('attribution', ['Line under the question', 'سطر تحت السؤال'], c.questionBy, { maxLen: 40 }),
+        ],
+      },
+      {
+        id: 'finale',
+        type: 'Finale',
+        transitionIn: enter('glow', 1200),
+        holdMs: 6000,
+        ornament: frame(look, 0.7),
+        decoration: { effect: 'fireworks', intensity: 'medium' },
+        style: { headingSize: 'xl', headingColor: look.accent, bodyColor: look.ink },
+        slots: [
+          t('heading', LABEL.finaleHeading, c.finale, { required: true, maxLen: 44, animation: 'glow' }),
+          t('body', LABEL.finaleBody, c.finaleBody, { maxLen: 110 }),
+        ],
+      },
+    ],
+  };
+}
 
 export const proposalEn: CatalogTemplate = {
   slug: 'proposal-marry-me-en',
@@ -29,188 +215,7 @@ export const proposalEn: CatalogTemplate = {
   thumbnailUrl:
     'https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?auto=format&fit=crop&w=800&q=70',
   mvp: true,
-  definition: {
-    version: 1,
-    locale: 'en',
-    direction: 'ltr',
-    theme: {
-      palette: ['#0E1A33', '#E7C36B', '#F6F1E7', '#243A66'],
-      fontHeading: 'Cormorant Garamond',
-      fontBody: 'Montserrat',
-      accent: '#E7C36B',
-      ornament: { kind: 'monogram', opacity: 0.55, scale: 1 },
-      music: 'cinematic-swell',
-      textColor: '#F6F1E7',
-      background: { type: 'radial', colors: ['#243A66', '#0E1A33'] },
-      decoration: { effect: 'stars', intensity: 'medium' },
-    },
-    scenes: [
-      {
-        id: 'cover',
-        type: 'Cover',
-        layout: 'centered',
-        transitionIn: { preset: 'blurIn', durationMs: 1400, delayMs: 0 },
-        holdMs: 4800,
-        background: {
-          type: 'radial',
-          colors: ['#243A66', '#0E1A33'],
-          pattern: 'noise',
-        },
-        decoration: { effect: 'stars', intensity: 'high' },
-        style: {
-          headingSize: '2xl',
-          headingColor: '#F6F1E7',
-          textPosition: 'center',
-          textAlign: 'center',
-        },
-        slots: [
-          { key: 'heading', type: 'text', editable: true, required: true, maxLen: 52, defaultEn: '{recipient}, there’s something I need to say', animation: 'blurIn' },
-          { key: 'subheading', type: 'text', editable: true, required: false, maxLen: 60, defaultEn: 'Just look up with me for a moment.' },
-        ],
-      },
-      {
-        id: 'journey',
-        type: 'PhotoReveal',
-        layout: 'full-bleed',
-        transitionIn: { preset: 'kenBurns', durationMs: 1600, delayMs: 0 },
-        holdMs: 5200,
-        background: {
-          type: 'image',
-          colors: ['#0E1A33', '#243A66'],
-          imageUrl: 'https://images.unsplash.com/photo-1444703686981-a3abbc4d4fe3?auto=format&fit=crop&w=1200&q=70',
-          overlay: 'linear-gradient(180deg, rgba(14,26,51,0.45), rgba(14,26,51,0.82))',
-          kenBurns: true,
-        },
-        decoration: { effect: 'sparkles', intensity: 'low', color: '#E7C36B' },
-        style: { imageStyle: 'full', headingColor: '#E7C36B' },
-        slots: [
-          { key: 'image', type: 'image', editable: true, required: true, aspect: '4:5', min: 1, max: 1, animation: 'kenBurns' },
-          { key: 'caption', type: 'text', editable: true, required: false, maxLen: 60, defaultEn: 'From the very first night, I knew.', animation: 'blurIn' },
-        ],
-      },
-      {
-        id: 'us',
-        type: 'Gallery',
-        layout: 'grid',
-        transitionIn: { preset: 'rise', durationMs: 1000, delayMs: 0 },
-        holdMs: 5000,
-        background: {
-          type: 'image',
-          colors: ['#0E1A33', '#243A66'],
-          imageUrl: 'https://images.unsplash.com/photo-1519608487953-e999c86e7455?auto=format&fit=crop&w=1200&q=70',
-          overlay: 'linear-gradient(180deg, rgba(14,26,51,0.78), rgba(14,26,51,0.9))',
-          kenBurns: true,
-        },
-        decoration: { effect: 'glow', intensity: 'low', color: '#E7C36B' },
-        style: { imageStyle: 'card', headingSize: 'lg', headingColor: '#F6F1E7' },
-        slots: [
-          { key: 'heading', type: 'text', editable: true, required: false, maxLen: 30, defaultEn: 'Every chapter, us', animation: 'float' },
-          { key: 'gallery', type: 'image', editable: true, required: true, min: 2, max: 6, aspect: '1:1', animation: 'float' },
-        ],
-      },
-      {
-        id: 'truth',
-        type: 'Letter',
-        transitionIn: { preset: 'blurIn', durationMs: 1500, delayMs: 0 },
-        holdMs: 5400,
-        background: {
-          type: 'radial',
-          colors: ['#243A66', '#0E1A33'],
-        },
-        decoration: { effect: 'sparkles', intensity: 'medium', color: '#E7C36B' },
-        style: {
-          headingFont: 'Marcellus',
-          headingColor: '#E7C36B',
-          bodyColor: '#F6F1E7',
-          headingSize: 'lg',
-          textAlign: 'center',
-        },
-        slots: [
-          { key: 'heading', type: 'text', editable: true, required: false, maxLen: 40, defaultEn: 'My whole heart', animation: 'glow' },
-          { key: 'message', type: 'text', editable: true, required: true, maxLen: 180, defaultEn: 'I’ve pictured every ordinary tomorrow — quiet mornings, long drives, growing old — and you’re in every single one of them.', animation: 'blurIn' },
-        ],
-      },
-      {
-        id: 'countdown',
-        type: 'Countdown',
-        transitionIn: { preset: 'glow', durationMs: 1000, delayMs: 0 },
-        holdMs: 4500,
-        background: {
-          type: 'image',
-          colors: ['#0E1A33', '#243A66'],
-          imageUrl: 'https://images.unsplash.com/photo-1492136344046-866c85e0bf04?auto=format&fit=crop&w=1200&q=70',
-          overlay: 'linear-gradient(180deg, rgba(14,26,51,0.55), rgba(14,26,51,0.85))',
-          kenBurns: true,
-        },
-        decoration: { effect: 'sparkles', intensity: 'low', color: '#E7C36B' },
-        style: { headingColor: '#E7C36B', headingSize: 'lg' },
-        slots: [
-          { key: 'lead', type: 'text', editable: true, required: false, maxLen: 40, defaultEn: 'So… here it goes', animation: 'glow' },
-          { key: 'targetDate', type: 'date', editable: true, required: false },
-        ],
-      },
-      {
-        id: 'the-ring',
-        type: 'GiftReveal',
-        layout: 'centered',
-        transitionIn: { preset: 'glow', durationMs: 1200, delayMs: 0 },
-        holdMs: 5200,
-        background: {
-          type: 'image',
-          colors: ['#0E1A33', '#243A66'],
-          imageUrl: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&w=1200&q=70',
-          overlay: 'radial-gradient(circle at center, rgba(14,26,51,0.3), rgba(14,26,51,0.88))',
-        },
-        decoration: { effect: 'glow', intensity: 'high', color: '#E7C36B' },
-        style: { imageStyle: 'circle', headingColor: '#F6F1E7', headingSize: 'lg' },
-        slots: [
-          { key: 'heading', type: 'text', editable: true, required: true, maxLen: 40, defaultEn: 'I had this made for you', animation: 'glow' },
-          { key: 'image', type: 'image', editable: true, required: false, aspect: '1:1', min: 0, max: 1, animation: 'glow' },
-        ],
-      },
-      {
-        id: 'the-question',
-        type: 'Quote',
-        transitionIn: { preset: 'blurIn', durationMs: 1600, delayMs: 0 },
-        holdMs: 6000,
-        background: {
-          type: 'radial',
-          colors: ['#243A66', '#0E1A33'],
-          pattern: 'noise',
-        },
-        decoration: { effect: 'sparkles', intensity: 'high', color: '#E7C36B' },
-        style: {
-          headingFont: 'Cormorant Garamond',
-          headingColor: '#E7C36B',
-          headingSize: '2xl',
-          textAlign: 'center',
-        },
-        slots: [
-          { key: 'message', type: 'text', editable: true, required: true, maxLen: 48, defaultEn: 'Will you marry me, {recipient}?', animation: 'blurIn' },
-          { key: 'attribution', type: 'text', editable: true, required: false, maxLen: 40, defaultEn: 'and stay mine forever' },
-        ],
-      },
-      {
-        id: 'finale',
-        type: 'Finale',
-        transitionIn: { preset: 'glow', durationMs: 1200, delayMs: 0 },
-        holdMs: 6000,
-        background: {
-          type: 'image',
-          colors: ['#0E1A33', '#243A66'],
-          imageUrl: 'https://images.unsplash.com/photo-1467810563316-b5476525c0f9?auto=format&fit=crop&w=1200&q=70',
-          overlay: 'linear-gradient(180deg, rgba(14,26,51,0.5), rgba(14,26,51,0.82))',
-          kenBurns: true,
-        },
-        decoration: { effect: 'fireworks', intensity: 'high', color: '#E7C36B' },
-        style: { headingSize: '2xl', headingColor: '#F6F1E7', textAlign: 'center' },
-        slots: [
-          { key: 'heading', type: 'text', editable: true, required: false, maxLen: 48, defaultEn: 'Forever starts now.', animation: 'glow' },
-          { key: 'body', type: 'text', editable: true, required: false, maxLen: 100, defaultEn: 'I can’t wait to spend my whole life with you — beneath every star.' },
-        ],
-      },
-    ],
-  },
+  definition: definition('en'),
 };
 
 export const proposalAr: CatalogTemplate = {
@@ -228,184 +233,5 @@ export const proposalAr: CatalogTemplate = {
   thumbnailUrl:
     'https://images.unsplash.com/photo-1512163143273-bde0e3cc7407?auto=format&fit=crop&w=800&q=70',
   mvp: false,
-  definition: {
-    version: 1,
-    locale: 'ar',
-    direction: 'rtl',
-    theme: {
-      palette: ['#0E1A33', '#E7C36B', '#F6F1E7', '#243A66'],
-      fontHeading: 'Reem Kufi',
-      fontBody: 'Tajawal',
-      accent: '#E7C36B',
-      ornament: { kind: 'monogram', opacity: 0.55, scale: 1 },
-      music: 'cinematic-swell',
-      textColor: '#F6F1E7',
-      background: { type: 'radial', colors: ['#243A66', '#0E1A33'] },
-      decoration: { effect: 'stars', intensity: 'medium' },
-    },
-    scenes: [
-      {
-        id: 'cover',
-        type: 'Cover',
-        layout: 'centered',
-        transitionIn: { preset: 'blurIn', durationMs: 1400, delayMs: 0 },
-        holdMs: 4800,
-        background: {
-          type: 'radial',
-          colors: ['#243A66', '#0E1A33'],
-          pattern: 'noise',
-        },
-        decoration: { effect: 'stars', intensity: 'high' },
-        style: {
-          headingSize: '2xl',
-          headingColor: '#F6F1E7',
-          textPosition: 'center',
-          textAlign: 'center',
-        },
-        slots: [
-          { key: 'heading', type: 'text', editable: true, required: true, maxLen: 52, defaultAr: 'يا {recipient}.. في كلمة لازم أقولهالك', animation: 'blurIn' },
-          { key: 'subheading', type: 'text', editable: true, required: false, maxLen: 60, defaultAr: 'بُص للسما معايا لحظة' },
-        ],
-      },
-      {
-        id: 'rehletna',
-        type: 'PhotoReveal',
-        layout: 'full-bleed',
-        transitionIn: { preset: 'kenBurns', durationMs: 1600, delayMs: 0 },
-        holdMs: 5200,
-        background: {
-          type: 'image',
-          colors: ['#0E1A33', '#243A66'],
-          imageUrl: 'https://images.unsplash.com/photo-1444703686981-a3abbc4d4fe3?auto=format&fit=crop&w=1200&q=70',
-          overlay: 'linear-gradient(180deg, rgba(14,26,51,0.45), rgba(14,26,51,0.82))',
-          kenBurns: true,
-        },
-        decoration: { effect: 'sparkles', intensity: 'low', color: '#E7C36B' },
-        style: { imageStyle: 'full', headingColor: '#E7C36B' },
-        slots: [
-          { key: 'image', type: 'image', editable: true, required: true, aspect: '4:5', min: 1, max: 1, animation: 'kenBurns' },
-          { key: 'caption', type: 'text', editable: true, required: false, maxLen: 60, defaultAr: 'من أول ليلة.. وأنا متأكد', animation: 'blurIn' },
-        ],
-      },
-      {
-        id: 'ehna',
-        type: 'Gallery',
-        layout: 'grid',
-        transitionIn: { preset: 'rise', durationMs: 1000, delayMs: 0 },
-        holdMs: 5000,
-        background: {
-          type: 'image',
-          colors: ['#0E1A33', '#243A66'],
-          imageUrl: 'https://images.unsplash.com/photo-1519608487953-e999c86e7455?auto=format&fit=crop&w=1200&q=70',
-          overlay: 'linear-gradient(180deg, rgba(14,26,51,0.78), rgba(14,26,51,0.9))',
-          kenBurns: true,
-        },
-        decoration: { effect: 'glow', intensity: 'low', color: '#E7C36B' },
-        style: { imageStyle: 'card', headingSize: 'lg', headingColor: '#F6F1E7' },
-        slots: [
-          { key: 'heading', type: 'text', editable: true, required: false, maxLen: 30, defaultAr: 'كل حكاية.. وإحنا فيها', animation: 'float' },
-          { key: 'gallery', type: 'image', editable: true, required: true, min: 2, max: 6, aspect: '1:1', animation: 'float' },
-        ],
-      },
-      {
-        id: 'haqiqa',
-        type: 'Letter',
-        transitionIn: { preset: 'blurIn', durationMs: 1500, delayMs: 0 },
-        holdMs: 5400,
-        background: {
-          type: 'radial',
-          colors: ['#243A66', '#0E1A33'],
-        },
-        decoration: { effect: 'sparkles', intensity: 'medium', color: '#E7C36B' },
-        style: {
-          headingColor: '#E7C36B',
-          bodyColor: '#F6F1E7',
-          headingSize: 'lg',
-          textAlign: 'center',
-        },
-        slots: [
-          { key: 'heading', type: 'text', editable: true, required: false, maxLen: 40, defaultAr: 'من كل قلبي', animation: 'glow' },
-          { key: 'message', type: 'text', editable: true, required: true, maxLen: 180, defaultAr: 'تخيّلت كل بكرة عادي.. الصبح الهادي، السكة الطويلة، إننا نكبر مع بعض.. ولقيتك في كله', animation: 'blurIn' },
-        ],
-      },
-      {
-        id: 'tanazol',
-        type: 'Countdown',
-        transitionIn: { preset: 'glow', durationMs: 1000, delayMs: 0 },
-        holdMs: 4500,
-        background: {
-          type: 'image',
-          colors: ['#0E1A33', '#243A66'],
-          imageUrl: 'https://images.unsplash.com/photo-1492136344046-866c85e0bf04?auto=format&fit=crop&w=1200&q=70',
-          overlay: 'linear-gradient(180deg, rgba(14,26,51,0.55), rgba(14,26,51,0.85))',
-          kenBurns: true,
-        },
-        decoration: { effect: 'sparkles', intensity: 'low', color: '#E7C36B' },
-        style: { headingColor: '#E7C36B', headingSize: 'lg' },
-        slots: [
-          { key: 'lead', type: 'text', editable: true, required: false, maxLen: 40, defaultAr: 'يلا.. هقولها', animation: 'glow' },
-          { key: 'targetDate', type: 'date', editable: true, required: false },
-        ],
-      },
-      {
-        id: 'el-khatem',
-        type: 'GiftReveal',
-        layout: 'centered',
-        transitionIn: { preset: 'glow', durationMs: 1200, delayMs: 0 },
-        holdMs: 5200,
-        background: {
-          type: 'image',
-          colors: ['#0E1A33', '#243A66'],
-          imageUrl: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&w=1200&q=70',
-          overlay: 'radial-gradient(circle at center, rgba(14,26,51,0.3), rgba(14,26,51,0.88))',
-        },
-        decoration: { effect: 'glow', intensity: 'high', color: '#E7C36B' },
-        style: { imageStyle: 'circle', headingColor: '#F6F1E7', headingSize: 'lg' },
-        slots: [
-          { key: 'heading', type: 'text', editable: true, required: true, maxLen: 40, defaultAr: 'عملته مخصوص علشانك', animation: 'glow' },
-          { key: 'image', type: 'image', editable: true, required: false, aspect: '1:1', min: 0, max: 1, animation: 'glow' },
-        ],
-      },
-      {
-        id: 'el-soaal',
-        type: 'Quote',
-        transitionIn: { preset: 'blurIn', durationMs: 1600, delayMs: 0 },
-        holdMs: 6000,
-        background: {
-          type: 'radial',
-          colors: ['#243A66', '#0E1A33'],
-          pattern: 'noise',
-        },
-        decoration: { effect: 'sparkles', intensity: 'high', color: '#E7C36B' },
-        style: {
-          headingColor: '#E7C36B',
-          headingSize: '2xl',
-          textAlign: 'center',
-        },
-        slots: [
-          { key: 'message', type: 'text', editable: true, required: true, maxLen: 48, defaultAr: 'تتجوزيني يا {recipient}؟', animation: 'blurIn' },
-          { key: 'attribution', type: 'text', editable: true, required: false, maxLen: 40, defaultAr: 'وتفضلي ليّا للأبد' },
-        ],
-      },
-      {
-        id: 'finale',
-        type: 'Finale',
-        transitionIn: { preset: 'glow', durationMs: 1200, delayMs: 0 },
-        holdMs: 6000,
-        background: {
-          type: 'image',
-          colors: ['#0E1A33', '#243A66'],
-          imageUrl: 'https://images.unsplash.com/photo-1467810563316-b5476525c0f9?auto=format&fit=crop&w=1200&q=70',
-          overlay: 'linear-gradient(180deg, rgba(14,26,51,0.5), rgba(14,26,51,0.82))',
-          kenBurns: true,
-        },
-        decoration: { effect: 'fireworks', intensity: 'high', color: '#E7C36B' },
-        style: { headingSize: '2xl', headingColor: '#F6F1E7', textAlign: 'center' },
-        slots: [
-          { key: 'heading', type: 'text', editable: true, required: false, maxLen: 48, defaultAr: 'العمر كله يبدأ من دلوقتي', animation: 'glow' },
-          { key: 'body', type: 'text', editable: true, required: false, maxLen: 100, defaultAr: 'مش قادر أستنى أعيش حياتي كلها معاكي.. تحت كل نجمة' },
-        ],
-      },
-    ],
-  },
+  definition: definition('ar'),
 };

@@ -1,15 +1,18 @@
 /**
  * Soundtrack resolution for the Player.
  *
- * Templates have always declared a `music` key in their theme (e.g.
- * `wedding-strings`), and the paid tier advertises music — but nothing ever
- * played it. This maps that key to a file under `public/audio/`.
+ * Templates declare a `music` key in their theme (e.g. `wedding-strings`),
+ * which maps to a file under `public/audio/`.
  *
- * LICENSING: no audio ships with the repo. Drop licensed tracks in as
- * `public/audio/<key>.mp3` and they light up automatically. A missing file is
- * not an error — `useSoundtrack` simply reports the track as unavailable and
- * the Player hides its music control, so a template without audio behaves
- * exactly as it did before.
+ * LICENSING: no audio ships with the repo. To light a track up, drop the
+ * licensed file in as `public/audio/<key>.mp3` AND add its key to
+ * `SHIPPED_TRACKS` below (a unit test fails if the two disagree).
+ *
+ * Why a manifest instead of "try the URL and see": the browser logs every 404
+ * as a console error, and it does so before any `onError` handler can hide
+ * it. The only way a template whose track is missing produces no error and no
+ * dead control is to never request the file at all — so the Player asks this
+ * list first and renders nothing for an unlisted key.
  */
 
 /** Every `music` key used by the template catalog. */
@@ -27,16 +30,26 @@ export const TRACK_KEYS = [
 
 export type TrackKey = (typeof TRACK_KEYS)[number];
 
-/** Public URL for a template's soundtrack, or null when it declares none. */
-export function trackUrl(music?: string | null): string | null {
+/**
+ * Tracks whose file actually exists in `public/audio/`. Empty until licensed
+ * audio is added — see public/audio/README.md.
+ */
+export const SHIPPED_TRACKS: ReadonlySet<string> = new Set<TrackKey>([]);
+
+/**
+ * Public URL for a template's soundtrack, or null when it declares none or
+ * the file has not shipped.
+ */
+export function trackUrl(music?: string | null, shipped: ReadonlySet<string> = SHIPPED_TRACKS): string | null {
   if (!music) return null;
   // Keys come from template JSON, so keep them to a safe charset rather than
   // interpolating whatever the definition happens to contain into a path.
   if (!/^[a-z0-9-]{1,64}$/.test(music)) return null;
+  if (!shipped.has(music)) return null;
   return `/audio/${music}.mp3`;
 }
 
-/** Playback volume. Matches the reference: present, but under the content. */
+/** Playback volume: present, but under the content. */
 export const TRACK_VOLUME = 0.5;
 
 /** Remembers a viewer's mute choice across cards on the same device. */

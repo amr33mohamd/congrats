@@ -1,22 +1,255 @@
 /**
- * NEWBORN — two native templates.
+ * NEWBORN — one soft card welcoming the baby home.
  *
- * Art direction: tender, soft, dreamy — a gentle welcome to the world.
- * Soft pastel backgrounds (mint, peach, cream) with DARK ink text for
- * legibility, handwritten/rounded fonts, gentle bubbles + stars + glow,
- * and slow soothing float/rise/blurIn/fade animations. Includes a Letter
- * scene — a quiet note to the little one.
+ * Cream paper with mint and peach, floral corners at the two ends, DARK ink
+ * throughout (pastel type on a pastel ground is unreadable):
+ *   cover → a note to the little one → the baby (photo) → the birth details →
+ *   first moments (gallery) → a blessing → come meet the baby (the Sebou') →
+ *   where → a keepsake → sign-off.
  *
- * EN "Welcome Little One" (free): Quicksand/Nunito, mint + peach pastel,
- *     a dreamy 8-scene welcome — cover, the-baby PhotoReveal, birth details,
- *     tiny-toes Gallery, a blessing line, a handwritten Letter, a keepsake
- *     gift, a soft glow finale.
- * AR "مبروك المولود" (free): native Arabic newborn congratulations —
- *     Harmattan/Tajawal, RTL, soft cream + sage, the warm
- *     "ربنا يخليه ويباركلكم فيه" blessing.
+ * EN "Welcome Little One" (free) — Quicksand over Nunito.
+ * AR "مبروك المولود" (free) — Harmattan over Tajawal; the Sebou' (السبوع)
+ *   with its candles and sieve is the Egyptian welcome party.
+ *
+ * The accent is a deeper terracotta than the palette's peach so ornaments,
+ * section titles and buttons actually read on cream. `{recipient}` is the
+ * baby. Scene ids that existed before the one-page rewrite are kept; `sebou`
+ * and `venue` are new.
  */
+import type { TemplateDefinitionInput } from '@/lib/template-contract';
 import type { CatalogTemplate } from './_helpers';
 import { PRICE } from './_helpers';
+import { LABEL, PLAIN, date, enter, frame, photo, text, theme, type Loc, type Look } from './_card';
+
+const LOOK: Record<Loc, Look> = {
+  en: {
+    palette: ['#FFF6F0', '#9DC7C0', '#3A4A49', '#F4C7B5'],
+    ground: ['#FFF6F0', '#FBEDE4', '#EAF4F1'],
+    accent: '#B8735A',
+    ink: '#3A4A49',
+    headingInk: '#3A4A49',
+    fontHeading: 'Quicksand',
+    fontBody: 'Nunito',
+    music: 'lullaby-soft',
+    ornament: 'corners',
+    angle: 180,
+    ambient: { effect: 'bubbles', intensity: 'low', color: '#9DC7C0' },
+  },
+  ar: {
+    palette: ['#FFF7EF', '#8FB9A8', '#3A4A49', '#E7B59B'],
+    ground: ['#FFF7EF', '#F8ECE1', '#E8F2EC'],
+    accent: '#A86E55',
+    ink: '#3A4A49',
+    headingInk: '#3A4A49',
+    fontHeading: 'Harmattan',
+    fontBody: 'Tajawal',
+    music: 'lullaby-soft',
+    ornament: 'corners',
+    angle: 180,
+    ambient: { effect: 'bubbles', intensity: 'low', color: '#8FB9A8' },
+  },
+};
+
+const IDS = {
+  en: { letter: 'letter', photo: 'the-baby', details: 'details', gallery: 'tiny-toes', quote: 'blessing', gift: 'keepsake' },
+  ar: { letter: 'gawab', photo: 'el-baby', details: 'tafaseel', gallery: 'koraat', quote: 'doaa', gift: 'hadiya' },
+} as const;
+
+const COPY = {
+  en: {
+    heading: 'Welcome to the world, {recipient}',
+    sub: 'A tiny miracle has arrived.',
+    dear: 'A note for you, little one',
+    letter:
+      'We waited so long for you, and now that you’re here the whole house feels brighter. We promise to keep you safe, to read you stories until you fall asleep, and to love you a little more every single day.',
+    sign: 'Your family',
+    caption: 'Hello, little one',
+    name: 'Name: {recipient}',
+    weight: 'Weight: 3.4 kg',
+    galleryTitle: 'First little moments',
+    blessing: 'May your days be soft, your nights be gentle, and your life be long and full.',
+    blessingBy: 'with all our love',
+    eventName: 'Come meet the baby',
+    eventPlace: 'A small welcome party at home',
+    eventWhen: 'Friday · 5 PM',
+    venueTitle: 'Where to find us',
+    address: 'Fifth Settlement, New Cairo',
+    giftTitle: 'A little something',
+    giftNote: 'For the newest, most loved arrival.',
+    finale: 'Welcome, {recipient}',
+    finaleBody: 'So loved already.',
+  },
+  ar: {
+    heading: 'أهلاً بيك في الدنيا يا {recipient}',
+    sub: 'وصلت أحلى هدية',
+    dear: 'كلمتين لأحلى مولود',
+    letter:
+      'استنيناك كتير، ودلوقتي وإنت معانا البيت كله نوّر. وعدناك نحافظ عليك، ونحكيلك حواديت لحد ما تنام، ونحبك أكتر كل يوم. نوّرت الدنيا يا حبيبنا.',
+    sign: 'عيلتك',
+    caption: 'يا أهلاً بالصغير',
+    name: 'الاسم: {recipient}',
+    weight: 'الوزن: ٣٫٤ كيلو',
+    galleryTitle: 'أول لحظات صغيّرة',
+    blessing: 'ربنا يجعله من مواليد السعادة ويتربّى في عزّكم',
+    blessingBy: 'بكل الحب',
+    eventName: 'السبوع',
+    eventPlace: 'في البيت.. بالشموع والغربال',
+    eventWhen: 'الجمعة · الساعة ٥',
+    venueTitle: 'هتلاقونا هنا',
+    address: 'التجمع الخامس، القاهرة الجديدة',
+    giftTitle: 'حاجة صغيّرة',
+    giftNote: 'لأجدد وأحلى واحد في العيلة',
+    finale: 'ربنا يخليه ويباركلكم فيه',
+    finaleBody: 'حبيبنا من قبل ما يوصل',
+  },
+} satisfies Record<Loc, Record<string, string>>;
+
+function definition(loc: Loc): TemplateDefinitionInput {
+  const look = LOOK[loc];
+  const c = COPY[loc];
+  const id = IDS[loc];
+  const t = (key: string, label: readonly [string, string], value: string, opts?: Parameters<typeof text>[4]) =>
+    text(loc, key, label, value, opts);
+  const info = { headingColor: look.accent, bodyColor: look.ink };
+
+  return {
+    version: 1,
+    locale: loc,
+    direction: loc === 'ar' ? 'rtl' : 'ltr',
+    theme: theme(look),
+    scenes: [
+      {
+        id: 'cover',
+        type: 'Cover',
+        transitionIn: enter('float', 1200),
+        holdMs: 4500,
+        ornament: frame(look, 0.7),
+        style: { headingSize: 'xl', headingColor: look.headingInk, bodyColor: look.accent, imageStyle: 'circle' },
+        slots: [
+          t('heading', LABEL.coverHeading, c.heading, { required: true, maxLen: 44, animation: 'blurIn' }),
+          t('subheading', LABEL.coverSub, c.sub, { maxLen: 50, animation: 'fade' }),
+          photo('coverImage', LABEL.coverPhoto, { aspect: '1:1' }),
+        ],
+      },
+      {
+        id: id.letter,
+        type: 'Letter',
+        transitionIn: enter('rise', 1000),
+        holdMs: 6000,
+        ornament: PLAIN,
+        slots: [
+          t('heading', LABEL.letterOpening, c.dear, { required: true, maxLen: 40 }),
+          t('body', LABEL.letterBody, c.letter, { maxLen: 420 }),
+          t('signoff', LABEL.letterSign, c.sign, { maxLen: 40 }),
+        ],
+      },
+      {
+        id: id.photo,
+        type: 'PhotoReveal',
+        transitionIn: enter('float', 1100),
+        holdMs: 4500,
+        ornament: PLAIN,
+        style: { imageStyle: 'arch', headingColor: look.headingInk, headingSize: 'md' },
+        slots: [
+          photo('image', LABEL.photo, { aspect: '3:4' }),
+          t('caption', LABEL.caption, c.caption, { maxLen: 50, animation: 'rise' }),
+        ],
+      },
+      {
+        id: id.details,
+        type: 'TextReveal',
+        transitionIn: enter('rise'),
+        holdMs: 4500,
+        ornament: PLAIN,
+        style: { headingColor: look.headingInk, bodyColor: look.accent, headingSize: 'md' },
+        slots: [
+          t('name', ['Baby’s name', 'اسم المولود'], c.name, { maxLen: 40 }),
+          t('weight', ['Weight', 'الوزن'], c.weight, { maxLen: 40 }),
+          date('date', ['Date of birth', 'تاريخ الميلاد']),
+        ],
+      },
+      {
+        id: id.gallery,
+        type: 'Gallery',
+        transitionIn: enter('rise', 850),
+        holdMs: 5200,
+        ornament: PLAIN,
+        style: { imageStyle: 'polaroid', headingSize: 'md', headingColor: look.accent },
+        slots: [
+          t('heading', LABEL.galleryTitle, c.galleryTitle, { maxLen: 36 }),
+          photo('gallery', LABEL.gallery, { aspect: '1:1', max: 6 }),
+        ],
+      },
+      {
+        id: id.quote,
+        type: 'Quote',
+        transitionIn: enter('blurIn', 1200),
+        holdMs: 5000,
+        ornament: PLAIN,
+        decoration: { effect: 'stars', intensity: 'low', color: look.accent },
+        style: { headingColor: look.headingInk, bodyColor: look.accent, headingSize: 'lg' },
+        slots: [
+          t('message', ['The blessing', 'الدعاء'], c.blessing, { maxLen: 140 }),
+          t('attribution', LABEL.quoteBy, c.blessingBy, { maxLen: 40 }),
+        ],
+      },
+      {
+        id: 'sebou',
+        type: 'Event',
+        transitionIn: enter('rise'),
+        holdMs: 5000,
+        ornament: PLAIN,
+        style: info,
+        slots: [
+          t('label', LABEL.eventName, c.eventName, { maxLen: 48 }),
+          t('venue', LABEL.eventPlace, c.eventPlace, { maxLen: 60 }),
+          t('when', LABEL.eventWhen, c.eventWhen, { maxLen: 48 }),
+          date('date', LABEL.eventDate),
+        ],
+      },
+      {
+        id: 'venue',
+        type: 'Venue',
+        transitionIn: enter('rise'),
+        holdMs: 5000,
+        ornament: PLAIN,
+        style: info,
+        slots: [
+          t('heading', LABEL.venueTitle, c.venueTitle, { maxLen: 40 }),
+          t('address', LABEL.venueAddress, c.address, { maxLen: 140 }),
+          t('mapUrl', LABEL.venueMap, '', { maxLen: 200 }),
+        ],
+      },
+      {
+        id: id.gift,
+        type: 'GiftReveal',
+        transitionIn: enter('float', 1000),
+        holdMs: 4500,
+        ornament: PLAIN,
+        decoration: { effect: 'bubbles', intensity: 'low', color: look.palette[1], emoji: '🧸' },
+        style: { headingColor: look.headingInk, bodyColor: look.accent, headingSize: 'lg', imageStyle: 'rounded' },
+        slots: [
+          t('heading', LABEL.giftTitle, c.giftTitle, { required: true, maxLen: 40 }),
+          t('body', LABEL.giftNote, c.giftNote, { maxLen: 100 }),
+          photo('image', LABEL.giftPhoto, { aspect: '1:1' }),
+        ],
+      },
+      {
+        id: 'finale',
+        type: 'Finale',
+        transitionIn: enter('blurIn', 1200),
+        holdMs: 6000,
+        ornament: frame(look, 0.7),
+        decoration: { effect: 'stars', intensity: 'medium', color: look.accent },
+        style: { headingSize: 'xl', headingColor: look.headingInk, bodyColor: look.accent },
+        slots: [
+          t('heading', LABEL.finaleHeading, c.finale, { required: true, maxLen: 44, animation: 'blurIn' }),
+          t('body', LABEL.finaleBody, c.finaleBody, { maxLen: 90 }),
+        ],
+      },
+    ],
+  };
+}
 
 export const newbornEn: CatalogTemplate = {
   slug: 'newborn-welcome-little-one-en',
@@ -33,215 +266,7 @@ export const newbornEn: CatalogTemplate = {
   thumbnailUrl:
     'https://images.unsplash.com/photo-1511948374796-056e8f289f34?auto=format&fit=crop&w=800&q=70',
   mvp: false,
-  definition: {
-    version: 1,
-    locale: 'en',
-    direction: 'ltr',
-    theme: {
-      palette: ['#FFF6F0', '#9DC7C0', '#3A4A49', '#F4C7B5'],
-      fontHeading: 'Quicksand',
-      fontBody: 'Nunito',
-      accent: '#F4C7B5',
-      ornament: { kind: 'corners', opacity: 0.45, scale: 0.9 },
-      music: 'lullaby-soft',
-      textColor: '#3A4A49',
-      background: { type: 'gradient', colors: ['#FFF6F0', '#F4C7B5', '#9DC7C0'], angle: 165 },
-      decoration: { effect: 'bubbles', intensity: 'low', color: '#9DC7C0' },
-    },
-    scenes: [
-      {
-        id: 'cover',
-        type: 'Cover',
-        layout: 'centered-photo',
-        transitionIn: { preset: 'blurIn', durationMs: 1200, delayMs: 0 },
-        holdMs: 4400,
-        background: {
-          type: 'gradient',
-          colors: ['#FFF6F0', '#FDE7DA', '#9DC7C0'],
-          angle: 160,
-        },
-        decoration: { effect: 'bubbles', intensity: 'low', color: '#9DC7C0' },
-        style: {
-          headingSize: '2xl',
-          headingColor: '#3A4A49',
-          bodyColor: '#5B6B6A',
-          headingFont: 'Caveat',
-          textPosition: 'center',
-        },
-        slots: [
-          { key: 'heading', type: 'text', editable: true, required: true, maxLen: 44, defaultEn: 'Welcome to the world, {recipient}', animation: 'blurIn' },
-          { key: 'subheading', type: 'text', editable: true, required: false, maxLen: 50, defaultEn: 'A tiny miracle has arrived.', animation: 'fade' },
-          { key: 'coverImage', type: 'image', editable: true, required: false, aspect: '1:1', min: 0, max: 1, animation: 'float' },
-        ],
-      },
-      {
-        id: 'the-baby',
-        type: 'PhotoReveal',
-        layout: 'full-bleed',
-        transitionIn: { preset: 'rise', durationMs: 1100, delayMs: 0 },
-        holdMs: 4800,
-        background: {
-          type: 'image',
-          colors: ['#FFF6F0', '#9DC7C0'],
-          imageUrl: 'https://images.unsplash.com/photo-1555252333-9f8e92e65df9?auto=format&fit=crop&w=1200&q=70',
-          overlay: 'linear-gradient(180deg, rgba(255,246,240,0.45), rgba(157,199,192,0.45))',
-          kenBurns: true,
-        },
-        decoration: { effect: 'glow', intensity: 'low', color: '#FFFFFF' },
-        style: {
-          imageStyle: 'rounded',
-          headingColor: '#3A4A49',
-          bodyColor: '#3A4A49',
-          textPosition: 'bottom',
-        },
-        slots: [
-          { key: 'image', type: 'image', editable: true, required: true, aspect: '4:5', min: 1, max: 1, animation: 'float' },
-          { key: 'caption', type: 'text', editable: true, required: false, maxLen: 50, defaultEn: 'Hello, little one', animation: 'rise' },
-        ],
-      },
-      {
-        id: 'details',
-        type: 'TextReveal',
-        transitionIn: { preset: 'fade', durationMs: 1000, delayMs: 0 },
-        holdMs: 4600,
-        background: {
-          type: 'gradient',
-          colors: ['#FFF6F0', '#FDE7DA'],
-          angle: 150,
-        },
-        decoration: { effect: 'stars', intensity: 'low', color: '#F4C7B5' },
-        style: {
-          headingColor: '#3A4A49',
-          bodyColor: '#5B6B6A',
-          headingSize: 'lg',
-          textPosition: 'center',
-        },
-        slots: [
-          { key: 'name', type: 'text', editable: true, required: false, maxLen: 40, defaultEn: 'Name: {recipient}', animation: 'rise' },
-          { key: 'weight', type: 'text', editable: true, required: false, maxLen: 40, defaultEn: 'Weight: 3.4 kg', animation: 'fade' },
-          { key: 'date', type: 'date', editable: true, required: false },
-        ],
-      },
-      {
-        id: 'tiny-toes',
-        type: 'Gallery',
-        layout: 'grid',
-        transitionIn: { preset: 'rise', durationMs: 900, delayMs: 0 },
-        holdMs: 5200,
-        background: {
-          type: 'image',
-          colors: ['#FFF6F0', '#F4C7B5'],
-          imageUrl: 'https://images.unsplash.com/photo-1492725764893-90b379c2b6e7?auto=format&fit=crop&w=1200&q=70',
-          overlay: 'linear-gradient(180deg, rgba(255,246,240,0.55), rgba(244,199,181,0.5))',
-        },
-        decoration: { effect: 'bubbles', intensity: 'low', color: '#FFFFFF' },
-        style: {
-          imageStyle: 'rounded',
-          headingColor: '#3A4A49',
-          bodyColor: '#3A4A49',
-          headingSize: 'md',
-        },
-        slots: [
-          { key: 'heading', type: 'text', editable: true, required: false, maxLen: 30, defaultEn: 'First little moments', animation: 'fade' },
-          { key: 'gallery', type: 'image', editable: true, required: true, min: 2, max: 6, aspect: '1:1', animation: 'float' },
-        ],
-      },
-      {
-        id: 'blessing',
-        type: 'Quote',
-        transitionIn: { preset: 'blurIn', durationMs: 1300, delayMs: 0 },
-        holdMs: 5000,
-        background: {
-          type: 'radial',
-          colors: ['#FFFDFB', '#9DC7C0'],
-        },
-        decoration: { effect: 'glow', intensity: 'medium', color: '#F4C7B5' },
-        style: {
-          headingColor: '#3A4A49',
-          bodyColor: '#5B6B6A',
-          headingSize: 'xl',
-          headingFont: 'Caveat',
-          textPosition: 'center',
-        },
-        slots: [
-          { key: 'message', type: 'text', editable: true, required: false, maxLen: 140, defaultEn: 'May your days be soft, your nights be gentle, and your life be long and full.', animation: 'blurIn' },
-          { key: 'attribution', type: 'text', editable: true, required: false, maxLen: 40, defaultEn: 'with all our love', animation: 'fade' },
-        ],
-      },
-      {
-        id: 'letter',
-        type: 'Letter',
-        layout: 'centered',
-        transitionIn: { preset: 'rise', durationMs: 1100, delayMs: 0 },
-        holdMs: 5500,
-        background: {
-          type: 'gradient',
-          colors: ['#FFF6F0', '#FDE7DA', '#FFF6F0'],
-          angle: 170,
-        },
-        decoration: { effect: 'stars', intensity: 'low', color: '#9DC7C0' },
-        style: {
-          headingColor: '#3A4A49',
-          bodyColor: '#5B6B6A',
-          headingFont: 'Caveat',
-          textAlign: 'start',
-          headingSize: 'lg',
-        },
-        slots: [
-          { key: 'heading', type: 'text', editable: true, required: true, maxLen: 40, defaultEn: 'A note for you, little one', animation: 'rise' },
-          { key: 'body', type: 'text', editable: true, required: false, maxLen: 320, defaultEn: 'We waited so long for you, and now that you are here the whole house feels brighter. We promise to keep you safe, to read you stories until you fall asleep, and to love you more with every passing day. Welcome home.', animation: 'fade' },
-        ],
-      },
-      {
-        id: 'keepsake',
-        type: 'GiftReveal',
-        layout: 'centered',
-        transitionIn: { preset: 'glow', durationMs: 1000, delayMs: 0 },
-        holdMs: 4600,
-        background: {
-          type: 'gradient',
-          colors: ['#9DC7C0', '#FFF6F0'],
-          angle: 200,
-        },
-        decoration: { effect: 'bubbles', intensity: 'low', color: '#F4C7B5' },
-        style: {
-          headingColor: '#3A4A49',
-          bodyColor: '#5B6B6A',
-          textPosition: 'center',
-        },
-        slots: [
-          { key: 'heading', type: 'text', editable: true, required: true, maxLen: 40, defaultEn: 'A little something', animation: 'glow' },
-          { key: 'body', type: 'text', editable: true, required: false, maxLen: 100, defaultEn: 'For the newest, most loved arrival.', animation: 'fade' },
-          { key: 'image', type: 'image', editable: true, required: false, aspect: '1:1', min: 0, max: 1, animation: 'float' },
-        ],
-      },
-      {
-        id: 'finale',
-        type: 'Finale',
-        transitionIn: { preset: 'glow', durationMs: 1200, delayMs: 0 },
-        holdMs: 6000,
-        background: {
-          type: 'image',
-          colors: ['#FFF6F0', '#9DC7C0'],
-          imageUrl: 'https://images.unsplash.com/photo-1490730141103-6cac27aaab94?auto=format&fit=crop&w=1200&q=70',
-          overlay: 'linear-gradient(180deg, rgba(255,246,240,0.55), rgba(157,199,192,0.5))',
-          kenBurns: true,
-        },
-        decoration: { effect: 'stars', intensity: 'medium', color: '#FFFFFF' },
-        style: {
-          headingSize: '2xl',
-          headingColor: '#3A4A49',
-          bodyColor: '#3A4A49',
-          headingFont: 'Caveat',
-          textPosition: 'center',
-        },
-        slots: [
-          { key: 'heading', type: 'text', editable: true, required: true, maxLen: 44, defaultEn: 'Welcome, {recipient}', animation: 'blurIn' },
-          { key: 'body', type: 'text', editable: true, required: false, maxLen: 90, defaultEn: 'So loved already.', animation: 'fade' },
-        ],
-      },
-    ],
-  },
+  definition: definition('en'),
 };
 
 export const newbornAr: CatalogTemplate = {
@@ -259,209 +284,5 @@ export const newbornAr: CatalogTemplate = {
   thumbnailUrl:
     'https://images.unsplash.com/photo-1544126592-807ade215a0b?auto=format&fit=crop&w=800&q=70',
   mvp: false,
-  definition: {
-    version: 1,
-    locale: 'ar',
-    direction: 'rtl',
-    theme: {
-      palette: ['#FFF7EF', '#8FB9A8', '#3A4A49', '#E7B59B'],
-      fontHeading: 'Harmattan',
-      fontBody: 'Tajawal',
-      accent: '#E7B59B',
-      ornament: { kind: 'corners', opacity: 0.45, scale: 0.9 },
-      music: 'lullaby-soft',
-      textColor: '#3A4A49',
-      background: { type: 'gradient', colors: ['#FFF7EF', '#E7B59B', '#8FB9A8'], angle: 165 },
-      decoration: { effect: 'bubbles', intensity: 'low', color: '#8FB9A8' },
-    },
-    scenes: [
-      {
-        id: 'cover',
-        type: 'Cover',
-        layout: 'centered-photo',
-        transitionIn: { preset: 'blurIn', durationMs: 1200, delayMs: 0 },
-        holdMs: 4400,
-        background: {
-          type: 'gradient',
-          colors: ['#FFF7EF', '#FBE4D6', '#8FB9A8'],
-          angle: 160,
-        },
-        decoration: { effect: 'bubbles', intensity: 'low', color: '#8FB9A8' },
-        style: {
-          headingSize: '2xl',
-          headingColor: '#3A4A49',
-          bodyColor: '#5B6B6A',
-          textPosition: 'center',
-        },
-        slots: [
-          { key: 'heading', type: 'text', editable: true, required: true, maxLen: 44, defaultAr: 'أهلاً بيك في الدنيا يا {recipient}', animation: 'blurIn' },
-          { key: 'subheading', type: 'text', editable: true, required: false, maxLen: 50, defaultAr: 'وصلت أحلى هدية', animation: 'fade' },
-          { key: 'coverImage', type: 'image', editable: true, required: false, aspect: '1:1', min: 0, max: 1, animation: 'float' },
-        ],
-      },
-      {
-        id: 'el-baby',
-        type: 'PhotoReveal',
-        layout: 'full-bleed',
-        transitionIn: { preset: 'rise', durationMs: 1100, delayMs: 0 },
-        holdMs: 4800,
-        background: {
-          type: 'image',
-          colors: ['#FFF7EF', '#8FB9A8'],
-          imageUrl: 'https://images.unsplash.com/photo-1555252333-9f8e92e65df9?auto=format&fit=crop&w=1200&q=70',
-          overlay: 'linear-gradient(180deg, rgba(255,247,239,0.45), rgba(143,185,168,0.45))',
-          kenBurns: true,
-        },
-        decoration: { effect: 'glow', intensity: 'low', color: '#FFFFFF' },
-        style: {
-          imageStyle: 'rounded',
-          headingColor: '#3A4A49',
-          bodyColor: '#3A4A49',
-          textPosition: 'bottom',
-        },
-        slots: [
-          { key: 'image', type: 'image', editable: true, required: true, aspect: '4:5', min: 1, max: 1, animation: 'float' },
-          { key: 'caption', type: 'text', editable: true, required: false, maxLen: 50, defaultAr: 'يا أهلاً بالصغير', animation: 'rise' },
-        ],
-      },
-      {
-        id: 'tafaseel',
-        type: 'TextReveal',
-        transitionIn: { preset: 'fade', durationMs: 1000, delayMs: 0 },
-        holdMs: 4600,
-        background: {
-          type: 'gradient',
-          colors: ['#FFF7EF', '#FBE4D6'],
-          angle: 150,
-        },
-        decoration: { effect: 'stars', intensity: 'low', color: '#E7B59B' },
-        style: {
-          headingColor: '#3A4A49',
-          bodyColor: '#5B6B6A',
-          headingSize: 'lg',
-          textPosition: 'center',
-        },
-        slots: [
-          { key: 'name', type: 'text', editable: true, required: false, maxLen: 40, defaultAr: 'الاسم: {recipient}', animation: 'rise' },
-          { key: 'weight', type: 'text', editable: true, required: false, maxLen: 40, defaultAr: 'الوزن: 3.4 كيلو', animation: 'fade' },
-          { key: 'date', type: 'date', editable: true, required: false },
-        ],
-      },
-      {
-        id: 'koraat',
-        type: 'Gallery',
-        layout: 'grid',
-        transitionIn: { preset: 'rise', durationMs: 900, delayMs: 0 },
-        holdMs: 5200,
-        background: {
-          type: 'image',
-          colors: ['#FFF7EF', '#E7B59B'],
-          imageUrl: 'https://images.unsplash.com/photo-1492725764893-90b379c2b6e7?auto=format&fit=crop&w=1200&q=70',
-          overlay: 'linear-gradient(180deg, rgba(255,247,239,0.55), rgba(231,181,155,0.5))',
-        },
-        decoration: { effect: 'bubbles', intensity: 'low', color: '#FFFFFF' },
-        style: {
-          imageStyle: 'rounded',
-          headingColor: '#3A4A49',
-          bodyColor: '#3A4A49',
-          headingSize: 'md',
-        },
-        slots: [
-          { key: 'heading', type: 'text', editable: true, required: false, maxLen: 30, defaultAr: 'أول لحظات صغيّرة', animation: 'fade' },
-          { key: 'gallery', type: 'image', editable: true, required: true, min: 2, max: 6, aspect: '1:1', animation: 'float' },
-        ],
-      },
-      {
-        id: 'doaa',
-        type: 'Quote',
-        transitionIn: { preset: 'blurIn', durationMs: 1300, delayMs: 0 },
-        holdMs: 5000,
-        background: {
-          type: 'radial',
-          colors: ['#FFFDFB', '#8FB9A8'],
-        },
-        decoration: { effect: 'glow', intensity: 'medium', color: '#E7B59B' },
-        style: {
-          headingColor: '#3A4A49',
-          bodyColor: '#5B6B6A',
-          headingSize: 'xl',
-          textPosition: 'center',
-        },
-        slots: [
-          { key: 'message', type: 'text', editable: true, required: false, maxLen: 140, defaultAr: 'ربنا يحفظه ويكبر في عزّ.. ويملا حياتكم فرح', animation: 'blurIn' },
-          { key: 'attribution', type: 'text', editable: true, required: false, maxLen: 40, defaultAr: 'بكل الحب', animation: 'fade' },
-        ],
-      },
-      {
-        id: 'gawab',
-        type: 'Letter',
-        layout: 'centered',
-        transitionIn: { preset: 'rise', durationMs: 1100, delayMs: 0 },
-        holdMs: 5500,
-        background: {
-          type: 'gradient',
-          colors: ['#FFF7EF', '#FBE4D6', '#FFF7EF'],
-          angle: 170,
-        },
-        decoration: { effect: 'stars', intensity: 'low', color: '#8FB9A8' },
-        style: {
-          headingColor: '#3A4A49',
-          bodyColor: '#5B6B6A',
-          textAlign: 'start',
-          headingSize: 'lg',
-        },
-        slots: [
-          { key: 'heading', type: 'text', editable: true, required: true, maxLen: 40, defaultAr: 'كلمتين لأحلى مولود', animation: 'rise' },
-          { key: 'body', type: 'text', editable: true, required: false, maxLen: 320, defaultAr: 'استنيناك كتير، ودلوقتي وإنت معانا البيت كله نوّر. وعدناك نحافظ عليك، ونحكيلك حواديت لما تنام، ونحبك أكتر كل يوم. نوّرت الدنيا يا حبيبنا.', animation: 'fade' },
-        ],
-      },
-      {
-        id: 'hadiya',
-        type: 'GiftReveal',
-        layout: 'centered',
-        transitionIn: { preset: 'glow', durationMs: 1000, delayMs: 0 },
-        holdMs: 4600,
-        background: {
-          type: 'gradient',
-          colors: ['#8FB9A8', '#FFF7EF'],
-          angle: 200,
-        },
-        decoration: { effect: 'bubbles', intensity: 'low', color: '#E7B59B' },
-        style: {
-          headingColor: '#3A4A49',
-          bodyColor: '#5B6B6A',
-          textPosition: 'center',
-        },
-        slots: [
-          { key: 'heading', type: 'text', editable: true, required: true, maxLen: 40, defaultAr: 'حاجة صغيّرة', animation: 'glow' },
-          { key: 'body', type: 'text', editable: true, required: false, maxLen: 100, defaultAr: 'لأحدث وأحلى وصول', animation: 'fade' },
-          { key: 'image', type: 'image', editable: true, required: false, aspect: '1:1', min: 0, max: 1, animation: 'float' },
-        ],
-      },
-      {
-        id: 'finale',
-        type: 'Finale',
-        transitionIn: { preset: 'glow', durationMs: 1200, delayMs: 0 },
-        holdMs: 6000,
-        background: {
-          type: 'image',
-          colors: ['#FFF7EF', '#8FB9A8'],
-          imageUrl: 'https://images.unsplash.com/photo-1490730141103-6cac27aaab94?auto=format&fit=crop&w=1200&q=70',
-          overlay: 'linear-gradient(180deg, rgba(255,247,239,0.55), rgba(143,185,168,0.5))',
-          kenBurns: true,
-        },
-        decoration: { effect: 'stars', intensity: 'medium', color: '#FFFFFF' },
-        style: {
-          headingSize: '2xl',
-          headingColor: '#3A4A49',
-          bodyColor: '#3A4A49',
-          textPosition: 'center',
-        },
-        slots: [
-          { key: 'heading', type: 'text', editable: true, required: true, maxLen: 44, defaultAr: 'ربنا يخليه ويباركلكم فيه', animation: 'blurIn' },
-          { key: 'body', type: 'text', editable: true, required: false, maxLen: 90, defaultAr: 'محبوب من قبل ما يجي', animation: 'fade' },
-        ],
-      },
-    ],
-  },
+  definition: definition('ar'),
 };

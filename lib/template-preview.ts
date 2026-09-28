@@ -39,13 +39,28 @@ function photoUrl(id: string, w = 900): string {
   return `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=${w}&q=70`;
 }
 
+/**
+ * A plausible upcoming date for a date slot the template leaves blank.
+ *
+ * Templates deliberately ship date slots empty — any fixed default would go
+ * stale and every new card would count down to a day already gone — but a
+ * preview with no date shows a countdown with nothing to count. The preview
+ * alone gets a date a few weeks out. Midday UTC, so it lands on the same
+ * calendar day in every timezone.
+ */
+export function sampleDate(now: Date = new Date(), daysAhead = 24): string {
+  const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + daysAhead, 12));
+  return d.toISOString().slice(0, 10);
+}
+
 /** Slot defaults for one scene, in the experience's locale. */
 function textForScene(scene: SceneDef, locale: Locale): Record<string, string> {
   const out: Record<string, string> = {};
   for (const slot of scene.slots) {
     if (slot.type !== 'text' && slot.type !== 'date') continue;
     const def = locale === 'ar' ? slot.defaultAr : slot.defaultEn;
-    if (def != null) out[slot.key] = def;
+    if (def != null && def !== '') out[slot.key] = def;
+    else if (slot.type === 'date') out[slot.key] = sampleDate();
   }
   return out;
 }

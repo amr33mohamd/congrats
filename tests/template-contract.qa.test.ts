@@ -147,3 +147,207 @@ describe('token + scene helpers', () => {
     expect(sceneForStep(def as never, { templateStepId: 'nope' })).toBeUndefined();
   });
 });
+
+/* ───────────────────────── the shipped catalog ────────────────────────── */
+
+describe('template catalog (content/templates)', () => {
+  // Imported inside the suite so a broken template reports as a failed test
+  // here rather than as an unrelated import crash.
+  const load = async () => (await import('@/content/templates')).TEMPLATE_CATALOG;
+
+  /**
+   * Row metadata a rewrite must never move: orders, prices and saved cards key
+   * off it. [slug, category, locale, isPaid, pricePiastres]
+   */
+  const ROWS: Array<[string, string, 'ar' | 'en', boolean, number]> = [
+    ['anniversary-our-story-en', 'anniversary', 'en', false, 0],
+    ['anniversary-hobbna-ar', 'anniversary', 'ar', true, 4900],
+    ['valentine-be-mine-en', 'valentine', 'en', false, 0],
+    ['valentine-ya-albi-ar', 'valentine', 'ar', true, 4900],
+    ['proposal-marry-me-en', 'proposal', 'en', true, 7900],
+    ['proposal-etgawezini-ar', 'proposal', 'ar', true, 7900],
+    ['eid-blessings-ar', 'eid', 'ar', true, 4900],
+    ['eid-mubarak-en', 'eid', 'en', false, 0],
+    ['birthday-make-a-wish-en', 'birthday', 'en', false, 0],
+    ['birthday-kol-sana-ar', 'birthday', 'ar', false, 0],
+    ['graduation-cap-and-gown-en', 'graduation', 'en', false, 0],
+    ['graduation-mabrouk-ar', 'graduation', 'ar', true, 4900],
+    ['newborn-welcome-little-one-en', 'newborn', 'en', false, 0],
+    ['newborn-mabrouk-elmawloud-ar', 'newborn', 'ar', false, 0],
+    ['wedding-two-hearts-en', 'wedding', 'en', true, 7900],
+    ['wedding-mabrouk-elzawag-ar', 'wedding', 'ar', true, 7900],
+  ];
+
+  /**
+   * Scene ids saved cards bind to (steps.template_step_id) that survived the
+   * one-page rewrite. Removing one orphans that section of every saved card,
+   * so it has to be a deliberate edit here too.
+   */
+  const KEPT_IDS: Record<string, string[]> = {
+    'anniversary-our-story-en': ['cover', 'the-day-we-met', 'vow', 'milestones', 'gallery', 'letter', 'keepsake', 'finale'],
+    'anniversary-hobbna-ar': ['cover', 'awwel-youm', 'kelma', 'hekayetna', 'zekrayat', 'gawab', 'hadiya', 'finale'],
+    'valentine-be-mine-en': ['cover', 'love-note', 'our-photo', 'moments', 'love-quote', 'reasons', 'gift', 'finale'],
+    'valentine-ya-albi-ar': ['cover', 'resala', 'sora', 'lahazat', 'eqtebas', 'asbab', 'hadiya', 'finale'],
+    'proposal-marry-me-en': ['cover', 'journey', 'us', 'truth', 'the-ring', 'the-question', 'finale'],
+    'proposal-etgawezini-ar': ['cover', 'rehletna', 'ehna', 'haqiqa', 'el-khatem', 'el-soaal', 'finale'],
+    'eid-blessings-ar': ['cover', 'blessing', 'lanterns', 'lamma', 'gift', 'doaa', 'finale'],
+    'eid-mubarak-en': ['cover', 'blessing', 'photo', 'gathering', 'gift', 'finale'],
+    'birthday-make-a-wish-en': ['cover', 'star', 'memories', 'wish-message', 'countdown', 'gift', 'finale'],
+    'birthday-kol-sana-ar': ['cover', 'negm', 'zekrayat', 'omneya', 'tanazol', 'hadiya', 'finale'],
+    'graduation-cap-and-gown-en': ['cover', 'the-grad', 'tassel', 'journey', 'years', 'ceremony', 'gift', 'finale'],
+    'graduation-mabrouk-ar': ['cover', 'el-khreeg', 'el-rehla', 'el-seneen', 'el-haflaa', 'hadiya', 'finale'],
+    'newborn-welcome-little-one-en': ['cover', 'the-baby', 'details', 'tiny-toes', 'blessing', 'letter', 'keepsake', 'finale'],
+    'newborn-mabrouk-elmawloud-ar': ['cover', 'el-baby', 'tafaseel', 'koraat', 'doaa', 'gawab', 'hadiya', 'finale'],
+    'wedding-two-hearts-en': ['cover', 'the-couple', 'vow', 'gallery', 'countdown', 'blessing', 'gift', 'finale'],
+    'wedding-mabrouk-elzawag-ar': ['cover', 'el-3roosain', 'doaa-quote', 'maaak-bas', 'tanazol', 'doaa', 'hadiya', 'finale'],
+  };
+
+  it('every template parses against the contract', async () => {
+    const catalog = await load();
+    expect(catalog.length).toBeGreaterThanOrEqual(26);
+    for (const t of catalog) {
+      expect(safeParseTemplateDefinition(t.definition).success, t.slug).toBe(true);
+    }
+  });
+
+  it('keeps every greeting template’s slug, category, locale and price', async () => {
+    const catalog = await load();
+    for (const [slug, category, locale, isPaid, price] of ROWS) {
+      const t = catalog.find((x) => x.slug === slug);
+      expect(t, slug).toBeDefined();
+      expect([t!.category, t!.locale, t!.isPaid, t!.pricePiastres], slug).toEqual([category, locale, isPaid, price]);
+    }
+  });
+
+  it('keeps the scene ids saved cards bind to', async () => {
+    const catalog = await load();
+    for (const [slug, ids] of Object.entries(KEPT_IDS)) {
+      const have = new Set(catalog.find((t) => t.slug === slug)!.definition.scenes.map((s) => s.id));
+      expect(ids.filter((id) => !have.has(id)), slug).toEqual([]);
+    }
+  });
+
+  it('labels every text and date field in both languages', async () => {
+    const catalog = await load();
+    for (const t of catalog) {
+      for (const scene of t.definition.scenes) {
+        for (const slot of scene.slots) {
+          if (slot.type === 'image') continue;
+          const where = `${t.slug} › ${scene.id} › ${slot.key}`;
+          expect(slot.labelEn?.trim(), where).toBeTruthy();
+          expect(slot.labelAr?.trim(), where).toBeTruthy();
+        }
+      }
+    }
+  });
+
+  it('matches direction to locale and writes defaults in the card’s own language', async () => {
+    const catalog = await load();
+    const arabic = /[؀-ۿ]/;
+    for (const t of catalog) {
+      expect(t.definition.direction, t.slug).toBe(t.locale === 'ar' ? 'rtl' : 'ltr');
+      for (const scene of t.definition.scenes) {
+        for (const slot of scene.slots) {
+          if (slot.type !== 'text') continue;
+          const where = `${t.slug} › ${scene.id} › ${slot.key}`;
+          const value = t.locale === 'ar' ? slot.defaultAr : slot.defaultEn;
+          expect(value, where).toBeDefined();
+          if (t.locale === 'ar' && value) expect(value, where).toMatch(arabic);
+        }
+      }
+    }
+  });
+
+  it('has a renderer for every scene type it uses, and unique scene ids', async () => {
+    const { SCENE_RENDERERS } = await import('@/components/player/SceneRenderer');
+    const catalog = await load();
+    for (const t of catalog) {
+      const ids = t.definition.scenes.map((s) => s.id);
+      expect(new Set(ids).size, t.slug).toBe(ids.length);
+      for (const scene of t.definition.scenes) {
+        expect(typeof SCENE_RENDERERS[scene.type], `${t.slug} › ${scene.type}`).toBe('function');
+      }
+    }
+  });
+
+  it('never requires a photo, so a card is publishable before any upload', async () => {
+    const catalog = await load();
+    for (const t of catalog) {
+      for (const scene of t.definition.scenes) {
+        for (const slot of scene.slots.filter((s) => s.type === 'image')) {
+          const where = `${t.slug} › ${scene.id} › ${slot.key}`;
+          expect(slot.required, where).toBe(false);
+          expect(slot.min ?? 0, where).toBe(0);
+        }
+      }
+    }
+  });
+
+  it('reads each greeting card as one page: cover, a letter, …, finale', async () => {
+    const catalog = await load();
+    for (const t of catalog.filter((x) => x.category !== 'invitation')) {
+      const types = t.definition.scenes.map((s) => s.type);
+      expect(types[0], t.slug).toBe('Cover');
+      expect(types[1], t.slug).toBe('Letter');
+      expect(types[types.length - 1], t.slug).toBe('Finale');
+      // The ornament frames only the tall ends; a mid-card section opens with a
+      // flourish instead of an arch squeezed around four lines.
+      for (const scene of t.definition.scenes.slice(1, -1)) {
+        expect(scene.ornament?.kind, `${t.slug} › ${scene.id}`).toBe('none');
+      }
+      // Dates ship empty so no new card counts down to a day long gone.
+      for (const scene of t.definition.scenes) {
+        for (const slot of scene.slots.filter((s) => s.type === 'date')) {
+          expect(slot.defaultAr ?? slot.defaultEn, `${t.slug} › ${scene.id}`).toBeUndefined();
+        }
+      }
+    }
+  });
+
+  it('uses the slot keys the information sections actually read', async () => {
+    const KEYS: Record<string, string[]> = {
+      Event: ['label', 'venue', 'when', 'date'],
+      Venue: ['heading', 'address', 'mapUrl'],
+      Rsvp: ['heading', 'body', 'phone'],
+      Gift: ['heading', 'body', 'account'],
+      // The invitations' title key (FamiliesScene also accepts `heading`).
+      Families: ['familiesHeading', 'groomLabel', 'groomFamily', 'brideLabel', 'brideFamily'],
+    };
+    const catalog = await load();
+    for (const t of catalog) {
+      for (const scene of t.definition.scenes) {
+        const want = KEYS[scene.type];
+        if (!want) continue;
+        expect(scene.slots.map((s) => s.key).sort(), `${t.slug} › ${scene.id}`).toEqual([...want].sort());
+      }
+    }
+  });
+});
+
+describe('soundtrack manifest (lib/audio.ts)', () => {
+  it('only lists catalog tracks whose file actually ships', async () => {
+    const { SHIPPED_TRACKS, TRACK_KEYS } = await import('@/lib/audio');
+    const { existsSync } = await import('node:fs');
+    const { join } = await import('node:path');
+    for (const key of SHIPPED_TRACKS) {
+      expect((TRACK_KEYS as readonly string[]).includes(key), key).toBe(true);
+      expect(existsSync(join(process.cwd(), 'public', 'audio', `${key}.mp3`)), key).toBe(true);
+    }
+  });
+
+  it('resolves no URL for a track that has not shipped, so nothing 404s', async () => {
+    const { trackUrl } = await import('@/lib/audio');
+    expect(trackUrl('wedding-strings', new Set())).toBeNull();
+    expect(trackUrl('wedding-strings', new Set(['wedding-strings']))).toBe('/audio/wedding-strings.mp3');
+    expect(trackUrl('../etc/passwd', new Set(['../etc/passwd']))).toBeNull();
+    expect(trackUrl(undefined)).toBeNull();
+  });
+
+  it('every catalog music key is a known track', async () => {
+    const { TRACK_KEYS } = await import('@/lib/audio');
+    for (const t of (await import('@/content/templates')).TEMPLATE_CATALOG) {
+      const music = t.definition.theme.music;
+      if (music) expect((TRACK_KEYS as readonly string[]).includes(music), t.slug).toBe(true);
+    }
+  });
+});

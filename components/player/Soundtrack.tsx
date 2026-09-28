@@ -15,47 +15,61 @@ import {
  * tapped to open the card. That is not a stylistic choice: browsers refuse
  * unmuted autoplay without a user gesture, and the open tap is the gesture.
  *
- * A template whose track file is missing (none ship with the repo — see
- * lib/audio.ts) silently renders nothing rather than showing a dead control.
+ * A template whose track has not shipped (none do yet — see lib/audio.ts)
+ * renders nothing at all: no <audio>, so no request and no 404 in the
+ * console, and no control that does nothing. If a listed file still fails to
+ * load, the control hides itself.
  */
 export function Soundtrack({
   music,
   started,
   label,
+  className,
+  style,
 }: {
   music?: string | null;
   started: boolean;
   /** Accessible name for the toggle, localized by the caller. */
   label: string;
+  /** Positioning for the control (the Player pins it to its own corner). */
+  className?: string;
+  style?: React.CSSProperties;
 }) {
   const src = trackUrl(music);
   const ref = React.useRef<HTMLAudioElement>(null);
-  const [muted, setMuted] = React.useState(true);
-  const [available, setAvailable] = React.useState(false);
+  const [muted, setMuted] = React.useState(false);
+  const [failed, setFailed] = React.useState(false);
 
   React.useEffect(() => setMuted(readMutePreference()), []);
+  React.useEffect(() => setFailed(false), [src]);
 
   React.useEffect(() => {
     const el = ref.current;
-    if (!el || !src || !started) return;
+    if (!el || !started || failed) return;
     el.volume = TRACK_VOLUME;
     if (muted) {
       el.pause();
       return;
     }
-    // Still possible to be blocked (e.g. a Lighthouse run with no gesture);
-    // treat a rejected play as "no music" rather than throwing.
-    void el.play().catch(() => setAvailable(false));
-  }, [src, started, muted]);
+    // Still possible to be blocked (no gesture reached us, e.g. an automated
+    // run). A rejected play is "not playing yet", not an error: the control
+    // stays so the viewer can start it by hand, which IS a gesture.
+    el.play().catch(() => setMuted(true));
+  }, [src, started, muted, failed]);
 
-  if (!src) return null;
+  if (!src || failed) return null;
 
   const toggle = () => {
-    setMuted((m) => {
-      const next = !m;
-      writeMutePreference(next);
-      return next;
-    });
+    const next = !muted;
+    writeMutePreference(next);
+    setMuted(next);
+    // Start inside the click itself: a play() deferred to an effect can lose
+    // the user-gesture token on Safari and be refused again.
+    const el = ref.current;
+    if (el && !next) {
+      el.volume = TRACK_VOLUME;
+      el.play().catch(() => setMuted(true));
+    }
   };
 
   return (
@@ -64,22 +78,22 @@ export function Soundtrack({
         ref={ref}
         src={src}
         loop
-        preload="none"
-        onCanPlay={() => setAvailable(true)}
-        onError={() => setAvailable(false)}
+        // Nothing downloads until the card is opened.
+        preload={started ? 'auto' : 'none'}
+        onError={() => setFailed(true)}
       />
-      {available && started ? (
+      {started ? (
         <button
           type="button"
           onClick={(e) => {
-            // The Player treats a tap anywhere as "advance"; the music control
-            // must not double as a page turn.
+            // Never let the music control double as a tap on the card.
             e.stopPropagation();
             toggle();
           }}
           aria-label={label}
           aria-pressed={!muted}
-          className="absolute bottom-token-4 inset-inline-end-token-4 z-30 grid h-10 w-10 place-items-center rounded-full bg-black/40 text-base text-white backdrop-blur-md transition-colors hover:bg-black/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+          className={`z-30 grid h-10 w-10 place-items-center rounded-full bg-black/40 text-base text-white backdrop-blur-md transition-colors hover:bg-black/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white ${className ?? 'absolute bottom-token-4 end-token-4'}`}
+          style={style}
         >
           <span aria-hidden>{muted ? '🔇' : '🔊'}</span>
         </button>

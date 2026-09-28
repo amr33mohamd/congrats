@@ -1,94 +1,80 @@
-# Template Authoring Guide (engine v2)
+# Template Authoring Guide (one-page cards)
 
 A template is a `CatalogTemplate` (see `_helpers.ts`) whose `definition` satisfies the
-zod contract in `lib/template-contract.ts`. Authoring uses the **input** shape, so any
-field with a default is OPTIONAL — only set what you want. The catalog is validated at
-module load (`index.ts`), so a contract violation throws at seed/build time.
+zod contract in `lib/template-contract.ts`. The catalog is validated at module load
+(`index.ts`), so a contract violation throws at seed/build time. Check it with:
 
-**Reference implementation:** `content/templates/birthday.ts` (`birthdayEn`) uses every
-feature below. Match its quality and structure.
+```sh
+npx tsx -e "import('./content/templates/index.ts').then(m => console.log(m.CATALOG_STATS))"
+```
+
+**Reference implementations:** `anniversary.ts` (greeting card, built with the kit in
+`_card.ts`) and `invitation.ts` (wedding invitation factory, 5 styles × AR/EN).
+
+## How a card is read
+
+The Player renders every scene as a section of ONE continuously scrolling card (not
+slides). A greeting card reads top to bottom:
+
+> cover → a personal letter → photo / gallery → the occasion's own sections → finale
+
+- **Cover and Finale** are full-height and carry the template's ornament (arch,
+  wreath, engraved frame…). Every section in between sets `ornament: { kind: 'none' }`
+  — the renderer opens it with a small flourish instead.
+- **One continuous ground.** The theme background is painted once for the whole card;
+  per-scene non-image backgrounds are ignored by the Player. Don't use stock photos as
+  scene backgrounds: they render as panels of strangers on someone's card.
+- **Empty sections disappear.** A photo/gallery section with no upload, a countdown
+  with no date, and any section whose fields the sender cleared are left out. That is
+  how a sender removes an optional section (a party venue they don't need).
 
 ## Hard rules (do NOT break)
 
 - Keep each template's `slug`, `category`, `locale`, `direction`, `isPaid`,
   `pricePiastres`, `currency` exactly as they are.
-- Keep every scene `id` and every slot `key` stable (experiences bind to them).
-  You MAY change a scene's `type`, copy, animations, `holdMs`, and add
-  `background`/`decoration`/`style`. You may add NEW scenes (new ids) but keep the
-  existing ones.
-- Arabic templates: `defaultAr` only (no `defaultEn`); LTR English: `defaultEn` only.
-- Add a `thumbnailUrl` (Unsplash) to every template.
-- Every template MUST look clearly different from the others: different palette,
-  fonts, background style, decoration effect, and animation mix.
+- Keep the `id` of every scene that survives a rewrite, and its slot `key`s (saved
+  cards bind text and photos to them). A retired scene is simply dropped; a new scene
+  gets a new id. `tests/template-contract.qa.test.ts` pins the kept ids.
+- Every text/date slot has `labelEn` + `labelAr` (the builder shows them). Use the
+  shared `LABEL` vocabulary in `_card.ts`.
+- Photos are never required (`required: false`, `min: 0`) — a card must be publishable
+  before any upload.
+- Date slots ship with NO default: a fixed date goes stale. The gallery preview fills a
+  sample date (`lib/template-preview.ts`).
+- Arabic templates: `defaultAr` only; English: `defaultEn` only. Arabic copy is written
+  natively (warm Egyptian where the card is personal), never translated from English.
+- Don't shrink an existing slot's `maxLen`: saved text longer than the new limit would
+  fail validation the next time the sender edits it.
 
-## Scene types
+## Scene types and the keys their renderer reads
 
-`Cover` `PhotoReveal` `TextReveal` `Countdown` `Gallery` `GiftReveal` `Finale`
-`Quote` (big stylized quote + optional attribution — 2 text slots)
-`Letter` (handwritten-note card on a light panel — 1 heading + body lines)
+| Type | Keys |
+| --- | --- |
+| `Cover` | first text = heading, rest = lines; optional image slot (circle photo) |
+| `Letter` | first text = opening, then body; a slot keyed `signoff` is set as the signature |
+| `PhotoReveal` | one image + caption |
+| `Gallery` | `heading` + an image slot with `max` > 1 |
+| `TextReveal` | up to three lines; a date slot is shown formatted as the last line |
+| `Quote` | the quote + an attribution line (rendered with a leading "— ") |
+| `Countdown` | title, a `date` slot to count to, a note |
+| `GiftReveal` | heading, note, optional photo of the gift (else `decoration.emoji`) |
+| `Event` | `label`, `venue`, `when`, `date` |
+| `Venue` | `heading`, `address`, `mapUrl` |
+| `Rsvp` | `heading`, `body`, `phone` (WhatsApp) — invitations |
+| `Gift` | `heading`, `body`, `account` (copyable transfer details) — invitations |
+| `Families` | `familiesHeading`, `groomLabel`, `groomFamily`, `brideLabel`, `brideFamily` |
+| `Finale` | heading + last words |
 
-## Animation presets (transitionIn.preset and slot.animation)
+## Look
 
-`fade` `slideStart` `slideEnd` `typewriter` `zoom` `parallax` `confettiBurst` `flip`
-`rise` `blurIn` `glow` `bounce` `float` `kenBurns` `shimmer`
+Colours come from the template only — never app tokens. Put `[ground, ground-deep,
+paper, accent]` in `palette`: the open gate and the letter sheet pick their paper and
+ink from it for contrast. Pick an `accent` that reads on the ground (section titles,
+buttons and ornaments use it); on light paper that usually means a deeper tone than
+the pastel in the palette.
 
-## theme
-
-```ts
-theme: {
-  palette: ['#bg', '#primary', '#text', '#accent'],   // hex strings
-  fontHeading: 'Playfair Display',   // see font list below
-  fontBody: 'Poppins',
-  accent: '#FBBF24',
-  music: 'soft-piano',
-  textColor: '#FFFFFF',              // default text color for scenes
-  background: { ... },               // default bg for scenes w/o their own
-  decoration: { ... },               // default ambient effect for the experience
-}
-```
-
-## Per-scene `background`
-
-```ts
-background: {
-  type: 'gradient' | 'solid' | 'radial' | 'image' | 'pattern',
-  colors: ['#a', '#b', '#c'],        // gradient/solid/radial stops
-  angle: 160,                        // gradient angle (deg)
-  imageUrl: 'https://images.unsplash.com/photo-XXXX?auto=format&fit=crop&w=1200&q=70',
-  overlay: 'linear-gradient(180deg, rgba(0,0,0,0.3), rgba(0,0,0,0.6))', // legibility over images
-  pattern: 'dots' | 'grid' | 'diagonal' | 'confettiDots' | 'noise',
-  kenBurns: true,                    // slow cinematic zoom on image bg
-  blurPx: 4,
-}
-```
-
-Images degrade gracefully: if an Unsplash URL fails, the gradient `colors` base shows
-through. ALWAYS provide `colors` alongside an image so the fallback looks intentional.
-
-## Per-scene `decoration` (ambient particles)
-
-```ts
-decoration: {
-  effect: 'confetti'|'hearts'|'petals'|'sparkles'|'snow'|'balloons'|'stars'|'bubbles'|'fireworks'|'glow'|'emoji'|'none',
-  intensity: 'low'|'medium'|'high',
-  color: '#FBBF24',                  // for bubbles/glow/sparkles tint
-  emoji: '🎁',                       // when effect === 'emoji'
-}
-```
-
-## Per-scene `style`
-
-```ts
-style: {
-  textAlign: 'start'|'center'|'end',
-  textPosition: 'center'|'top'|'bottom',
-  headingColor: '#FFFFFF',
-  bodyColor: '#FFFFFF',
-  headingSize: 'sm'|'md'|'lg'|'xl'|'2xl',
-  headingFont: 'Great Vibes',        // per-scene font override
-  imageStyle: 'rounded'|'circle'|'full'|'polaroid'|'card'|'tilt',
-}
-```
+Decorations (`hearts`, `petals`, `confetti`…) run only while their section is on
+screen; keep the theme-wide ambient layer `low`.
 
 ## Supported fonts (loaded on demand)
 
@@ -98,20 +84,5 @@ Script: `Dancing Script` `Great Vibes` `Pacifico` `Sacramento` `Caveat` `Parisie
 Display: `Bebas Neue`
 Arabic: `Cairo` `Tajawal` `Reem Kufi` `Amiri` `Aref Ruqaa` `El Messiri` `Lalezar` `Lateef` `Markazi Text` `Mada` `Harmattan`
 
-Use a font NOT on this list and it falls back to system — so only use these.
-
-## Unsplash images
-
-Format: `https://images.unsplash.com/photo-<ID>?auto=format&fit=crop&w=1200&q=70`
-(use `w=800` for thumbnails). Pick photos that match the occasion. Because images
-degrade to the gradient, prefer evocative photos but always pair with a `colors` base
-and a dark `overlay` so white text stays legible.
-
-## Quality bar
-
-- 6–8 scenes per template, a varied rhythm of types (don't repeat the same type back
-  to back), distinct `holdMs` (3500–6000).
-- Each scene gets a thoughtful background + (often) a decoration + a style.
-- Copy must be warm and human, occasion-appropriate, and native (Arabic = real spoken
-  Egyptian warmth, not a translation calque).
-- The whole template should feel like one art-directed piece, distinct from siblings.
+A font not on this list falls back to the system face. `fontBody` is used for the
+card's running text.

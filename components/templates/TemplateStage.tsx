@@ -8,7 +8,7 @@ import {
   type Decoration,
   type SceneDef,
 } from '@/lib/template-contract';
-import { googleFontsHref } from '@/lib/fonts';
+import { bodyFamily, googleFontsHref } from '@/lib/fonts';
 import { SceneRenderer } from '@/components/player/SceneRenderer';
 import { SceneBackground, backgroundCss } from '@/components/player/SceneBackground';
 import { Decorations } from '@/components/player/Decorations';
@@ -123,7 +123,7 @@ export function TemplateStage({
           // Hide the unscaled frame for the one paint before measurement lands.
           visibility: scale ? 'visible' : 'hidden',
           background: backgroundCss(bg, palette),
-          fontFamily: 'var(--font-body), system-ui, sans-serif',
+          fontFamily: bodyFamily(theme.fontBody),
           containerType: 'inline-size',
         }}
       >
