@@ -24,7 +24,7 @@ export function PaymentProofViewer({ url }: { url: string | null | undefined }) 
 
   return (
     <div>
-      <div className="relative flex h-72 items-center justify-center overflow-hidden rounded-md border border-border bg-ink/90">
+      <div className="relative flex h-72 items-center justify-center overflow-hidden rounded-md border border-border bg-backdrop">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={url}

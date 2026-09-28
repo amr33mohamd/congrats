@@ -58,6 +58,26 @@ function patternLayer(pattern: Background['pattern']): React.CSSProperties | nul
         backgroundImage:
           'repeating-linear-gradient(45deg, rgba(255,255,255,0.06) 0 14px, transparent 14px 28px)',
       };
+    case 'damask': {
+      // A brocade repeat, drawn once as an inline SVG tile. Kept very low
+      // contrast: it should read as woven texture under the type, never as
+      // wallpaper competing with it.
+      const tile =
+        "%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='120' viewBox='0 0 80 120'%3E" +
+        "%3Cg fill='none' stroke='%23ffffff' stroke-opacity='0.055' stroke-width='1.1'%3E" +
+        "%3Cpath d='M40 8 C52 22 52 38 40 52 C28 38 28 22 40 8 Z'/%3E" +
+        "%3Cpath d='M40 20 C46 27 46 35 40 42 C34 35 34 27 40 20 Z'/%3E" +
+        "%3Cpath d='M12 60 C24 46 32 54 40 60 C32 66 24 74 12 60 Z'/%3E" +
+        "%3Cpath d='M68 60 C56 46 48 54 40 60 C48 66 56 74 68 60 Z'/%3E" +
+        "%3Cpath d='M40 68 C52 82 52 98 40 112 C28 98 28 82 40 68 Z'/%3E" +
+        "%3Cpath d='M0 0 C10 6 10 14 0 20 M80 0 C70 6 70 14 80 20'/%3E" +
+        "%3Cpath d='M0 100 C10 106 10 114 0 120 M80 100 C70 106 70 114 80 120'/%3E" +
+        "%3C/g%3E%3C/svg%3E";
+      return {
+        backgroundImage: `url("data:image/svg+xml,${tile}")`,
+        backgroundSize: '80px 120px',
+      };
+    }
     case 'noise':
       return {
         backgroundImage:

@@ -43,6 +43,9 @@ export async function GET() {
       const locale = (r.locale === 'ar' ? 'ar' : 'en') as 'ar' | 'en';
       const parsed = safeParseTemplateDefinition(r.definition);
       const palette = parsed.success ? parsed.data.theme.palette : undefined;
+      // The picker renders the real template rather than a thumbnail, so it
+      // needs the definition. Only ship it when it actually parses.
+      const definition = parsed.success ? parsed.data : null;
       return {
         id: r.id,
         name: (locale === 'ar' ? r.titleAr : r.titleEn) ?? r.titleEn ?? r.titleAr ?? r.slug,
@@ -55,6 +58,7 @@ export async function GET() {
         currency: r.currency,
         thumbnailUrl: r.thumbnailUrl,
         palette,
+        definition,
       };
     });
 

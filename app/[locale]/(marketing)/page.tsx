@@ -20,7 +20,7 @@ export default async function MarketingHome({
 
   return (
     <div className="min-h-[100dvh] bg-surface-2">
-      <SiteHeader isAuthed={Boolean(session)} />
+      <SiteHeader isAuthed={Boolean(session)} overDark />
       <main>
         <Hero locale={typed} />
         <Occasions />

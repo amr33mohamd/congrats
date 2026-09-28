@@ -26,7 +26,7 @@ export const graduationEn: CatalogTemplate = {
   thumbnailHint:
     'Deep navy + gold, a thrown cap and gold tassel against confetti, bold Bebas-Neue "CONGRATS, GRAD", fireworks finale.',
   thumbnailUrl:
-    'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=800&q=70',
+    'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?auto=format&fit=crop&w=800&q=70',
   mvp: false,
   definition: {
     version: 1,
@@ -37,6 +37,7 @@ export const graduationEn: CatalogTemplate = {
       fontHeading: 'Bebas Neue',
       fontBody: 'Montserrat',
       accent: '#E3B341',
+      ornament: { kind: 'banner', opacity: 0.5, scale: 1 },
       music: 'triumphant-soft',
       textColor: '#FFFFFF',
       background: { type: 'gradient', colors: ['#0B1B2B', '#11294A'], angle: 160 },
@@ -198,7 +199,7 @@ export const graduationAr: CatalogTemplate = {
   thumbnailHint:
     'Deep navy + gold, a thrown graduation cap and gold tassel over confetti, bold El-Messiri "ألف مبروك", fireworks, RTL.',
   thumbnailUrl:
-    'https://images.unsplash.com/photo-1564981797816-1043664bf78d?auto=format&fit=crop&w=800&q=70',
+    'https://images.unsplash.com/photo-1590012314607-cda9d9b699ae?auto=format&fit=crop&w=800&q=70',
   mvp: false,
   definition: {
     version: 1,
@@ -209,6 +210,7 @@ export const graduationAr: CatalogTemplate = {
       fontHeading: 'El Messiri',
       fontBody: 'Tajawal',
       accent: '#E3B341',
+      ornament: { kind: 'banner', opacity: 0.5, scale: 1 },
       music: 'triumphant-soft',
       textColor: '#FFFFFF',
       background: { type: 'gradient', colors: ['#0B1B2B', '#11294A'], angle: 160 },

@@ -4,7 +4,7 @@
  * permissive where the backend payload shape isn't fully nailed down yet, so the
  * UI is resilient to additive fields.
  */
-import type { SceneDef, BoundStep, TemplateTheme } from '@/lib/template-contract';
+import type { SceneDef, BoundStep, TemplateTheme, TemplateDefinition } from '@/lib/template-contract';
 
 export type AppLocale = 'ar' | 'en';
 
@@ -48,6 +48,8 @@ export interface TemplateCard {
   currency: string;
   thumbnailUrl?: string | null;
   palette?: string[];
+  /** Parsed template definition, used to render a live preview in the picker. */
+  definition?: TemplateDefinition | null;
 }
 
 /** Full editor payload (GET /api/dashboard/experiences/:id). */

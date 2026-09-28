@@ -7,13 +7,19 @@ test.describe('Template gallery', () => {
     await page.goto('/en/builder');
     await expect(page.getByRole('heading', { name: 'Create a new experience' })).toBeVisible();
 
-    // Each card has a "Use this template" button.
-    const useButtons = page.getByRole('button', { name: 'Use this template' });
-    await expect(useButtons.first()).toBeVisible({ timeout: 15_000 });
-    expect(await useButtons.count()).toBeGreaterThanOrEqual(4);
+    // Each card IS the button, and is named after its template rather than
+    // repeating "Use this template" a dozen times — so assert on the cards
+    // themselves via the test id they expose.
+    const cards = page.getByTestId('template-card');
+    await expect(cards.first()).toBeVisible({ timeout: 15_000 });
+    expect(await cards.count()).toBeGreaterThanOrEqual(4);
+
+    // A card must carry an accessible name, or the grid is unusable by keyboard
+    // and screen reader alike.
+    await expect(cards.first()).toHaveAttribute('aria-label', /\S/);
   });
 
-  test('catalog exposes both AR and EN templates across the 16 seeded', async ({ page }) => {
+  test('catalog exposes both AR and EN templates across the seeded catalog', async ({ page }) => {
     await login(page, userEmail('gallery'));
     const templates = await listTemplates(page.request);
     expect(templates.length).toBeGreaterThanOrEqual(8);

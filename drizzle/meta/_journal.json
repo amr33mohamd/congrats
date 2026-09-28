@@ -8,6 +8,13 @@
       "when": 1784351959247,
       "tag": "0000_init",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1790550627974,
+      "tag": "0001_silly_king_bedlam",
+      "breakpoints": true
     }
   ]
 }

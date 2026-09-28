@@ -1,10 +1,14 @@
 /**
- * QA — Player render smoke test (jsdom). (6)
+ * QA — Player render smoke test (jsdom).
  *
- * Mounts the shared Player with a validated BoundExperience and asserts it
- * renders the first scene's resolved copy, direction, and progress dots without
- * throwing. canvas-confetti is mocked (jsdom has no canvas) so the Finale scene
- * can mount too.
+ * The Player renders an experience as ONE scrolling card: every scene is a
+ * stacked section revealed as it enters the viewport, rather than a deck of
+ * tap-through slides. These tests assert that shape — all sections present,
+ * direction honoured, tokens resolved, and the open gate withholding the card
+ * until tapped.
+ *
+ * canvas-confetti is mocked (jsdom has no canvas) so a Finale can mount, and
+ * IntersectionObserver is stubbed in vitest.setup so sections count as visible.
  */
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, fireEvent, cleanup } from '@testing-library/react';
@@ -48,65 +52,54 @@ const sample: BoundExperience = parseBoundExperience({
 });
 
 describe('Player render', () => {
-  it('renders the container with the correct direction and one progress dot per step', () => {
+  it('renders the container with the correct direction and one section per step', () => {
     render(<Player experience={sample} startPaused={false} />);
     const root = screen.getByTestId('player-root');
     expect(root).toBeInTheDocument();
     expect(root).toHaveAttribute('dir', 'rtl');
-    // 3 steps → 3 progress dots (the small w-6 bars). Count via the dots container.
-    const dots = root.querySelectorAll('.rounded-pill.h-1, span.h-1');
-    expect(dots.length).toBeGreaterThanOrEqual(3);
+    expect(root.querySelectorAll('section[data-scene]')).toHaveLength(3);
   });
 
   it('renders the first scene copy with the {recipient} token resolved', () => {
     render(<Player experience={sample} startPaused={false} />);
-    // Cover heading: 'مرحبا {recipient}' → recipient 'سارة'
     expect(screen.getByText('مرحبا سارة')).toBeInTheDocument();
     expect(screen.getByText('كل عام وأنتِ بخير')).toBeInTheDocument();
   });
 
-  it('shows the start overlay when startPaused and advances on tap', () => {
-    render(<Player experience={sample} startPaused />);
-    const root = screen.getByTestId('player-root');
-    // paused → first scene copy not yet shown
-    expect(screen.queryByText('مرحبا سارة')).not.toBeInTheDocument();
-    fireEvent.click(root);
-    // after tap it starts and renders the first scene
-    expect(screen.getByText('مرحبا سارة')).toBeInTheDocument();
-  });
-
-  // NOTE on scene swapping: the Player wraps scenes in framer-motion's
-  // <AnimatePresence mode="wait">, which keeps the OUTGOING scene mounted until
-  // its exit animation reports completion. jsdom has no layout/raf loop, so the
-  // exit "complete" callback never fires and the incoming scene is not swapped
-  // in during a test. This is a jsdom limitation, not a Player bug (advancement
-  // works in a real browser). We therefore assert advancement via the stable
-  // observable signal — the progress dots (opacity 0.95 for i <= index).
-  function activeDotCount(root: HTMLElement): number {
-    return Array.from(root.querySelectorAll('span.h-1')).filter((el) =>
-      (el as HTMLElement).style.opacity === '0.95',
-    ).length;
-  }
-
-  it('advances the step index on tap (progress reflects the new index)', () => {
+  it('renders EVERY scene, not just the first — the card is one scrolling document', () => {
     render(<Player experience={sample} startPaused={false} />);
     const root = screen.getByTestId('player-root');
-    expect(activeDotCount(root)).toBe(1); // on step 0
-    fireEvent.click(root);
-    expect(activeDotCount(root)).toBe(2); // advanced to step 1
-    fireEvent.click(root);
-    expect(activeDotCount(root)).toBe(3); // advanced to step 2 (Finale)
+    // TextReveal animates per character, so its heading is split across spans —
+    // match on the section's text content rather than a single text node.
+    const text = (id: string) =>
+      root.querySelector(`[data-scene="${id}"]`)?.textContent?.replace(/\s+/g, ' ') ?? '';
+    expect(text('cover')).toContain('مرحبا سارة');
+    expect(text('text')).toContain('نحبك');
+    expect(text('finale')).toContain('مبروك');
   });
 
-  it('mounts and renders the initial Cover scene (confetti mocked) without throwing', () => {
-    // Smoke: rendering the full BoundExperience does not throw and produces copy.
-    expect(() => render(<Player experience={sample} startPaused={false} />)).not.toThrow();
+  it('sections are addressable by step id so the builder can jump to one', () => {
+    render(<Player experience={sample} startPaused={false} />);
+    const root = screen.getByTestId('player-root');
+    for (const id of ['cover', 'text', 'finale']) {
+      expect(root.querySelector(`[data-scene="${id}"]`)).not.toBeNull();
+    }
+  });
+
+  it('covers the card with the open gate until it is tapped', () => {
+    render(<Player experience={sample} startPaused />);
+    // The gate is an overlay, not a conditional render: the card is in the DOM
+    // behind it (this is a shared link, not a secret), but the reader sees the
+    // gate — which is also what legitimises audio playback on the tap.
+    const open = screen.getByRole('button', { name: 'افتح الدعوة' });
+    expect(open).toBeInTheDocument();
+    expect(screen.getByText('سارة')).toBeInTheDocument(); // the guest is named on the gate
+    fireEvent.click(open);
+    expect(screen.queryByRole('button', { name: 'افتح الدعوة' })).not.toBeInTheDocument();
     expect(screen.getByText('مرحبا سارة')).toBeInTheDocument();
   });
 
   it('renders a Finale-first experience and fires confetti via the mocked module', async () => {
-    // A standalone experience whose only/first scene is the Finale, proving the
-    // Finale renderer mounts (and uses the confetti mock) without a real canvas.
     const confetti = (await import('canvas-confetti')).default as unknown as ReturnType<typeof vi.fn>;
     confetti.mockClear?.();
     const finaleOnly = parseBoundExperience({

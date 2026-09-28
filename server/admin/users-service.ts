@@ -34,6 +34,7 @@ export async function listUsers(
       locale: users.locale,
       avatarUrl: users.avatarUrl,
       isBlocked: users.isBlocked,
+      allAccess: users.allAccess,
       createdAt: users.createdAt,
       updatedAt: users.updatedAt,
       role: adminUsers.role,
@@ -53,6 +54,7 @@ export async function listUsers(
       locale: r.locale,
       avatarUrl: r.avatarUrl,
       isBlocked: r.isBlocked,
+      allAccess: r.allAccess,
       createdAt: r.createdAt,
       updatedAt: r.updatedAt,
       isAdmin: Boolean(r.role),
@@ -82,6 +84,7 @@ export async function setUserBlocked(
       locale: users.locale,
       avatarUrl: users.avatarUrl,
       isBlocked: users.isBlocked,
+      allAccess: users.allAccess,
       createdAt: users.createdAt,
       updatedAt: users.updatedAt,
     });

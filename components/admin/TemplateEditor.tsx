@@ -313,7 +313,7 @@ export function TemplateEditor({
             spellCheck={false}
             dir="ltr"
             rows={18}
-            className="w-full rounded-md border border-border bg-ink/95 px-3 py-2 font-mono text-xs leading-relaxed text-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+            className="w-full rounded-md border border-border bg-backdrop px-3 py-2 font-mono text-xs leading-relaxed text-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
           />
           {jsonError ? <p className="mt-token-2 text-sm text-danger">{jsonError}</p> : null}
         </Field>

@@ -37,6 +37,12 @@ export const users = pgTable(
     locale: text('locale').notNull().default('ar'),
     avatarUrl: text('avatar_url'),
     isBlocked: boolean('is_blocked').notNull().default(false),
+    /**
+     * Comped account: publishes paid templates without going through the
+     * InstaPay order flow. For reviewers, press, and internal QA — it skips
+     * payment, NOT ownership, so every other scoping rule still applies.
+     */
+    allAccess: boolean('all_access').notNull().default(false),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },

@@ -34,14 +34,12 @@ export function ReviewStep({
     setError(null);
     try {
       await onBeforePublish();
-      if (experience.isPaid) {
-        // Create a pending order then route to checkout.
-        const order = await dashboardApi.createOrder(experience.id);
-        router.push(`/orders/${order.id}`);
-        return;
-      }
+      // ALWAYS go through publish and let the server decide whether payment is
+      // owed. Branching on `experience.isPaid` here meant the client made the
+      // entitlement call — which skipped the server's checks entirely, so a
+      // comped account was still sent to checkout for a template it already
+      // had. Publish answers `published` or `payment_required`; we just route.
       const res = await dashboardApi.publish(experience.id);
-      // Free template publishes directly; an order means a paid flow kicked in.
       if (res.order?.id) {
         router.push(`/orders/${res.order.id}`);
       } else {

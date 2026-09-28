@@ -27,18 +27,34 @@
   --c-danger-500: 220 53 69;
   --c-warning-500: 214 164 53;
 
-  /* ── semantic aliases ── */
+  /* ── semantic aliases ──
+   * The product ships DARK. The template gallery and the player are the
+   * product's face and both live on near-black, so the app chrome matches
+   * rather than flipping the viewer between two worlds mid-flow.
+   * `.light` below restores the original light set for anything that has to
+   * stay on paper (print, a QR code, a payment screenshot). */
+  color-scheme: dark;
   --color-brand: var(--c-brand-500);
-  --color-brand-strong: var(--c-brand-700);
-  --color-gold: var(--c-gold-500);
-  --color-ink: var(--c-ink);
-  --color-surface: var(--c-neutral-0);
-  --color-surface-2: var(--c-neutral-50);
-  --color-muted: var(--c-neutral-500);
-  --color-border: var(--c-neutral-300);
-  --color-success: var(--c-success-500);
-  --color-danger: var(--c-danger-500);
-  --color-warning: var(--c-warning-500);
+  /* Text accent on tinted brand fills — must stay legible on near-black, so
+   * it is the LIGHT end of the ramp here, not the dark end. */
+  --color-brand-strong: var(--c-brand-300);
+  /* Hover fill for solid brand buttons. Separate from the text accent: on dark
+   * a hover should brighten, but white-on-light-pink would fail contrast. */
+  --color-brand-hover: 250 90 130;
+  --color-gold: var(--c-gold-300);
+  --color-ink: 247 244 245;
+  --color-surface: 26 21 24;
+  --color-surface-2: 12 10 11;
+  --color-muted: 158 148 152;
+  --color-border: 48 41 45;
+  --color-success: 52 199 133;
+  --color-danger: 240 92 104;
+  --color-warning: var(--c-gold-300);
+  /* Always-dark backdrop, independent of theme: the lightbox behind a payment
+   * screenshot and the code well in the template editor both need to stay dark
+   * so their contents read the same way in either theme. Previously these used
+   * `ink`, which broke the moment `ink` became the light-on-dark text colour. */
+  --color-backdrop: 14 11 13;
 
   /* ── spacing scale ── */
   --space-1: 0.25rem;
@@ -63,16 +79,29 @@
   --motion-slow: 520ms;
 
   /* ── elevation ── */
-  --shadow-card: 0 1px 2px rgb(20 16 14 / 0.04), 0 8px 24px -12px rgb(20 16 14 / 0.18);
-  --shadow-pop: 0 12px 48px -16px rgb(20 16 14 / 0.32);
+  /* On near-black a drop shadow alone reads as nothing, so each elevation
+   * carries a hairline light ring to separate the surface from the page. */
+  --shadow-card: 0 1px 0 rgb(255 255 255 / 0.04) inset, 0 8px 24px -12px rgb(0 0 0 / 0.7);
+  --shadow-pop: 0 1px 0 rgb(255 255 255 / 0.06) inset, 0 18px 56px -18px rgb(0 0 0 / 0.85);
 }
 
-.dark {
-  --color-surface: var(--c-neutral-900);
-  --color-surface-2: 32 27 24;
-  --color-ink: var(--c-neutral-50);
-  --color-muted: var(--c-neutral-300);
-  --color-border: 60 53 49;
+/* Escape hatch: opt a subtree back onto paper (print views, a QR code, a
+ * payment screenshot the admin has to read as the buyer sent it). */
+.light {
+  color-scheme: light;
+  --color-brand-strong: var(--c-brand-700);
+  --color-brand-hover: var(--c-brand-700);
+  --color-gold: var(--c-gold-500);
+  --color-ink: var(--c-ink);
+  --color-surface: var(--c-neutral-0);
+  --color-surface-2: var(--c-neutral-50);
+  --color-muted: var(--c-neutral-500);
+  --color-border: var(--c-neutral-300);
+  --color-success: var(--c-success-500);
+  --color-danger: var(--c-danger-500);
+  --color-warning: var(--c-warning-500);
+  --shadow-card: 0 1px 2px rgb(20 16 14 / 0.04), 0 8px 24px -12px rgb(20 16 14 / 0.18);
+  --shadow-pop: 0 12px 48px -16px rgb(20 16 14 / 0.32);
 }
 
 * {

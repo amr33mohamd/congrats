@@ -19,7 +19,10 @@ export function Badge({ tone = 'neutral', className, ...props }: BadgeProps) {
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1 rounded-pill border px-token-2 py-0.5 text-xs font-medium',
+        // `leading-5` + the taller padding matter for Arabic: at text-xs the
+        // default 1rem line box is shorter than Arabic ascenders and tanween,
+        // so glyphs spilled past the pill and read as clipped.
+        'inline-flex items-center gap-1 rounded-pill border px-token-2 py-1 text-xs font-medium leading-5',
         tones[tone],
         className,
       )}

@@ -45,7 +45,13 @@ export function BuilderPreview({
     <PhoneFrame>
       <div className="absolute inset-0">
         <div className="h-full w-full [&>div]:!h-full">
-          <Player key={contentKey} experience={bound} startPaused={false} startAtStepId={focusStepId} />
+          <Player
+            key={contentKey}
+            experience={bound}
+            startPaused={false}
+            startAtStepId={focusStepId}
+            embedded
+          />
         </div>
       </div>
     </PhoneFrame>

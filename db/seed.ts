@@ -55,6 +55,34 @@ export async function seed() {
       .where(eq(users.id, admin.id))
       .returning();
   }
+  // Comped QA account: an ordinary (non-admin) user with `all_access`, so the
+  // full buyer journey can be walked on PAID templates without an InstaPay
+  // transfer. Opt in explicitly — it is skipped unless SEED_TESTER is set, so a
+  // production seed never quietly creates a free-everything login.
+  if (process.env.SEED_TESTER === '1') {
+    const testerEmail = (process.env.SEED_TESTER_EMAIL ?? 'tester@congrats.dev').toLowerCase();
+    const testerPassword = process.env.SEED_TESTER_PASSWORD ?? 'congrats-tester';
+    const testerHash = await hashPassword(testerPassword);
+    const existingTester = (
+      await db.select().from(users).where(eq(users.email, testerEmail)).limit(1)
+    )[0];
+    if (!existingTester) {
+      await db.insert(users).values({
+        email: testerEmail,
+        passwordHash: testerHash,
+        displayName: 'QA Tester',
+        locale: 'ar',
+        allAccess: true,
+      });
+    } else {
+      // Re-running the seed re-arms the flag and the password.
+      await db
+        .update(users)
+        .set({ allAccess: true, passwordHash: testerHash })
+        .where(eq(users.id, existingTester.id));
+    }
+  }
+
   let adminRow = (await db.select().from(adminUsers).where(eq(adminUsers.userId, admin.id)).limit(1))[0];
   if (!adminRow) {
     [adminRow] = await db.insert(adminUsers).values({ userId: admin.id, role: 'superadmin' }).returning();

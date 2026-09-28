@@ -38,6 +38,7 @@ export const proposalEn: CatalogTemplate = {
       fontHeading: 'Cormorant Garamond',
       fontBody: 'Montserrat',
       accent: '#E7C36B',
+      ornament: { kind: 'monogram', opacity: 0.55, scale: 1 },
       music: 'cinematic-swell',
       textColor: '#F6F1E7',
       background: { type: 'radial', colors: ['#243A66', '#0E1A33'] },
@@ -225,7 +226,7 @@ export const proposalAr: CatalogTemplate = {
   thumbnailHint:
     'Midnight-navy night sky + champagne gold, Reem Kufi "اتجوزيني؟", a glowing ring box under the stars, sparkles, RTL.',
   thumbnailUrl:
-    'https://images.unsplash.com/photo-1532978379173-523e16f371f9?auto=format&fit=crop&w=800&q=70',
+    'https://images.unsplash.com/photo-1512163143273-bde0e3cc7407?auto=format&fit=crop&w=800&q=70',
   mvp: false,
   definition: {
     version: 1,
@@ -236,6 +237,7 @@ export const proposalAr: CatalogTemplate = {
       fontHeading: 'Reem Kufi',
       fontBody: 'Tajawal',
       accent: '#E7C36B',
+      ornament: { kind: 'monogram', opacity: 0.55, scale: 1 },
       music: 'cinematic-swell',
       textColor: '#F6F1E7',
       background: { type: 'radial', colors: ['#243A66', '#0E1A33'] },

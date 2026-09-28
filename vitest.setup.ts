@@ -13,3 +13,30 @@ if (typeof window !== 'undefined' && !window.matchMedia) {
     dispatchEvent: () => false,
   });
 }
+
+// jsdom has no IntersectionObserver; the Player reveals each scene section with
+// framer-motion's useInView. Report everything as intersecting so scroll-driven
+// content is present in tests.
+if (typeof window !== 'undefined' && !('IntersectionObserver' in window)) {
+  class StubIntersectionObserver implements IntersectionObserver {
+    readonly root = null;
+    readonly rootMargin = '';
+    readonly thresholds: ReadonlyArray<number> = [];
+    constructor(private cb: IntersectionObserverCallback) {}
+    observe(target: Element): void {
+      this.cb(
+        [{ isIntersecting: true, intersectionRatio: 1, target } as IntersectionObserverEntry],
+        this,
+      );
+    }
+    unobserve(): void {}
+    disconnect(): void {}
+    takeRecords(): IntersectionObserverEntry[] {
+      return [];
+    }
+  }
+  // The `in` guard above narrows `window` to `never` for TS, so assign through
+  // globalThis and let the window reference come along with it.
+  (globalThis as unknown as Record<string, unknown>).IntersectionObserver =
+    StubIntersectionObserver;
+}

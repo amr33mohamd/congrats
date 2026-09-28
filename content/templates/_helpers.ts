@@ -25,7 +25,8 @@ export type CategorySlug =
   | 'eid'
   | 'graduation'
   | 'newborn'
-  | 'wedding';
+  | 'wedding'
+  | 'invitation';
 
 /** A category row the reviewer seeds before templates (FK target). */
 export interface CatalogCategory {

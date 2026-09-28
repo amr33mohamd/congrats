@@ -18,8 +18,10 @@ const config: Config = {
         // Token-backed semantic aliases (see globals.css for raw ramps).
         brand: 'rgb(var(--color-brand) / <alpha-value>)',
         'brand-strong': 'rgb(var(--color-brand-strong) / <alpha-value>)',
+        'brand-hover': 'rgb(var(--color-brand-hover) / <alpha-value>)',
         gold: 'rgb(var(--color-gold) / <alpha-value>)',
         ink: 'rgb(var(--color-ink) / <alpha-value>)',
+        backdrop: 'rgb(var(--color-backdrop) / <alpha-value>)',
         surface: 'rgb(var(--color-surface) / <alpha-value>)',
         'surface-2': 'rgb(var(--color-surface-2) / <alpha-value>)',
         muted: 'rgb(var(--color-muted) / <alpha-value>)',
@@ -27,6 +29,11 @@ const config: Config = {
         success: 'rgb(var(--color-success) / <alpha-value>)',
         danger: 'rgb(var(--color-danger) / <alpha-value>)',
         warning: 'rgb(var(--color-warning) / <alpha-value>)',
+      },
+      // Tailwind's ring offset defaults to white, which draws a bright halo
+      // around every focused control on a dark page.
+      ringOffsetColor: {
+        DEFAULT: 'rgb(var(--color-surface-2))',
       },
       borderRadius: {
         sm: 'var(--radius-sm)',

@@ -5,7 +5,8 @@
     "pricing": "Pricing",
     "faq": "FAQ",
     "start": "Create yours",
-    "openDashboard": "My dashboard"
+    "openDashboard": "My dashboard",
+    "templates": "Templates"
   },
   "hero": {
     "eyebrow": "Animated greetings, made personal",
@@ -109,5 +110,16 @@
     "refunds": "Refund Policy",
     "contact": "Contact",
     "made": "Made with care in Egypt"
+  },
+  "templates": {
+    "title": "Handcrafted animated templates",
+    "subtitle": "Free to start · Pay only for the premium ones · Switch template any time while editing",
+    "hint": "Hover a card to watch it play",
+    "all": "All occasions",
+    "popular": "Popular",
+    "free": "Free",
+    "sampleName": "Layla",
+    "cta": "Create yours free",
+    "empty": "No templates in this collection yet."
   }
 }

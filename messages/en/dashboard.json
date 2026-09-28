@@ -169,5 +169,21 @@
   "errors": {
     "loadFailed": "Couldn't load this. Please refresh.",
     "notFound": "We couldn't find that experience."
+  },
+  "sceneTypes": {
+    "Cover": "Cover",
+    "PhotoReveal": "Photo",
+    "TextReveal": "Message",
+    "Countdown": "Countdown",
+    "Gallery": "Photo gallery",
+    "GiftReveal": "Gift reveal",
+    "Finale": "Finale",
+    "Quote": "Quote",
+    "Letter": "Letter",
+    "Families": "The families",
+    "Event": "Event",
+    "Venue": "Venue",
+    "Rsvp": "RSVP",
+    "Gift": "Gift details"
   }
 }

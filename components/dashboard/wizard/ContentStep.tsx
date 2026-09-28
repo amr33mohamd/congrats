@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { Input, Textarea, Badge } from '@/components/ui';
 import { cn } from '@/components/ui/cn';
 import type { EditorExperience } from '../types';
@@ -26,6 +26,12 @@ export function ContentStep({
   onUpdateStep: (stepId: string, updater: (s: LocalStep) => LocalStep) => void;
 }) {
   const t = useTranslations('dashboard.wizard.content');
+  const tScene = useTranslations('dashboard.sceneTypes');
+  const uiLocale = useLocale();
+  const slotLabel = (slot: { labelEn?: string; labelAr?: string }, fallback: string) =>
+    (uiLocale === 'ar' ? slot.labelAr : slot.labelEn) ?? slot.labelEn ?? slot.labelAr ?? fallback;
+  // Scene type ids ("Families", "Rsvp") are engine names, not copy.
+  const sceneName = (type: string) => (tScene.has(type) ? tScene(type) : type);
   const scenes = React.useMemo(() => editableScenes(experience, steps), [experience, steps]);
   const [activeIdx, setActiveIdx] = React.useState(0);
 
@@ -97,7 +103,7 @@ export function ContentStep({
               {t('stepLabel', { index: activeIdx + 1, total: scenes.length })}
             </p>
             <h3 className="mt-token-1 font-heading text-lg font-semibold text-ink">
-              {active.scene.type}
+              {sceneName(active.scene.type)}
             </h3>
 
             <div className="mt-token-6 flex flex-col gap-token-6">
@@ -112,7 +118,7 @@ export function ContentStep({
                         htmlFor={`slot-${slot.key}`}
                         className="text-sm font-medium text-ink"
                       >
-                        {t('textLabel')}
+                        {slotLabel(slot, t('textLabel'))}
                         {slot.required ? (
                           <Badge tone="neutral" className="ms-token-2">
                             {t('required')}
@@ -155,7 +161,7 @@ export function ContentStep({
                     htmlFor={`slot-${slot.key}`}
                     className="mb-token-2 block text-sm font-medium text-ink"
                   >
-                    {t('dateLabel')}
+                    {slotLabel(slot, t('dateLabel'))}
                   </label>
                   <Input
                     id={`slot-${slot.key}`}
@@ -209,7 +215,7 @@ export function ContentStep({
               {active.textSlots.length === 0 &&
               active.imageSlots.length === 0 &&
               active.dateSlots.length === 0 ? (
-                <p className="text-sm text-muted">{active.scene.type}</p>
+                <p className="text-sm text-muted">{sceneName(active.scene.type)}</p>
               ) : null}
 
               {active.textSlots.length > 0 ? (

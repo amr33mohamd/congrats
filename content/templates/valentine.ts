@@ -27,7 +27,7 @@ export const valentineEn: CatalogTemplate = {
   thumbnailHint:
     'Crimson-to-rose glow on cream, hand-script "Be Mine", floating hearts, soft bokeh.',
   thumbnailUrl:
-    'https://images.unsplash.com/photo-1518621736915-f3b1c41bfd00?auto=format&fit=crop&w=800&q=70',
+    'https://images.unsplash.com/photo-1518709779341-56cf4535e94b?auto=format&fit=crop&w=800&q=70',
   mvp: true,
   definition: {
     version: 1,
@@ -38,6 +38,7 @@ export const valentineEn: CatalogTemplate = {
       fontHeading: 'Dancing Script',
       fontBody: 'Poppins',
       accent: '#D11A4B',
+      ornament: { kind: 'corners', opacity: 0.5, scale: 1 },
       music: 'romantic-strings',
       textColor: '#FFF1F2',
       background: { type: 'gradient', colors: ['#3B0A1A', '#8C0E36', '#D11A4B'], angle: 160 },
@@ -211,6 +212,7 @@ export const valentineAr: CatalogTemplate = {
       fontHeading: 'Aref Ruqaa',
       fontBody: 'Tajawal',
       accent: '#D11A4B',
+      ornament: { kind: 'corners', opacity: 0.5, scale: 1 },
       music: 'romantic-strings',
       textColor: '#FFF1F2',
       background: { type: 'gradient', colors: ['#3B0A1A', '#8C0E36', '#D11A4B'], angle: 200 },

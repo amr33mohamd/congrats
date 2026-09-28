@@ -26,7 +26,7 @@ export const eidAr: CatalogTemplate = {
   thumbnailHint:
     'Emerald-green night with gold crescent + hanging fanous lanterns, Aref Ruqaa "عيد مبارك", arabesque glow, RTL.',
   thumbnailUrl:
-    'https://images.unsplash.com/photo-1561089489-f13d5e730d72?auto=format&fit=crop&w=800&q=70',
+    'https://images.unsplash.com/photo-1577214407836-1f3a0604ecb2?auto=format&fit=crop&w=800&q=70',
   mvp: true,
   definition: {
     version: 1,
@@ -37,6 +37,7 @@ export const eidAr: CatalogTemplate = {
       fontHeading: 'Aref Ruqaa',
       fontBody: 'Tajawal',
       accent: '#D4AF37',
+      ornament: { kind: 'arch', opacity: 0.5, scale: 1 },
       music: 'eid-takbir-soft',
       textColor: '#FFFFFF',
       background: { type: 'gradient', colors: ['#06281F', '#0B3B2B'], angle: 165 },
@@ -181,7 +182,7 @@ export const eidEn: CatalogTemplate = {
   thumbnailHint:
     'Deep emerald night with a gold crescent moon and lantern silhouettes, Marcellus "Eid Mubarak", soft glow.',
   thumbnailUrl:
-    'https://images.unsplash.com/photo-1564769662533-4f00a87b4056?auto=format&fit=crop&w=800&q=70',
+    'https://images.unsplash.com/photo-1590092794015-bce5431c83f4?auto=format&fit=crop&w=800&q=70',
   mvp: false,
   definition: {
     version: 1,
@@ -192,6 +193,7 @@ export const eidEn: CatalogTemplate = {
       fontHeading: 'Marcellus',
       fontBody: 'Poppins',
       accent: '#D4AF37',
+      ornament: { kind: 'arch', opacity: 0.5, scale: 1 },
       music: 'eid-takbir-soft',
       textColor: '#FFFFFF',
       background: { type: 'gradient', colors: ['#06281F', '#0B3B2B'], angle: 165 },

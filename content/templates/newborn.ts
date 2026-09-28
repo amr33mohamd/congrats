@@ -31,7 +31,7 @@ export const newbornEn: CatalogTemplate = {
   thumbnailHint:
     'Soft mint + peach pastel, tiny footprints, rounded script "Welcome, Little One", cloud + star.',
   thumbnailUrl:
-    'https://images.unsplash.com/photo-1519689680058-324335c77eba?auto=format&fit=crop&w=800&q=70',
+    'https://images.unsplash.com/photo-1511948374796-056e8f289f34?auto=format&fit=crop&w=800&q=70',
   mvp: false,
   definition: {
     version: 1,
@@ -42,6 +42,7 @@ export const newbornEn: CatalogTemplate = {
       fontHeading: 'Quicksand',
       fontBody: 'Nunito',
       accent: '#F4C7B5',
+      ornament: { kind: 'corners', opacity: 0.45, scale: 0.9 },
       music: 'lullaby-soft',
       textColor: '#3A4A49',
       background: { type: 'gradient', colors: ['#FFF6F0', '#F4C7B5', '#9DC7C0'], angle: 165 },
@@ -267,6 +268,7 @@ export const newbornAr: CatalogTemplate = {
       fontHeading: 'Harmattan',
       fontBody: 'Tajawal',
       accent: '#E7B59B',
+      ornament: { kind: 'corners', opacity: 0.45, scale: 0.9 },
       music: 'lullaby-soft',
       textColor: '#3A4A49',
       background: { type: 'gradient', colors: ['#FFF7EF', '#E7B59B', '#8FB9A8'], angle: 165 },

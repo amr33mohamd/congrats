@@ -78,6 +78,7 @@ async function ensurePgliteSchema(pg: { exec: (sql: string) => Promise<unknown> 
       locale text NOT NULL DEFAULT 'ar' CHECK (locale IN ('ar','en')),
       avatar_url text,
       is_blocked boolean NOT NULL DEFAULT false,
+      all_access boolean NOT NULL DEFAULT false,
       created_at timestamptz NOT NULL DEFAULT now(),
       updated_at timestamptz NOT NULL DEFAULT now()
     );
@@ -228,6 +229,7 @@ async function ensurePgliteSchema(pg: { exec: (sql: string) => Promise<unknown> 
   // re-run on every boot, including against a fresh database.
   await pg.exec(/* sql */ `
     ALTER TABLE users ADD COLUMN IF NOT EXISTS password_hash text;
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS all_access boolean NOT NULL DEFAULT false;
   `);
 }
 

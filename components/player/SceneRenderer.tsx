@@ -13,6 +13,7 @@ import {
 } from '@/lib/template-contract';
 import { getVariants, typewriterChild, resolveScenePreset } from '@/lib/animation-presets';
 import { cssFamily } from '@/lib/fonts';
+import { FamiliesScene, EventScene, VenueScene, RsvpScene, GiftScene } from './InvitationScenes';
 
 export interface SceneRenderProps {
   scene: SceneDef;
@@ -79,6 +80,7 @@ interface Resolved {
   headingSize: string;
   headingFamily: string;
   imageStyle: NonNullable<SceneStyle['imageStyle']>;
+  accent: string;
 }
 
 function resolveStyle(scene: SceneDef, theme: TemplateTheme, fallbackSize: SceneStyle['headingSize'] = 'lg'): Resolved {
@@ -92,6 +94,7 @@ function resolveStyle(scene: SceneDef, theme: TemplateTheme, fallbackSize: Scene
     headingSize: HEADING_SIZES[s.headingSize ?? fallbackSize],
     headingFamily: cssFamily(s.headingFont ?? theme.fontHeading),
     imageStyle: s.imageStyle ?? 'rounded',
+    accent: theme.accent ?? '#FFFFFF',
   };
 }
 
@@ -118,9 +121,43 @@ function frameClass(style: Resolved['imageStyle']): string {
       return 'rounded-xl object-cover shadow-[var(--shadow-pop)] ring-1 ring-white/20';
     case 'tilt':
       return 'rounded-xl object-cover shadow-[var(--shadow-pop)] -rotate-2';
+    case 'arch':
+      // Chapel-window crop: full radius on top, square feet.
+      return 'object-cover rounded-t-full rounded-b-md ring-1 ring-white/40 shadow-[var(--shadow-pop)]';
+    case 'ornate':
+      // Gilt frame — the ring colour comes from the template's own accent.
+      return 'object-cover rounded-md shadow-[var(--shadow-pop)] ring-[3px] ring-offset-2 ring-offset-black/20 ring-[color:var(--scene-accent)]';
+    case 'taped':
+      return 'object-cover rounded-sm bg-white p-2 pb-7 shadow-[var(--shadow-pop)] rotate-[-2.5deg]';
     default:
       return 'rounded-xl object-cover shadow-[var(--shadow-pop)]';
   }
+}
+
+/** Relative luminance of a hex colour, 0 (black) → 1 (white). */
+export function hexLuminance(hex: string): number {
+  const h = hex.replace('#', '');
+  const n = h.length === 3 ? h.split('').map((c) => c + c).join('') : h.slice(0, 6);
+  const [r, g, b] = [0, 2, 4].map((i) => parseInt(n.slice(i, i + 2), 16) / 255);
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+/**
+ * Pick the palette entry that reads best on `on`. Scenes that paint their own
+ * panel (the letter card, the open gate) previously used `text-ink`, which is
+ * an APP token — once the product went dark, `ink` became near-white and those
+ * panels rendered white-on-white.
+ */
+export function readableOn(on: string, palette: string[]): string {
+  const target = hexLuminance(on) > 0.5;
+  const candidates = palette.filter((c) => /^#[0-9a-f]{3,8}$/i.test(c));
+  let best = target ? '#1A1418' : '#FFFFFF';
+  let bestGap = 0;
+  for (const c of candidates) {
+    const gap = Math.abs(hexLuminance(c) - hexLuminance(on));
+    if (gap > bestGap) { bestGap = gap; best = c; }
+  }
+  return bestGap > 0.35 ? best : target ? '#1A1418' : '#FFFFFF';
 }
 
 /* ───────────────────────────── shared bits ──────────────────────────────── */
@@ -222,6 +259,7 @@ function Frame({ r, children }: { r: Resolved; children: React.ReactNode }) {
   return (
     <div
       className={`relative z-[1] flex h-full w-full flex-col px-token-6 ${alignItems[r.align]} ${justify[r.position]}`}
+      style={{ ['--scene-accent' as string]: r.accent }}
     >
       {children}
     </div>
@@ -250,6 +288,16 @@ export function SceneRenderer(props: SceneRenderProps) {
       return <QuoteScene {...props} />;
     case 'Letter':
       return <LetterScene {...props} />;
+    case 'Families':
+      return <FamiliesScene {...props} />;
+    case 'Event':
+      return <EventScene {...props} />;
+    case 'Venue':
+      return <VenueScene {...props} />;
+    case 'Rsvp':
+      return <RsvpScene {...props} />;
+    case 'Gift':
+      return <GiftScene {...props} />;
     default:
       return <TextRevealScene {...props} />;
   }
@@ -350,15 +398,19 @@ function CountdownScene(p: SceneRenderProps) {
       {remaining ? (
         <div className="mt-token-6 flex gap-token-4">
           {[
-            { v: remaining.d, l: 'days' },
-            { v: remaining.h, l: 'hrs' },
-            { v: remaining.m, l: 'min' },
+            { v: remaining.d, l: p.direction === 'rtl' ? 'يوم' : 'days' },
+            { v: remaining.h, l: p.direction === 'rtl' ? 'ساعة' : 'hrs' },
+            { v: remaining.m, l: p.direction === 'rtl' ? 'دقيقة' : 'min' },
           ].map((u) => (
             <div key={u.l} className="flex min-w-[4.5rem] flex-col items-center rounded-xl bg-white/12 px-token-3 py-token-2 backdrop-blur-sm">
               <span className="font-heading text-4xl font-bold tabular-nums" style={{ color: r.headingColor }}>
-                {String(u.v).padStart(2, '0')}
+                {/* Same numerals as the rest of the card — Arabic-Indic in RTL. */}
+                {new Intl.NumberFormat(p.direction === 'rtl' ? 'ar-EG' : 'en-GB', { minimumIntegerDigits: 2 }).format(u.v)}
               </span>
-              <span className="text-xs uppercase tracking-wide" style={{ color: r.textColor, opacity: 0.8 }}>
+              <span
+                className={`text-xs ${p.direction === 'rtl' ? '' : 'uppercase tracking-wide'}`}
+                style={{ color: r.textColor, opacity: 0.8 }}
+              >
                 {u.l}
               </span>
             </div>
@@ -369,30 +421,97 @@ function CountdownScene(p: SceneRenderProps) {
   );
 }
 
+/**
+ * Gallery — a depth carousel that advances on its own.
+ *
+ * A static grid shrinks every photo to a thumbnail; a carousel gives each one
+ * the full frame in turn, which is what people actually want to look at. The
+ * neighbours stay visible, scaled back and dimmed, so it reads as a stack you
+ * are moving through rather than a slideshow that replaces itself.
+ *
+ * Falls back to a plain grid under reduced motion, where self-advancing
+ * content is exactly what you are being asked not to do.
+ */
+const GALLERY_INTERVAL_MS = 1800;
+
 function GalleryScene(p: SceneRenderProps) {
   const r = resolveStyle(p.scene, p.theme, 'md');
   const images = sceneImages(p.scene, p.step);
   const blocks = textBlocks(p.scene, p.step, p.recipientName);
-  const container = { hidden: {}, visible: { transition: { staggerChildren: p.reducedMotion ? 0 : 0.12 } } };
-  const item = getVariants('parallax', { direction: p.direction, reducedMotion: p.reducedMotion });
-  const cols = images.length <= 1 ? 1 : images.length <= 4 ? 2 : 3;
+  const count = images.length;
+  const [index, setIndex] = React.useState(0);
+
+  React.useEffect(() => {
+    if (!p.active || p.reducedMotion || count < 2) return;
+    const id = setInterval(() => setIndex((i) => (i + 1) % count), GALLERY_INTERVAL_MS);
+    return () => clearInterval(id);
+  }, [p.active, p.reducedMotion, count]);
+
+  if (count === 0) {
+    return (
+      <Frame r={r}>
+        <TextStack blocks={blocks} r={r} direction={p.direction} reducedMotion={p.reducedMotion} active={p.active} />
+      </Frame>
+    );
+  }
+
+  if (p.reducedMotion) {
+    const cols = count <= 1 ? 1 : count <= 4 ? 2 : 3;
+    return (
+      <Frame r={r}>
+        <div className="flex flex-col items-center gap-token-4">
+          <TextStack blocks={blocks} r={r} direction={p.direction} reducedMotion active={p.active} />
+          <div className="grid w-full max-w-lg gap-token-3" style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
+            {images.map((img, i) => (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img key={i} src={img.url} alt="" className={`aspect-square w-full ${frameClass(r.imageStyle === 'rounded' ? 'card' : r.imageStyle)}`} />
+            ))}
+          </div>
+        </div>
+      </Frame>
+    );
+  }
+
+  const frame = frameClass(r.imageStyle === 'rounded' ? 'card' : r.imageStyle);
+  // Mirror the depth order in RTL so "next" travels the way the eye reads.
+  const dir = p.direction === 'rtl' ? -1 : 1;
+
   return (
     <Frame r={r}>
-      <div className="flex flex-col items-center gap-token-4">
+      <div className="flex w-full flex-col items-center gap-token-4">
         <TextStack blocks={blocks} r={r} direction={p.direction} reducedMotion={p.reducedMotion} active={p.active} />
-        {images.length > 0 ? (
-          <motion.div
-            className="grid w-full max-w-lg gap-token-3"
-            style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
-            variants={container}
-            initial="hidden"
-            animate={p.active ? 'visible' : 'hidden'}
-          >
-            {images.map((img, i) => (
-              <motion.img key={i} src={img.url} alt="" variants={item} className={`aspect-square w-full ${frameClass(r.imageStyle === 'rounded' ? 'card' : r.imageStyle)}`} />
-            ))}
-          </motion.div>
-        ) : null}
+
+        <div className="relative h-[46cqw] max-h-[52vh] w-full max-w-md" style={{ perspective: 1200 }}>
+          {images.map((img, i) => {
+            // Shortest signed distance around the ring.
+            let d = i - index;
+            if (d > count / 2) d -= count;
+            if (d < -count / 2) d += count;
+            const far = Math.abs(d) > 2;
+            return (
+              <motion.img
+                key={i}
+                src={img.url}
+                alt=""
+                className={`absolute left-1/2 top-1/2 h-full w-auto max-w-[78%] ${frame}`}
+                style={{ transformOrigin: 'center' }}
+                animate={{
+                  x: `calc(-50% + ${d * 34 * dir}cqw)`,
+                  y: '-50%',
+                  scale: d === 0 ? 1 : 0.74,
+                  opacity: far ? 0 : d === 0 ? 1 : 0.45,
+                  zIndex: 10 - Math.abs(d),
+                  rotateY: d * -18 * dir,
+                }}
+                transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
+              />
+            );
+          })}
+        </div>
+
+        <span className="text-xs tabular-nums" style={{ color: r.textColor, opacity: 0.7 }}>
+          {index + 1} / {count}
+        </span>
       </div>
     </Frame>
   );
@@ -492,10 +611,17 @@ function LetterScene(p: SceneRenderProps) {
   });
   const blocks = textBlocks(p.scene, p.step, p.recipientName);
   const [heading, ...body] = blocks;
+  // The letter is a sheet of paper laid on the card: take the lightest palette
+  // entry for the sheet and whatever reads on it for the writing.
+  const palette = p.theme.palette ?? [];
+  const paper =
+    [...palette].sort((a, b) => hexLuminance(b) - hexLuminance(a))[0] ?? '#F7F2E8';
+  const letterInk = readableOn(paper, palette);
   return (
     <Frame r={r}>
       <motion.div
-        className="w-full max-w-md rounded-2xl bg-white/90 p-token-8 text-start shadow-[var(--shadow-pop)] ring-1 ring-black/5"
+        className="w-full max-w-md rounded-2xl p-token-8 text-start shadow-[var(--shadow-pop)]"
+        style={{ background: paper, boxShadow: `0 0 0 1px ${r.accent}55, var(--shadow-pop)` }}
         variants={variants}
         initial="hidden"
         animate={p.active ? 'visible' : 'hidden'}
@@ -503,12 +629,15 @@ function LetterScene(p: SceneRenderProps) {
         dir={p.direction}
       >
         {heading ? (
-          <p className="font-heading text-2xl font-semibold text-ink" style={{ fontFamily: r.headingFamily }}>
+          <p
+            className="font-heading text-2xl font-semibold"
+            style={{ fontFamily: r.headingFamily, color: letterInk }}
+          >
             {heading.value}
           </p>
         ) : null}
         {body.map((b) => (
-          <p key={b.key} className="mt-token-3 text-lg leading-relaxed text-ink/80">
+          <p key={b.key} className="mt-token-3 text-lg leading-relaxed" style={{ color: letterInk, opacity: 0.82 }}>
             {b.value}
           </p>
         ))}

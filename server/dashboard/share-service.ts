@@ -19,7 +19,7 @@ import { eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import type { UserContext } from '@/server/db-context';
 import { getDb } from '@/db';
-import { shareLinks, experiences, templates, steps, media } from '@/db/schema';
+import { shareLinks, experiences, templates, steps, media, users } from '@/db/schema';
 import type { Media } from '@/db/schema';
 import {
   parseTemplateDefinition,
@@ -97,9 +97,15 @@ export async function publishExperience(
 
   const { slug } = await ensureShareLink(ctx, experienceId);
 
-  if (!tpl.isPaid || tpl.pricePiastres <= 0) {
-    // FREE → publish directly: unlock + activate link. (Contract-sanctioned;
-    // paid unlock always goes through the order state machine instead.)
+  // A comped account publishes paid templates as if they were free. Read from
+  // the DB, never the session: `all_access` must be revocable without waiting
+  // for a stateless JWT to expire.
+  const comped = await isAllAccess(ctx);
+
+  if (!tpl.isPaid || tpl.pricePiastres <= 0 || comped) {
+    // FREE (or comped) → publish directly: unlock + activate link.
+    // (Contract-sanctioned; paid unlock always goes through the order state
+    // machine instead.)
     await repo.updateOwnedExperience(ctx.db, ctx.user.id, experienceId, {
       isUnlocked: true,
       status: 'published',
@@ -117,6 +123,20 @@ export async function publishExperience(
   // PAID → create (or reuse) a pending order; link stays inactive until approval.
   const order = await createOrder(ctx, experienceId);
   return { kind: 'payment_required', order, slug };
+}
+
+/**
+ * Is this account comped? Checked per request against the row rather than the
+ * session, so revoking access takes effect immediately instead of whenever the
+ * user's JWT happens to expire.
+ */
+async function isAllAccess(ctx: UserContext): Promise<boolean> {
+  const row = await ctx.db
+    .select({ allAccess: users.allAccess })
+    .from(users)
+    .where(eq(users.id, ctx.user.id))
+    .limit(1);
+  return row[0]?.allAccess === true;
 }
 
 /* ───────────────────── Public render (gated) ──────────────────────────── */

@@ -16,4 +16,5 @@ export const CATALOG_CATEGORIES: CatalogCategory[] = [
   { slug: 'graduation', nameEn: 'Graduation', nameAr: 'التخرّج', icon: '🎓', sortOrder: 6 },
   { slug: 'newborn', nameEn: 'Newborn', nameAr: 'مولود جديد', icon: '🍼', sortOrder: 7 },
   { slug: 'wedding', nameEn: 'Wedding', nameAr: 'زفاف', icon: '💐', sortOrder: 8 },
+  { slug: 'invitation', nameEn: 'Wedding Invitation', nameAr: 'دعوة زفاف', icon: '💌', sortOrder: 9 },
 ];
