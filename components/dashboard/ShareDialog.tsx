@@ -3,7 +3,6 @@
 import * as React from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import { Dialog, Button } from '@/components/ui';
-import { QrPlaceholder } from './QrPlaceholder';
 
 /** Builds the absolute /[locale]/p/[slug] share URL for the current origin. */
 export function buildShareUrl(locale: string, slug: string): string {
@@ -48,13 +47,10 @@ export function ShareDialog({
 
       {slug ? (
         <div className="flex flex-col gap-token-4">
-          <div className="flex justify-center">
-            <div className="text-center">
-              <QrPlaceholder value={url} />
-              <p className="mt-token-2 text-xs text-muted">{t('qrHint')}</p>
-            </div>
-          </div>
-
+          {/* No QR here on purpose: QrPlaceholder draws a decorative pattern,
+              not a scannable code, and a QR that scans to nothing is worse than
+              none. Re-add once a real encoder (e.g. the `qrcode` package) is a
+              dependency — keep it dark-on-white inside a `.light` wrapper. */}
           <div className="flex items-center gap-token-2 rounded-md border border-border bg-surface-2 px-token-3 py-token-2">
             <span className="truncate text-sm text-ink" dir="ltr">
               {url}

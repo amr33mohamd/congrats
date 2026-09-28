@@ -26,6 +26,13 @@ export function ReviewStep({
   const locale = useLocale() as AppLocale;
   const router = useRouter();
 
+  // Mirrors the server's publish decision (share-service.publishExperience) so
+  // the button says what will actually happen. Purely cosmetic: publish is
+  // always called and the server still answers `payment_required` if owed.
+  const priced = experience.isPaid && experience.pricePiastres > 0;
+  const comped = priced && Boolean(experience.allAccess) && !experience.isUnlocked;
+  const needsPayment = priced && !experience.allAccess && !experience.isUnlocked;
+
   const [busy, setBusy] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
@@ -75,15 +82,21 @@ export function ReviewStep({
             <div className="flex items-center justify-between gap-token-2 sm:col-span-2">
               <dt className="text-sm text-muted">{t('price')}</dt>
               <dd>
-                {experience.isPaid ? (
-                  <Badge tone="brand">{formatEgp(experience.pricePiastres, locale)}</Badge>
-                ) : (
+                {!priced ? (
                   <Badge tone="success">{t('free')}</Badge>
+                ) : comped ? (
+                  <Badge tone="success">{t('included')}</Badge>
+                ) : experience.isUnlocked ? (
+                  <Badge tone="success">{t('alreadyPaid')}</Badge>
+                ) : (
+                  <Badge tone="brand">{formatEgp(experience.pricePiastres, locale)}</Badge>
                 )}
               </dd>
             </div>
           </dl>
         </div>
+
+        {comped ? <p className="mt-token-3 text-sm text-muted">{t('compedNote')}</p> : null}
 
         {error ? (
           <div className="mt-token-4 rounded-md border border-danger/30 bg-danger/10 px-token-4 py-token-3 text-sm text-danger">
@@ -95,7 +108,7 @@ export function ReviewStep({
           <Button size="lg" className="w-full sm:w-auto" onClick={publish} disabled={busy}>
             {busy ? (
               <Spinner size={18} />
-            ) : experience.isPaid ? (
+            ) : needsPayment ? (
               t('goCheckout')
             ) : (
               t('publishFree')

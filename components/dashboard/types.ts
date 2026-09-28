@@ -71,6 +71,11 @@ export interface EditorExperience {
   templateName?: string | null;
   shareSlug?: string | null;
   orderId?: string | null;
+  /**
+   * Comped account (users.all_access). Display only — it picks the review
+   * step's label; the server decides entitlement when publishing.
+   */
+  allAccess?: boolean;
 }
 
 /** Step payload for PUT /api/dashboard/experiences/:id/steps. */
