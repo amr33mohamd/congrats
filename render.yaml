@@ -5,11 +5,15 @@
 #   2. On render.com → New → Blueprint → connect this repo.
 #   3. Render reads this file, provisions the DB + web service, generates
 #      AUTH_SECRET and the admin password, and runs the Docker build.
-#   4. After the first deploy, set AUTH_URL to the service's public URL
-#      (e.g. https://congrats.onrender.com) and redeploy, then set
-#      INSTAPAY_HANDLE (and RESEND_API_KEY/EMAIL_FROM for password-reset email).
+#   4. Render prompts for every `sync: false` value on first creation. At minimum
+#      fill INSTAPAY_HANDLE — the app refuses to boot in production without it.
+#      AUTH_URL may be left empty: the entrypoint then uses RENDER_EXTERNAL_URL
+#      (https://<service>.onrender.com). Set it once you add a custom domain.
 #
 # The entrypoint auto-runs versioned migrations (drizzle/) + the idempotent seed.
+# Render passes service env vars to the Docker build as build args, so the
+# NEXT_PUBLIC_* / SENTRY_DSN values below are baked in at build time — change
+# them, then trigger a new deploy (not just a restart).
 
 databases:
   - name: congrats-db
@@ -35,17 +39,27 @@ services:
         generateValue: true # strong random secret, managed by Render
       - key: AUTH_TRUST_HOST
         value: 'true'
-      # Set this to your public URL after the first deploy, then redeploy.
+      # Optional on Render: defaults to RENDER_EXTERNAL_URL. Set it to your
+      # custom domain (https://…) once you have one, then redeploy.
       - key: AUTH_URL
         sync: false
       - key: SEED_ADMIN_EMAIL
         value: admin@congrats.dev
       - key: SEED_ADMIN_PASSWORD
         generateValue: true # printed once in the deploy logs on first boot
-      # Optional — fill in the dashboard:
+      # Required — the InstaPay handle buyers pay to.
       - key: INSTAPAY_HANDLE
         sync: false
+      # Optional — fill in the dashboard (boot logs warn about any left empty):
       - key: RESEND_API_KEY
         sync: false
       - key: EMAIL_FROM
+        sync: false
+      - key: SENTRY_DSN
+        sync: false
+      - key: NEXT_PUBLIC_PLAUSIBLE_DOMAIN
+        sync: false
+      - key: NEXT_PUBLIC_COMPANY_NAME
+        sync: false
+      - key: NEXT_PUBLIC_SUPPORT_EMAIL
         sync: false

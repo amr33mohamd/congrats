@@ -12,6 +12,13 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      # Build-time config (inlined into the bundle / CSP). Empty = feature off.
+      args:
+        NEXT_PUBLIC_PLAUSIBLE_DOMAIN: ${NEXT_PUBLIC_PLAUSIBLE_DOMAIN:-}
+        NEXT_PUBLIC_COMPANY_NAME: ${NEXT_PUBLIC_COMPANY_NAME:-}
+        NEXT_PUBLIC_SUPPORT_EMAIL: ${NEXT_PUBLIC_SUPPORT_EMAIL:-}
+        SENTRY_DSN: ${SENTRY_DSN:-}
+        CSP_ENFORCE: ${CSP_ENFORCE:-}
     image: congrats:latest
     ports:
       # Host port is configurable (default 3000) so it can avoid conflicts.
@@ -20,6 +27,9 @@ services:
       NODE_ENV: production
       # Persist PGlite + local uploads under the mounted volume.
       PGLITE_PATH: /app/.data/pglite
+      # This default stack deliberately runs without Postgres; lib/env.ts
+      # refuses that in production unless it is acknowledged here.
+      ALLOW_PGLITE_IN_PRODUCTION: "true"
       LOCAL_STORAGE_ROOT: /app/.data/uploads
       STORAGE_DRIVER: local
       # Auth.js (NextAuth v5). Leave AUTH_SECRET unset and the entrypoint
@@ -36,6 +46,11 @@ services:
       # Optional: transactional email for password reset (falls back to logging).
       RESEND_API_KEY: ${RESEND_API_KEY:-}
       EMAIL_FROM: ${EMAIL_FROM:-}
+      # Optional: error tracking + analytics + legal/contact details.
+      SENTRY_DSN: ${SENTRY_DSN:-}
+      NEXT_PUBLIC_PLAUSIBLE_DOMAIN: ${NEXT_PUBLIC_PLAUSIBLE_DOMAIN:-}
+      NEXT_PUBLIC_COMPANY_NAME: ${NEXT_PUBLIC_COMPANY_NAME:-}
+      NEXT_PUBLIC_SUPPORT_EMAIL: ${NEXT_PUBLIC_SUPPORT_EMAIL:-}
     volumes:
       - congrats-data:/app/.data
     restart: unless-stopped
