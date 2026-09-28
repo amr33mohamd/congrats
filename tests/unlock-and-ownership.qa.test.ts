@@ -65,6 +65,10 @@ import { createOrder, submitPayment, getOrder } from '@/server/dashboard/orders-
 import { uploadMedia } from '@/server/dashboard/media-service';
 import { approveOrder, rejectOrder } from '@/server/admin/orders-service';
 
+// Real PNG signature + a unique tail: uploads are sniffed by their bytes.
+const pngBytes = (tail: string) => Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), Buffer.from(tail)]);
+
+
 function userCtx(db: Awaited<ReturnType<typeof getDb>>, user: SessionUser): UserContext {
   return {
     db,
@@ -184,7 +188,7 @@ describe('unlock gate', () => {
     const shot = await uploadMedia(ctxA, {
       kind: 'payment_screenshot',
       mime: 'image/png',
-      data: Buffer.from('approve-flow-bytes'),
+      data: pngBytes('approve-flow-bytes'),
       experienceId: exp.id,
     });
     await submitPayment(ctxA, order.id, { screenshotMediaId: shot.id, paymentRef: 'INSTA-APPROVE' });
@@ -216,7 +220,7 @@ describe('unlock gate', () => {
     const shot = await uploadMedia(ctxA, {
       kind: 'payment_screenshot',
       mime: 'image/png',
-      data: Buffer.from('reject-flow-bytes'),
+      data: pngBytes('reject-flow-bytes'),
       experienceId: exp.id,
     });
     await submitPayment(ctxA, order.id, { screenshotMediaId: shot.id, paymentRef: 'INSTA-REJECT' });
@@ -284,7 +288,7 @@ describe('payment screenshot duplicate-hash flagging', () => {
     const exp2 = await experiencesService.createExperience(ctxA, { templateId: paidTemplateId });
     const order2 = await createOrder(ctxA, exp2.id);
 
-    const sameBytes = Buffer.from('the-exact-same-proof-image');
+    const sameBytes = pngBytes('the-exact-same-proof-image');
 
     // First submission: this is the only proof with these bytes → NOT a dup.
     const shot1 = await uploadMedia(ctxA, {
@@ -320,7 +324,7 @@ describe('payment screenshot duplicate-hash flagging', () => {
     const shot = await uploadMedia(ctxA, {
       kind: 'payment_screenshot',
       mime: 'image/png',
-      data: Buffer.from(`unique-bytes-${Date.now()}-${Math.random()}`),
+      data: pngBytes(`unique-bytes-${Date.now()}-${Math.random()}`),
       experienceId: exp.id,
     });
     const sub = await submitPayment(ctxA, order.id, { screenshotMediaId: shot.id, paymentRef: 'REF-UNIQUE' });

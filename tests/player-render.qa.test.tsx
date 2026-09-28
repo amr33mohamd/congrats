@@ -225,7 +225,7 @@ describe('Player render', () => {
 
   it('keeps Arabic words whole in the typewriter heading (no per-letter split)', () => {
     render(<Player experience={sample} startPaused={false} />);
-    const heading = screen.getByTestId('player-root').querySelector('[data-scene="text"] h1')!;
+    const heading = screen.getByTestId('player-root').querySelector('[data-scene="text"] h2')!;
     // One animated piece per word, not per letter: splitting a joined script
     // into letters breaks the joins.
     const pieces = Array.from(heading.querySelectorAll('span')).map((s) => s.textContent);

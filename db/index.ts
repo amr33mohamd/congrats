@@ -39,6 +39,12 @@ async function create(): Promise<Cached> {
   const { drizzle } = await import('drizzle-orm/pglite');
 
   const dataDir = process.env.PGLITE_PATH ?? '.data/pglite';
+  if (dataDir !== 'memory://' && !dataDir.includes('://')) {
+    // PGlite only creates the last path segment; a fresh clone has no .data/.
+    const { mkdirSync } = await import('node:fs');
+    const { dirname } = await import('node:path');
+    mkdirSync(dirname(dataDir), { recursive: true });
+  }
   const pg = dataDir === 'memory://' ? new PGlite() : new PGlite(dataDir);
   const db = drizzle(pg, { schema });
 

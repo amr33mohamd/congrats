@@ -62,6 +62,10 @@ export default defineConfig({
       // test process must not open PGlite while the server owns it, so the seed
       // (which runs BEFORE the server starts) is the only safe place to create it.
       SEED_TESTER: '1',
+      // Every test registers/logs in from 127.0.0.1; the per-IP auth limits
+      // (5 registrations, 20 logins a minute) would otherwise fail the suite.
+      // lib/rate-limit.ts ignores this flag when NODE_ENV=production.
+      RATE_LIMIT_DISABLED: '1',
       SEED_TESTER_EMAIL: 'e2e-comped@example.com',
       SEED_TESTER_PASSWORD: 'e2e-password-123',
     },

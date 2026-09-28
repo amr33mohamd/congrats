@@ -13,6 +13,7 @@ const config = [
       '.next/**',
       'node_modules/**',
       'remotion/**',
+      '.claude/**',
       'drizzle/**',
       'next-env.d.ts',
       'tsconfig.tsbuildinfo',

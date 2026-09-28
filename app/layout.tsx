@@ -1,6 +1,14 @@
 import './globals.css';
 import type { ReactNode } from 'react';
+import type { Metadata } from 'next';
 import Script from 'next/script';
+import { SITE_URL } from '@/lib/site';
+
+// Root-level metadataBase so file-convention routes outside [locale] (the root
+// opengraph-image) resolve absolute URLs against the real origin.
+export function generateMetadata(): Metadata {
+  return { metadataBase: new URL(SITE_URL) };
+}
 
 // Privacy-friendly analytics (no cookies, no personal data). Only rendered when
 // a domain is configured at build time; the CSP in next.config.mjs allows the

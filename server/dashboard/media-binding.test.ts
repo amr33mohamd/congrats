@@ -21,6 +21,10 @@ import * as experiencesService from './experiences-service';
 import { publishExperience, getPublicExperienceBySlug } from './share-service';
 import { uploadMedia } from './media-service';
 
+// Real PNG signature + a unique tail: uploads are sniffed by their bytes.
+const pngBytes = (tail: string) => Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), Buffer.from(tail)]);
+
+
 function makeCtx(db: Awaited<ReturnType<typeof getDb>>, user: SessionUser): UserContext {
   return {
     db,
@@ -105,7 +109,7 @@ async function addPhoto(
   await uploadMedia(ctx, {
     kind: 'step_image',
     mime: 'image/png',
-    data: Buffer.from(`png-${Math.random()}`),
+    data: pngBytes(`png-${Math.random()}`),
     experienceId,
     ...opts,
   });

@@ -14,6 +14,11 @@ export interface RateLimitResult {
 }
 
 export function rateLimit(key: string, limit: number, windowMs: number): RateLimitResult {
+  // The e2e suite registers/logs in dozens of accounts from one IP within a
+  // minute. It may switch limiting off — never in production.
+  if (process.env.RATE_LIMIT_DISABLED === '1' && process.env.NODE_ENV !== 'production') {
+    return { ok: true, remaining: limit, retryAfterSec: 0 };
+  }
   const now = Date.now();
   const existing = buckets.get(key);
   if (!existing || existing.resetAt <= now) {

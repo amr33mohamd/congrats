@@ -126,7 +126,9 @@ export async function uploadMedia(
   },
 ): Promise<Media> {
   assertImageMime(input.mime);
-  assertSize(input.data.byteLength);
+  // Every caller gets the byte check, not only the HTTP route: the stored and
+  // recorded type is what the bytes say, never the declared one.
+  const mime = assertImageBytes(input.data);
 
   if (input.experienceId) {
     const exp = await repo.getOwnedExperience(ctx.db, ctx.user.id, input.experienceId);
@@ -134,7 +136,7 @@ export async function uploadMedia(
   }
 
   const bucket = bucketForKind(input.kind);
-  const ext = EXT_BY_MIME[input.mime];
+  const ext = EXT_BY_MIME[mime];
   const fileId = nanoid(16);
   const key =
     bucket === 'payment-proofs'
@@ -142,7 +144,7 @@ export async function uploadMedia(
       : experienceMediaKey(ctx.user.id, input.experienceId ?? 'unbound', fileId, ext);
 
   const storage = getStorage();
-  const stored = await storage.put({ bucket, key, data: input.data, contentType: input.mime });
+  const stored = await storage.put({ bucket, key, data: input.data, contentType: mime });
 
   return repo.insertMedia(ctx.db, {
     userId: ctx.user.id,
@@ -153,7 +155,7 @@ export async function uploadMedia(
     kind: input.kind,
     storagePath: key,
     bucket,
-    mimeType: input.mime,
+    mimeType: mime,
     width: input.width ?? null,
     height: input.height ?? null,
     bytes: stored.bytes,

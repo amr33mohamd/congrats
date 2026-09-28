@@ -27,6 +27,14 @@ services:
     dockerfilePath: ./Dockerfile
     plan: free # free tier (spins down when idle). Upgrade to 'starter' for always-on.
     healthCheckPath: /api/health
+    # ⚠ Uploads (recipient photos, payment proofs) live on local disk under
+    # /app/.data/uploads and are LOST on every deploy without a persistent disk.
+    # Disks need a paid plan (starter+). Uncomment after upgrading, then verify
+    # an uploaded photo survives a redeploy (the image runs as user `nextjs`).
+    # disk:
+    #   name: uploads
+    #   mountPath: /app/.data/uploads
+    #   sizeGB: 1
     autoDeploy: true
     envVars:
       - key: NODE_ENV
@@ -62,4 +70,8 @@ services:
       - key: NEXT_PUBLIC_COMPANY_NAME
         sync: false
       - key: NEXT_PUBLIC_SUPPORT_EMAIL
+        sync: false
+      - key: NEXT_PUBLIC_BUSINESS_ADDRESS
+        sync: false
+      - key: NEXT_PUBLIC_SUPPORT_WHATSAPP
         sync: false

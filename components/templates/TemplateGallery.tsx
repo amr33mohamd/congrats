@@ -43,7 +43,7 @@ export function TemplateGallery({
         className={`rounded-pill px-token-4 py-token-2 text-sm font-medium transition-colors duration-[var(--motion-fast)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand ${
           on
             ? 'bg-brand text-white'
-            : 'bg-white/8 text-white/70 hover:bg-white/15 hover:text-white'
+            : 'bg-white/[0.08] text-white/70 hover:bg-white/15 hover:text-white'
         }`}
       >
         {label}

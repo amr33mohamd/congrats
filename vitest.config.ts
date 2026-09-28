@@ -17,6 +17,6 @@ export default defineConfig({
     // Playwright owns e2e/*.spec.ts (its own runner). Excluding them here keeps
     // the two test runners from colliding — vitest can't execute Playwright's
     // test.describe()/test() and would otherwise error on every e2e spec.
-    exclude: ['node_modules', '.next', 'e2e/**', 'playwright.config.ts'],
+    exclude: ['**/node_modules/**', '.next', '.claude/**', '.data/**', 'e2e/**', 'playwright.config.ts'],
   },
 });

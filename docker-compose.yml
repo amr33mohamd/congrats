@@ -17,6 +17,9 @@ services:
         NEXT_PUBLIC_PLAUSIBLE_DOMAIN: ${NEXT_PUBLIC_PLAUSIBLE_DOMAIN:-}
         NEXT_PUBLIC_COMPANY_NAME: ${NEXT_PUBLIC_COMPANY_NAME:-}
         NEXT_PUBLIC_SUPPORT_EMAIL: ${NEXT_PUBLIC_SUPPORT_EMAIL:-}
+        NEXT_PUBLIC_BUSINESS_ADDRESS: ${NEXT_PUBLIC_BUSINESS_ADDRESS:-}
+        NEXT_PUBLIC_SUPPORT_WHATSAPP: ${NEXT_PUBLIC_SUPPORT_WHATSAPP:-}
+        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-}
         SENTRY_DSN: ${SENTRY_DSN:-}
         CSP_ENFORCE: ${CSP_ENFORCE:-}
     image: congrats:latest
@@ -42,7 +45,7 @@ services:
       # Leave SEED_ADMIN_PASSWORD unset → the entrypoint generates one and prints
       # it once in the logs. Set it to choose your own.
       SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD:-}
-      INSTAPAY_HANDLE: ${INSTAPAY_HANDLE:-congrats@instapay}
+      INSTAPAY_HANDLE: ${INSTAPAY_HANDLE:?set INSTAPAY_HANDLE to your real InstaPay address}
       # Optional: transactional email for password reset (falls back to logging).
       RESEND_API_KEY: ${RESEND_API_KEY:-}
       EMAIL_FROM: ${EMAIL_FROM:-}

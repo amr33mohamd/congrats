@@ -188,12 +188,14 @@ function SectionRule({ theme, r }: { theme: TemplateTheme; r: Resolved }) {
 function Heading({ text, r }: { text: string; r: Resolved }) {
   if (!text) return null;
   return (
-    <h1
+    // h2, not h1: a card stacks many sections on one page, and gallery
+    // thumbnails render these too — neither should add page-level h1s.
+    <h2
       className={`font-bold leading-[1.15] ${liftFor(r.headingColor)} [text-wrap:balance] [overflow-wrap:anywhere]`}
       style={{ color: r.headingColor, fontSize: r.headingSize, fontFamily: r.headingFamily }}
     >
       {text}
-    </h1>
+    </h2>
   );
 }
 
@@ -228,7 +230,7 @@ function TypewriterHeading({
   // in their isolated forms. RTL types in word by word instead.
   const pieces = text.split(/(\s+)/).filter(Boolean);
   return (
-    <motion.h1
+    <motion.h2
       className={`font-bold leading-[1.15] ${liftFor(r.headingColor)} [overflow-wrap:anywhere]`}
       style={{ color: r.headingColor, fontSize: r.headingSize, fontFamily: r.headingFamily }}
       variants={variants}
@@ -257,7 +259,7 @@ function TypewriterHeading({
           </span>
         ),
       )}
-    </motion.h1>
+    </motion.h2>
   );
 }
 

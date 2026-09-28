@@ -5,19 +5,18 @@ import { NextIntlClientProvider } from 'next-intl';
 import { setRequestLocale, getMessages } from 'next-intl/server';
 import { Inter, Cairo, Tajawal } from 'next/font/google';
 import { routing, dirFor } from '@/i18n/routing';
-
-const SITE_URL = (process.env.AUTH_URL ?? 'http://localhost:3000').replace(/\/$/, '');
+import { SITE_URL } from '@/lib/site';
 
 const SEO = {
   en: {
     title: 'Congrats — Animated greetings, made personal',
     description:
-      'Craft a step-by-step animated congratulations — their name, your photos, your words — and share it with a single link. Works on every phone, Arabic & English.',
+      'Make one animated card that unfolds as they scroll — their name, your photos, your words — or a one-page wedding invitation, shared with a single link. Arabic & English.',
   },
   ar: {
     title: 'مبروك — تهاني متحركة بلمسة شخصية',
     description:
-      'اصنع تهنئة متحركة خطوة بخطوة — باسمهم وصورك وكلماتك — وشاركها برابط واحد. تعمل على كل هاتف، بالعربية والإنجليزية.',
+      'اعمل كارت تهنئة متحرك يتكشّف مع كل سحبة — باسمهم وصورك وكلماتك — أو دعوة فرح في صفحة واحدة، وشاركها برابط واحد. بالعربي والإنجليزي.',
   },
 } as const;
 
@@ -36,7 +35,7 @@ export async function generateMetadata({
     applicationName: 'Congrats',
     alternates: {
       canonical: `/${l}`,
-      languages: { en: '/en', ar: '/ar', 'x-default': '/en' },
+      languages: { en: '/en', ar: '/ar', 'x-default': '/ar' },
     },
     openGraph: {
       type: 'website',
@@ -46,8 +45,14 @@ export async function generateMetadata({
       url: `/${l}`,
       locale: l === 'ar' ? 'ar_EG' : 'en_US',
       alternateLocale: l === 'ar' ? 'en_US' : 'ar_EG',
+      images: [{ url: `/${l}/og`, width: 1200, height: 630 }],
     },
-    twitter: { card: 'summary_large_image', title: seo.title, description: seo.description },
+    twitter: {
+      card: 'summary_large_image',
+      title: seo.title,
+      description: seo.description,
+      images: [`/${l}/og`],
+    },
     icons: { icon: '/favicon.svg', apple: '/favicon.svg' },
     robots: { index: true, follow: true },
   };

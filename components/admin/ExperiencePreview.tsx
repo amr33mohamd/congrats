@@ -50,11 +50,13 @@ export function ExperiencePreview({ experience }: { experience: unknown }) {
             type="button"
             onClick={() => setOpen(false)}
             aria-label={t('common.close')}
-            className="absolute inset-block-start-0 inset-inline-end-0 z-10 m-token-4 rounded-pill border border-border bg-surface/90 px-token-4 py-token-2 text-sm font-medium text-ink backdrop-blur-sm shadow-[var(--shadow-pop)]"
+            className="absolute top-0 end-0 z-40 m-token-4 rounded-pill border border-border bg-surface/90 px-token-4 py-token-2 text-sm font-medium text-ink backdrop-blur-sm shadow-[var(--shadow-pop)]"
           >
             ✕
           </button>
-          <Player experience={parsed} startPaused />
+          {/* Embedded: the one-page card scrolls inside this overlay instead of
+              pinning its fixed layers to the window behind it. */}
+          <Player experience={parsed} startPaused embedded />
         </div>
       ) : null}
     </div>

@@ -34,6 +34,11 @@ export default function Error({ error, reset }: { error: Error & { digest?: stri
   useEffect(() => {
     // Surfaces to the server log / error tracker (see instrumentation).
     console.error('[app error]', error);
+    // Errors caught by this boundary never reach the global handlers, so
+    // report them explicitly — only when Sentry is configured at build time.
+    if (process.env.NEXT_PUBLIC_SENTRY_DSN) {
+      void import('@sentry/nextjs').then((Sentry) => Sentry.captureException(error));
+    }
   }, [error]);
 
   return (

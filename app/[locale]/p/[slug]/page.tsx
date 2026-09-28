@@ -32,7 +32,9 @@ export async function generateMetadata({
   return {
     title,
     robots,
-    openGraph: { title, type: 'website' },
+    // A page-level openGraph replaces the layout's, so the image is re-stated.
+    openGraph: { title, type: 'website', images: [{ url: `/${locale}/og`, width: 1200, height: 630 }] },
+    twitter: { card: 'summary_large_image', title, images: [`/${locale}/og`] },
   };
 }
 

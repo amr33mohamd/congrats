@@ -23,6 +23,10 @@ import { publishExperience, getPublicExperienceBySlug, ensureShareLink } from '.
 import { createOrder, submitPayment } from './orders-service';
 import { uploadMedia } from './media-service';
 
+// Real PNG signature + a unique tail: uploads are sniffed by their bytes.
+const pngBytes = (tail: string) => Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), Buffer.from(tail)]);
+
+
 function makeCtx(db: Awaited<ReturnType<typeof getDb>>, user: SessionUser): UserContext {
   return {
     db,
@@ -164,7 +168,7 @@ describe('paid order flow', () => {
     const shot = await uploadMedia(ctxA, {
       kind: 'payment_screenshot',
       mime: 'image/png',
-      data: Buffer.from('fake-png-bytes'),
+      data: pngBytes('fake-png-bytes'),
       experienceId: exp.id,
     });
 

@@ -32,6 +32,16 @@ primary_region = "cdg"  # Paris — closest low-latency region to Egypt/MENA on 
   NODE_ENV = "production"
   PORT = "3000"
 
+# ⚠ Uploads (recipient photos, payment proofs) are stored on local disk under
+# /app/.data/uploads. Without a volume they are LOST on every deploy/restart.
+# Before launch either implement an object-storage adapter (server/storage.ts)
+# or create a volume (`fly volumes create congrats_data --size 1`) and mount it.
+# The image runs as the non-root `nextjs` user, so make sure the mounted
+# directory is writable by it (verify an upload survives `fly deploy`).
+# [mounts]
+#   source = "congrats_data"
+#   destination = "/app/.data/uploads"
+
 [http_service]
   internal_port = 3000
   force_https = true

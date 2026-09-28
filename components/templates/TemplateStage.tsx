@@ -99,6 +99,9 @@ export function TemplateStage({
   return (
     <div
       ref={outer}
+      // Visual preview only: the card's own title/labels carry the meaning, so
+      // keep the scaled-down scene text out of the a11y tree and outline.
+      aria-hidden
       className={`relative h-full w-full overflow-hidden ${className ?? ''}`}
       style={{ background: backgroundCss(bg, palette) }}
     >
