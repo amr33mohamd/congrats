@@ -3,74 +3,66 @@ import {
   login,
   userEmail,
   ADMIN_EMAIL,
+  COMPED_EMAIL,
   listTemplates,
+  getSteps,
+  putSteps,
+  uploadStepPhoto,
   uploadPaymentScreenshot,
   submitOrder,
+  playerRoot,
+  openGateIfPresent,
+  sceneSection,
+  expectSceneText,
+  renderedSceneIds,
 } from './helpers';
 import { TEMPLATE_CATALOG } from '@/content/templates';
 import type { ValidatedTemplate } from '@/content/templates';
 import type { SceneDef, Slot, Locale } from '@/lib/template-contract';
 
 /**
- * COMPREHENSIVE, DATA-DRIVEN template render proof.
+ * COMPREHENSIVE, DATA-DRIVEN template render proof over the scrolling Player.
  *
- * Iterates ALL 16 templates in TEMPLATE_CATALOG. For each one we:
- *   1. Dev-login a user, create an experience from that template (template's own locale).
- *   2. Stamp a UNIQUE sentinel into the FIRST editable text slot of EACH scene
- *      (keeping every other slot at its seeded default), plus a unique recipient
- *      sentinel so {recipient}/{name} token substitution is observable. Countdown
- *      scenes also get a future targetDate so the timer can render.
- *   3. Publish — FREE directly; PAID via the real money path (pay + admin-approve).
- *      The UI admin-approve is exercised EXHAUSTIVELY on a representative paid
- *      template; the rest of the paid templates approve via the admin API (same
- *      state machine + audit) to keep runtime sane. EVERY template — free or paid —
- *      is then PLAYED and asserted.
- *   4. Open /<locale>/p/<slug> in the template's own locale, tap to start, walk
- *      ALL scenes via progress dots, and assert per scene:
- *        - the player shows NON-EMPTY visible text (no blank scene),
- *        - the scene's injected sentinel is visible when active,
- *        - dot count == template scene count,
- *        - the recipient sentinel appears for token-bearing templates,
- *        - dir matches the template direction (rtl/ltr).
- *
- * This is the assertion that proves the slot-driven SceneRenderer fix: scenes
- * whose templates use non-standard slot keys (subheading, caption, lead, message,
- * line1/2/3, reason1/2/3, coverImage, targetDate, note, dua, name, weight, …)
- * render the user-entered text rather than coming up empty.
+ * For EVERY template in TEMPLATE_CATALOG:
+ *   1. Create an experience from it (template's own locale).
+ *   2. Stamp a UNIQUE sentinel + the {recipient} token into the first editable
+ *      text slot of each scene, a future date into date slots, and upload one
+ *      tiny photo to each photo scene (PhotoReveal/Gallery). Photo scenes with
+ *      no media are deliberately left OUT of the card by the Player, so without
+ *      the upload their section would not exist to assert on.
+ *   3. Publish — free directly; paid: one representative through the FULL money
+ *      path (pay → admin approves in the real queue UI), the rest via the comped
+ *      (all_access) account, which publishes paid templates without an order.
+ *   4. Open /<locale>/p/<slug>, open the gate, and for every scene scroll its
+ *      `section[data-scene]` into view and assert its sentinel is visible and
+ *      revealed. Also assert: one section per scene, dir, recipient rendered.
  */
 
-/* ───────────────────────── helpers (local) ───────────────────────── */
-
-/** Deterministic recipient sentinel (no Date.now/random → stable reruns). */
 const RECIPIENT = 'ZephyrQA';
 
-/** Per-(template,scene) deterministic text sentinel, short enough for any maxLen. */
+/** Per-(template,scene) deterministic sentinel, short enough for any maxLen. */
 function sentinel(tIdx: number, sIdx: number): string {
-  // e.g. "Zq3s0" — alnum, <= 6 chars so it never trips a slot maxLen (min seen: 30).
   return `Zq${tIdx}s${sIdx}`;
 }
 
-/** The first editable TEXT slot on a scene (what the user would first type into). */
 function firstEditableTextSlot(scene: SceneDef): Slot | undefined {
   return scene.slots.find((s) => s.type === 'text' && s.editable);
 }
-
-/** Does a scene declare an editable date slot (Countdown target)? */
 function firstEditableDateSlot(scene: SceneDef): Slot | undefined {
   return scene.slots.find((s) => s.type === 'date' && s.editable);
 }
+function firstImageSlot(scene: SceneDef): Slot | undefined {
+  return scene.slots.find((s) => s.type === 'image' && s.editable);
+}
+function isPhotoScene(scene: SceneDef): boolean {
+  return scene.type === 'PhotoReveal' || scene.type === 'Gallery';
+}
 
-/** Does the template's definition contain a {recipient}/{name} token anywhere? */
 function usesRecipientToken(t: ValidatedTemplate): boolean {
   const s = JSON.stringify(t.definition);
   return s.includes('{recipient}') || s.includes('{name}');
 }
 
-type EditorView = {
-  steps: Array<{ templateStepId: string; orderIndex: number; text: Record<string, string> }>;
-};
-
-/** Create an experience and return its id. */
 async function createExperience(
   req: APIRequestContext,
   templateId: string,
@@ -86,229 +78,165 @@ async function createExperience(
   return id as string;
 }
 
-/**
- * Stamp the per-scene sentinel into the first editable text slot of each scene,
- * a future date into any editable date slot, and preserve all seeded defaults.
- * Returns the sentinel string injected for each scene index (for later assertion).
- */
-async function stampScenes(
+/** Stamp sentinels + dates, upload photos. Returns sentinel per scene index ('' = none). */
+async function fillScenes(
   req: APIRequestContext,
   experienceId: string,
   template: ValidatedTemplate,
   tIdx: number,
-): Promise<{ sentinelByScene: string[] }> {
-  const get = await req.get(`/api/dashboard/experiences/${experienceId}`);
-  expect(get.ok(), `get experience failed: ${get.status()}`).toBeTruthy();
-  const view = (await get.json()) as EditorView;
-  expect(view.steps.length, 'experience has no steps').toBe(template.definition.scenes.length);
+): Promise<string[]> {
+  const steps = await getSteps(req, experienceId);
+  expect(steps.length, 'step count != scene count').toBe(template.definition.scenes.length);
 
-  // Map templateStepId -> scene def + its index in the (ordered) definition.
   const sceneById = new Map<string, { scene: SceneDef; index: number }>();
   template.definition.scenes.forEach((scene, index) => sceneById.set(scene.id, { scene, index }));
-
   const sentinelByScene: string[] = new Array(template.definition.scenes.length).fill('');
 
-  const payload = view.steps.map((s) => {
+  const next = steps.map((s) => {
     const entry = sceneById.get(s.templateStepId);
     expect(entry, `step ${s.templateStepId} not found in template def`).toBeTruthy();
     const { scene, index } = entry!;
     const text = { ...s.text };
-
     const slot = firstEditableTextSlot(scene);
     if (slot) {
       const mark = sentinel(tIdx, index);
-      // Append the {recipient} token so token substitution stays observable on
-      // EVERY scene (the first editable slot is often the one that carried a
-      // {recipient} default we'd otherwise clobber). Stored form is short
-      // (e.g. "Zq15s4 {recipient}" = 18 chars) so it never trips a slot maxLen.
+      // Append {recipient} so token substitution stays observable on every scene.
       text[slot.key] = `${mark} {recipient}`;
       sentinelByScene[index] = mark;
     }
-
-    // Give Countdown scenes a far-future target so the timer renders something.
     const dateSlot = firstEditableDateSlot(scene);
     if (dateSlot) text[dateSlot.key] = '2030-01-01T00:00:00.000Z';
-
-    return {
-      templateStepId: s.templateStepId,
-      orderIndex: s.orderIndex,
-      text,
-      animationConfig: {},
-    };
+    return { ...s, text };
   });
+  await putSteps(req, experienceId, next);
 
-  const put = await req.put(`/api/dashboard/experiences/${experienceId}/steps`, {
-    data: { steps: payload },
-  });
-  expect(put.ok(), `put steps failed: ${put.status()} ${await put.text()}`).toBeTruthy();
-
-  return { sentinelByScene };
+  for (const scene of template.definition.scenes) {
+    const img = firstImageSlot(scene);
+    if (img && isPhotoScene(scene)) await uploadStepPhoto(req, experienceId, scene.id, img.key);
+  }
+  return sentinelByScene;
 }
 
-/** Publish a free OR paid template and return the live, unlocked slug. */
+/** Publish and return the live, unlocked slug. */
 async function publishAndUnlock(
   page: Page,
   experienceId: string,
   template: ValidatedTemplate,
-  approveVia: 'ui' | 'api',
+  via: 'free' | 'comped' | 'money-path',
 ): Promise<string> {
   const req = page.request;
   const pub = await req.post(`/api/dashboard/experiences/${experienceId}/publish`);
   const body = await pub.json();
 
-  if (!template.isPaid) {
-    expect(pub.status(), `free publish should be 200, got ${pub.status()}`).toBe(200);
+  if (via !== 'money-path') {
+    // Free templates, and paid templates for the comped account, publish directly.
+    expect(pub.status(), `${via} publish should be 200, got ${pub.status()} ${JSON.stringify(body)}`).toBe(200);
     expect(body.kind).toBe('published');
     return body.slug as string;
   }
 
-  // PAID → 202 payment_required with an order; pay then admin-approve.
   expect(pub.status(), `paid publish should be 202, got ${pub.status()}`).toBe(202);
   expect(body.kind).toBe('payment_required');
   const orderId = body.order.id as string;
   const orderRef = body.order.orderRef as string;
   const slug = body.slug as string;
-  expect(orderId && orderRef && slug).toBeTruthy();
 
   const mediaId = await uploadPaymentScreenshot(req, experienceId);
   await submitOrder(req, orderId, mediaId, `QA-${template.slug}`);
 
-  // Admin approves. Switch the SAME browser context to the admin session.
+  // Switch the SAME browser context to the admin and approve in the real UI.
   await login(page, ADMIN_EMAIL);
-
-  if (approveVia === 'ui') {
-    // Exhaustively drive the real admin Review drawer (the money path UI).
-    await page.goto('/en/admin/queue');
-    await expect(page.getByRole('heading', { name: 'Payment queue' })).toBeVisible();
-    const row = page.locator('tr', { hasText: orderRef });
-    await expect(row).toBeVisible({ timeout: 15_000 });
-    await row.getByRole('button', { name: 'Review' }).click();
-    const approveBtn = page.getByRole('button', { name: /Approve/ });
-    await expect(approveBtn).toBeVisible();
-    await approveBtn.click();
-    await expect(page.locator('tr', { hasText: orderRef })).toHaveCount(0, { timeout: 15_000 });
-  } else {
-    // Same state machine + audit, driven through the admin API (admin session cookie).
-    const res = await page.request.post(`/api/admin/orders/${orderId}/approve`);
-    expect(res.ok(), `admin approve failed: ${res.status()} ${await res.text()}`).toBeTruthy();
-  }
-
+  await page.goto('/en/admin/queue');
+  await expect(page.getByRole('heading', { name: 'Payment queue' })).toBeVisible();
+  const row = page.locator('tr', { hasText: orderRef });
+  await expect(row).toBeVisible({ timeout: 15_000 });
+  await row.getByRole('button', { name: 'Review' }).click();
+  const approveBtn = page.getByRole('button', { name: /Approve/ });
+  await expect(approveBtn).toBeVisible();
+  await approveBtn.click();
+  await expect(page.locator('tr', { hasText: orderRef })).toHaveCount(0, { timeout: 15_000 });
   return slug;
 }
 
-/**
- * Open the player at the template's OWN locale, tap-start, and walk every scene.
- * Asserts non-empty text, the per-scene sentinel, dot count, recipient token, dir.
- */
 async function playAndAssert(
   page: Page,
   slug: string,
   template: ValidatedTemplate,
   sentinelByScene: string[],
 ): Promise<void> {
-  const localePrefix = `/${template.locale}`;
-  await page.goto(`${localePrefix}/p/${slug}`);
-
-  const player = page.getByTestId('player-root');
-  await expect(player, `player-root not visible for ${template.slug}`).toBeVisible({
-    timeout: 15_000,
-  });
-
-  // Direction matches the template (RTL templates render under dir="rtl").
+  await page.goto(`/${template.locale}/p/${slug}`);
+  const player = playerRoot(page);
+  await expect(player, `player-root not visible for ${template.slug}`).toBeVisible({ timeout: 15_000 });
   await expect(player).toHaveAttribute('dir', template.direction);
 
-  // Progress dots == scene count.
-  const sceneCount = template.definition.scenes.length;
-  const dots = player.locator('span.rounded-pill');
-  await expect(dots).toHaveCount(sceneCount);
+  await openGateIfPresent(page);
 
-  // Tap the start overlay to begin playback (scene 0 becomes active).
-  await player.click();
+  // Every scene is a section (photo scenes included — they all got a photo).
+  const scenes = template.definition.scenes;
+  expect(await renderedSceneIds(page)).toEqual(scenes.map((s) => s.id));
 
-  let sawRecipient = false;
-
-  for (let i = 0; i < sceneCount; i++) {
+  // Walk EVERY section even after a failure, so one broken scene type does not
+  // hide whether the rest of the card works; report all failures together.
+  const failures: string[] = [];
+  for (let i = 0; i < scenes.length; i++) {
     const mark = sentinelByScene[i];
-
-    // The active scene's injected sentinel must be visible (proves user data renders).
-    if (mark) {
-      await expect(
-        player.getByText(mark, { exact: false }),
-        `scene ${i} sentinel "${mark}" not visible for ${template.slug}`,
-      ).toBeVisible({ timeout: 15_000 });
+    if (!mark) {
+      // No text slot to stamp — still require the section to exist and scroll.
+      await sceneSection(page, scenes[i].id).scrollIntoViewIfNeeded();
+      continue;
     }
-
-    // The active scene must show SOME non-empty heading/body text (no blank scene).
-    // The sentinel itself is non-empty visible text; assert a real heading node too.
-    const headings = player.locator('h1');
-    await expect(
-      headings.first(),
-      `scene ${i} has no visible heading for ${template.slug}`,
-    ).toBeVisible({ timeout: 15_000 });
-
-    // Recipient-token proof: the unique recipient appears somewhere during the run.
-    if (!sawRecipient && (await player.getByText(RECIPIENT, { exact: false }).count()) > 0) {
-      sawRecipient = true;
-    }
-
-    // Advance to the next scene (tap), except after the last one.
-    if (i < sceneCount - 1) {
-      await player.click();
-      // Wait for AnimatePresence mode="wait" to settle on the next sentinel.
-      const next = sentinelByScene[i + 1];
-      if (next) {
-        await expect(player.getByText(next, { exact: false })).toBeVisible({ timeout: 15_000 });
-      }
+    const msg = `scene ${i} (${scenes[i].type} "${scenes[i].id}") sentinel "${mark}" not revealed for ${template.slug}`;
+    try {
+      await expectSceneText(page, scenes[i].id, mark, msg);
+    } catch {
+      failures.push(msg);
     }
   }
+  expect(failures, failures.join('\n')).toEqual([]);
 
   if (usesRecipientToken(template)) {
-    expect(
-      sawRecipient,
-      `recipient sentinel "${RECIPIENT}" never rendered for token-bearing template ${template.slug}`,
-    ).toBeTruthy();
+    await expect(
+      player.getByText(RECIPIENT, { exact: false }).first(),
+      `recipient "${RECIPIENT}" never rendered for ${template.slug}`,
+    ).toBeVisible();
   }
 }
 
 /* ─────────────────────────── the data-driven suite ─────────────────────────── */
 
-// One representative paid template is approved through the FULL admin UI; the
-// rest of the paid templates approve via the admin API (same service + audit).
+// One representative paid template goes through the FULL pay → admin-approve UI;
+// the rest publish through the comped account (money path is also covered in
+// money-path.spec.ts, so repeating it 20+ times would only add runtime).
 const PAID_UI_SAMPLE = TEMPLATE_CATALOG.find((t) => t.isPaid)?.slug;
 
-test.describe('All templates render user-filled data with no empty scenes', () => {
+test.describe('All templates render user-filled data in every section', () => {
   TEMPLATE_CATALOG.forEach((template, tIdx) => {
     const label = `${template.slug} (${template.locale}/${template.direction}, ${
       template.isPaid ? 'paid' : 'free'
     })`;
 
     test(`template ${label}`, async ({ page }) => {
-      // 1. Login as a per-template user (deterministic email → stable reruns).
-      await login(page, userEmail(`tpl-${tIdx}`));
+      const via: 'free' | 'comped' | 'money-path' = !template.isPaid
+        ? 'free'
+        : template.slug === PAID_UI_SAMPLE
+          ? 'money-path'
+          : 'comped';
+      await login(page, via === 'comped' ? COMPED_EMAIL : userEmail(`tpl-${tIdx}`));
 
-      // Resolve this catalog template → seeded DB template id. The templates API
-      // does NOT expose slug, so match on the localized title (unique per template)
-      // plus locale + paid flag to disambiguate.
+      // The templates API does not expose slug; the localized title is unique
+      // per template, plus locale + paid flag to disambiguate.
       const cards = await listTemplates(page.request);
       const expectedName = template.locale === 'ar' ? template.titleAr : template.titleEn;
       const dbId = cards.find(
-        (c) =>
-          c.name === expectedName &&
-          c.locale === template.locale &&
-          c.isPaid === template.isPaid,
+        (c) => c.name === expectedName && c.locale === template.locale && c.isPaid === template.isPaid,
       )?.id;
-      expect(dbId, `no seeded template found for ${template.slug} (name "${expectedName}")`).toBeTruthy();
+      expect(dbId, `no seeded template for ${template.slug} ("${expectedName}")`).toBeTruthy();
 
-      // 2. Create + stamp sentinels.
       const expId = await createExperience(page.request, dbId!, template.locale);
-      const { sentinelByScene } = await stampScenes(page.request, expId, template, tIdx);
-
-      // 3. Publish + unlock (free direct; paid pay+approve).
-      const approveVia = template.slug === PAID_UI_SAMPLE ? 'ui' : 'api';
-      const slug = await publishAndUnlock(page, expId, template, approveVia);
+      const sentinelByScene = await fillScenes(page.request, expId, template, tIdx);
+      const slug = await publishAndUnlock(page, expId, template, via);
       expect(slug, 'no slug after publish').toBeTruthy();
 
-      // 4. Play through every scene and assert.
       await playAndAssert(page, slug, template, sentinelByScene);
     });
   });

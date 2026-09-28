@@ -19,7 +19,9 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: 0,
   reporter: [['list']],
-  timeout: 60_000,
+  // Dev-mode compiles each route on first hit; a full invitation walk (login,
+  // create, upload, publish, scroll 12 sections) needs headroom beyond 60s.
+  timeout: 120_000,
   expect: { timeout: 15_000 },
 
   use: {
@@ -42,7 +44,9 @@ export default defineConfig({
     // Seed a dedicated e2e database (fresh admin with a known password + full
     // template catalog), then start the dev server. Fixed port so baseURL is
     // deterministic; AUTH_URL aligned so Auth.js v5 redirect URLs match.
-    command: `npm run db:seed && next dev -p ${PORT}`,
+    // `mkdir -p .data` first: PGlite creates only the leaf directory, so on a
+    // fresh checkout (CI, a new worktree) the seed died with ENOENT.
+    command: `mkdir -p .data && npm run db:seed && next dev -p ${PORT}`,
     url: BASE_URL,
     reuseExistingServer: false,
     timeout: 180_000,
@@ -53,6 +57,13 @@ export default defineConfig({
       PGLITE_PATH: '.data/pglite-e2e',
       // The seeded admin uses the same password the e2e login helper submits.
       SEED_ADMIN_PASSWORD: 'e2e-password-123',
+      // Comped (users.all_access) account for the "comped publishes a paid
+      // template free" path. There is no admin API to grant all_access and the
+      // test process must not open PGlite while the server owns it, so the seed
+      // (which runs BEFORE the server starts) is the only safe place to create it.
+      SEED_TESTER: '1',
+      SEED_TESTER_EMAIL: 'e2e-comped@example.com',
+      SEED_TESTER_PASSWORD: 'e2e-password-123',
     },
   },
 });
