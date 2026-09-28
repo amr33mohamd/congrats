@@ -2,13 +2,14 @@
 #
 #   docker compose -f docker-compose.yml -f docker-compose.postgres.yml up --build
 #
-# The entrypoint detects DATABASE_URL, applies the schema with drizzle-kit push,
-# then seeds. The app waits for Postgres to be healthy before starting.
+# The entrypoint detects DATABASE_URL, applies the versioned migrations in
+# drizzle/ (drizzle-kit migrate), then seeds. The app waits for Postgres to be healthy before starting.
 
 services:
   app:
     environment:
       DATABASE_URL: postgresql://congrats:congrats@db:5432/congrats
+      ALLOW_PGLITE_IN_PRODUCTION: "false"
     depends_on:
       db:
         condition: service_healthy
@@ -20,7 +21,9 @@ services:
       POSTGRES_PASSWORD: congrats
       POSTGRES_DB: congrats
     ports:
-      - "5432:5432"
+      # Loopback only: never expose the database (with its default password)
+      # on a public interface of the VPS.
+      - "127.0.0.1:${DB_PORT:-5432}:5432"
     volumes:
       - congrats-pgdata:/var/lib/postgresql/data
     healthcheck:

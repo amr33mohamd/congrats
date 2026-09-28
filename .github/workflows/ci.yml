@@ -2,13 +2,16 @@ name: CI
 
 on:
   push:
-    branches: [main, foundation]
+    branches: [main, production-ready]
   pull_request:
     branches: [main]
 
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
+
+permissions:
+  contents: read
 
 jobs:
   build:
@@ -40,3 +43,47 @@ jobs:
 
       - name: Build
         run: npm run build
+
+      # Fails the job on new high/critical advisories in production
+      # dependencies. Dev-only tooling (vitest, drizzle-kit) is excluded
+      # because it never ships to users.
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=high
+
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: build
+    # Allowed to fail for now: the suite drives a real browser against a dev
+    # server + PGlite and has not yet been stabilised on CI runners (cold
+    # compiles on first navigation, timing-sensitive animations). Flip this to
+    # false once it has been green for a week so regressions start blocking.
+    continue-on-error: true
+    env:
+      NEXT_TELEMETRY_DISABLED: '1'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      # playwright.config.ts owns the server: it seeds a dedicated PGlite DB
+      # and starts `next dev` on port 3100 with its own test-only secrets.
+      - name: Run E2E tests
+        run: npx playwright test
+
+      - name: Upload Playwright artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-results
+          path: test-results/
+          retention-days: 7

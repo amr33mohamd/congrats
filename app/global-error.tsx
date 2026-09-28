@@ -9,6 +9,11 @@ import { useEffect } from 'react';
 export default function GlobalError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   useEffect(() => {
     console.error('[global error]', error);
+    // Report only when Sentry is configured (DSN inlined at build time); the
+    // lazy import keeps the SDK out of the bundle path otherwise.
+    if (process.env.NEXT_PUBLIC_SENTRY_DSN) {
+      void import('@sentry/nextjs').then((Sentry) => Sentry.captureException(error));
+    }
   }, [error]);
 
   return (
