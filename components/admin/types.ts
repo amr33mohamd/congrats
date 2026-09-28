@@ -66,6 +66,8 @@ export interface UserRow {
   displayName?: string | null;
   locale: string;
   isBlocked: boolean;
+  /** Comped: publishes paid templates without an order. */
+  allAccess?: boolean;
   createdAt?: string | null;
 }
 

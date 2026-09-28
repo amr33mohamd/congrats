@@ -116,7 +116,10 @@
       "goCheckout": "Continue to payment",
       "publishing": "Publishing…",
       "previewFull": "Preview full experience",
-      "publishError": "Couldn't publish. Please try again."
+      "publishError": "Couldn't publish. Please try again.",
+      "included": "Included with your account",
+      "alreadyPaid": "Paid",
+      "compedNote": "Your account includes every template, so publishing this one is free."
     }
   },
   "checkout": {

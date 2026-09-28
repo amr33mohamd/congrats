@@ -10,7 +10,7 @@
  *
  * Uses the same db client (PGlite locally).
  */
-import { eq } from 'drizzle-orm';
+import { and, eq, notInArray } from 'drizzle-orm';
 import { getDb } from './index';
 import { categories, templates, users, adminUsers } from './schema';
 import { TEMPLATE_CATALOG, CATALOG_CATEGORIES } from '@/content/templates';
@@ -24,6 +24,31 @@ async function upsertCategory(
   if (existing[0]) return existing[0];
   const [row] = await db.insert(categories).values(c).returning();
   return row;
+}
+
+/**
+ * Retire published templates the catalog no longer ships (e.g. the invitation
+ * rewrite replaced whole slugs). Archived, never deleted: experiences hold an
+ * FK to their template and must keep rendering — archiving only removes the
+ * template from the gallery/picker. Idempotent: already-archived rows are left
+ * alone, so a re-seed reports 0.
+ *
+ * NB: this also archives published templates an admin created in the admin UI
+ * (they are not in the catalog either). Set SEED_ARCHIVE_UNLISTED=0 to skip it
+ * on a database where admins author templates directly.
+ */
+export async function archiveUnlistedTemplates(
+  db: Awaited<ReturnType<typeof getDb>>,
+  catalogSlugs: readonly string[],
+): Promise<string[]> {
+  // An empty catalog would archive everything — refuse rather than wipe the shop.
+  if (catalogSlugs.length === 0) return [];
+  const rows = await db
+    .update(templates)
+    .set({ status: 'archived', updatedAt: new Date() })
+    .where(and(eq(templates.status, 'published'), notInArray(templates.slug, [...catalogSlugs])))
+    .returning({ slug: templates.slug });
+  return rows.map((r) => r.slug).sort();
 }
 
 export async function seed() {
@@ -118,12 +143,24 @@ export async function seed() {
     }
   }
 
+  const archived =
+    process.env.SEED_ARCHIVE_UNLISTED === '0'
+      ? []
+      : await archiveUnlistedTemplates(
+          db,
+          TEMPLATE_CATALOG.map((t) => t.slug),
+        );
+  if (archived.length > 0) {
+    console.log(`Seed: archived ${archived.length} template(s) no longer in the catalog:`, archived);
+  }
+
   return {
     categories: Object.keys(catRows).length,
     admin: admin.email,
     templatesInCatalog: TEMPLATE_CATALOG.length,
     templatesInserted: inserted,
     templatesUpdated: updated,
+    templatesArchived: archived.length,
   };
 }
 

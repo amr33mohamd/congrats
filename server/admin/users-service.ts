@@ -1,6 +1,8 @@
 /**
- * User administration (admin): list users with search/filter and block/unblock.
- * Blocking sets users.is_blocked; consumers (auth/dashboard) enforce the gate.
+ * User administration (admin): list users with search/filter, block/unblock,
+ * and grant/revoke comped access. Blocking sets users.is_blocked; consumers
+ * (auth/dashboard) enforce the gate. Comped access sets users.all_access, which
+ * share-service reads per publish (never from the session).
  */
 import { and, desc, eq, ilike, or, type SQL } from 'drizzle-orm';
 import { users, adminUsers } from '@/db/schema';
@@ -94,6 +96,50 @@ export async function setUserBlocked(
     entityType: 'user',
     entityId: userId,
     metadata: { isBlocked },
+  });
+  return rows[0];
+}
+
+/**
+ * Grant or revoke comped access (`users.all_access`): a comped account publishes
+ * PAID templates without an order. This gives away paid product, so every change
+ * is audited with the before/after value. Takes effect on the user's next
+ * publish — the flag is read from the DB per request, not from their JWT.
+ */
+export async function setUserAllAccess(
+  ctx: AdminContext,
+  userId: string,
+  allAccess: boolean,
+  actor: AuditActor,
+): Promise<Omit<User, 'passwordHash'>> {
+  const existing = await ctx.db
+    .select({ id: users.id, allAccess: users.allAccess })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+  if (!existing[0]) throw notFound('user not found');
+
+  const rows = await ctx.db
+    .update(users)
+    .set({ allAccess, updatedAt: new Date() })
+    .where(eq(users.id, userId))
+    .returning({
+      id: users.id,
+      email: users.email,
+      displayName: users.displayName,
+      locale: users.locale,
+      avatarUrl: users.avatarUrl,
+      isBlocked: users.isBlocked,
+      allAccess: users.allAccess,
+      createdAt: users.createdAt,
+      updatedAt: users.updatedAt,
+    });
+
+  await appendAdminAudit(ctx.db, actor, {
+    action: allAccess ? 'user.all_access_grant' : 'user.all_access_revoke',
+    entityType: 'user',
+    entityId: userId,
+    metadata: { allAccess, previous: existing[0].allAccess },
   });
   return rows[0];
 }

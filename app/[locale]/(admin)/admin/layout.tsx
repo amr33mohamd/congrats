@@ -2,6 +2,8 @@ import type { ReactNode } from 'react';
 import { setRequestLocale } from 'next-intl/server';
 import { redirect } from '@/i18n/navigation';
 import { getSession } from '@/lib/auth';
+import { getDb } from '@/db';
+import { hasAdminRow } from '@/server/db-context';
 import { AdminSidebar } from '@/components/admin/AdminSidebar';
 import { LogoutButton } from './LogoutButton';
 
@@ -24,6 +26,9 @@ export default async function AdminLayout({
   const session = await getSession();
   if (!session) redirect({ href: '/login', locale });
   if (!session!.isAdmin) redirect({ href: '/dashboard', locale });
+  // The JWT's admin flag can be stale (role revoked after sign-in); the DB is
+  // the source of truth. The admin APIs enforce the same check.
+  if (!(await hasAdminRow(await getDb(), session!.id))) redirect({ href: '/dashboard', locale });
 
   return (
     <div className="flex min-h-[100dvh] flex-col bg-surface-2 md:flex-row">

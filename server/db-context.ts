@@ -13,7 +13,7 @@
 import { and, eq, type SQL } from 'drizzle-orm';
 import type { PgColumn } from 'drizzle-orm/pg-core';
 import { getDb, type DbClient } from '@/db';
-import { users } from '@/db/schema';
+import { users, adminUsers } from '@/db/schema';
 import { requireUser, requireAdmin, type SessionUser, AuthError } from '@/lib/auth';
 
 /**
@@ -67,11 +67,29 @@ export async function userContext(): Promise<UserContext> {
   };
 }
 
+/**
+ * Is this user CURRENTLY an admin? The session's `isAdmin` is baked into the
+ * JWT at sign-in, so removing someone's admin_users row would otherwise leave
+ * them with admin API access until their token expired. Same reasoning as the
+ * per-request `isBlocked` re-check above.
+ */
+export async function hasAdminRow(db: DbClient, userId: string): Promise<boolean> {
+  const row = await db
+    .select({ id: adminUsers.id })
+    .from(adminUsers)
+    .where(eq(adminUsers.userId, userId))
+    .limit(1);
+  return Boolean(row[0]);
+}
+
 /** Build a request-scoped context for an admin (throws if not admin). */
 export async function adminContext(): Promise<AdminContext> {
   const admin = await requireAdmin();
   const db = await getDb();
   await assertUserExists(db, admin.id);
+  if (!(await hasAdminRow(db, admin.id))) {
+    throw new AuthError('admin privileges required', 'FORBIDDEN');
+  }
   return { db, admin };
 }
 

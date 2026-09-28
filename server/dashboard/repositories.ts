@@ -16,6 +16,7 @@ import {
   orders,
   shareLinks,
   templates,
+  users,
   type Experience,
   type Step,
   type Media,
@@ -28,6 +29,22 @@ import {
 
 export async function getTemplateById(db: DbClient, id: string): Promise<Template | undefined> {
   return (await db.select().from(templates).where(eq(templates.id, id)).limit(1))[0];
+}
+
+/* ─────────────────────────────── Users ────────────────────────────────── */
+
+/**
+ * Is this account comped (`users.all_access`)? Read per request from the row,
+ * never from the session, so revoking access takes effect immediately instead
+ * of whenever the user's stateless JWT expires.
+ */
+export async function getUserAllAccess(db: DbClient, userId: string): Promise<boolean> {
+  const row = await db
+    .select({ allAccess: users.allAccess })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+  return row[0]?.allAccess === true;
 }
 
 /* ──────────────────────────── Experiences ─────────────────────────────── */
@@ -110,6 +127,40 @@ export async function replaceSteps(
   await db.delete(steps).where(eq(steps.experienceId, experienceId));
   if (rows.length === 0) return [];
   return db.insert(steps).values(rows).returning();
+}
+
+/**
+ * Apply a reconciliation plan without replacing rows: existing steps keep their
+ * UUIDs (legacy media rows bind by `step_id`, and a replace would null those
+ * out), so we only move order indexes and insert the missing scenes.
+ *
+ * Runs in a transaction and moves every row through a negative scratch index
+ * first — the (experience_id, order_index) unique key would otherwise reject
+ * swaps. The caller has already verified ownership of the experience.
+ */
+export async function applyStepPlan(
+  db: DbClient,
+  experienceId: string,
+  plan: {
+    moves: Array<{ id: string; orderIndex: number }>;
+    inserts: Array<typeof steps.$inferInsert>;
+  },
+): Promise<void> {
+  await db.transaction(async (tx) => {
+    for (let i = 0; i < plan.moves.length; i++) {
+      await tx
+        .update(steps)
+        .set({ orderIndex: -1 - i })
+        .where(and(eq(steps.id, plan.moves[i].id), eq(steps.experienceId, experienceId)));
+    }
+    for (const move of plan.moves) {
+      await tx
+        .update(steps)
+        .set({ orderIndex: move.orderIndex, updatedAt: new Date() })
+        .where(and(eq(steps.id, move.id), eq(steps.experienceId, experienceId)));
+    }
+    if (plan.inserts.length > 0) await tx.insert(steps).values(plan.inserts);
+  });
 }
 
 /* ─────────────────────────────── Media ────────────────────────────────── */

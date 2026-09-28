@@ -137,6 +137,10 @@ export const BlockUserSchema = z.object({
   isBlocked: z.boolean(),
 });
 
+export const AllAccessSchema = z.object({
+  allAccess: z.boolean(),
+});
+
 /* ─────────────────────────────── Audit ────────────────────────────── */
 
 export const AuditQuerySchema = z.object({

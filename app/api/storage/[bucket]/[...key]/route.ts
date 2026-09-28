@@ -18,6 +18,7 @@ import { getDb } from '@/db';
 import { media, experiences, shareLinks } from '@/db/schema';
 import { getSession } from '@/lib/auth';
 import { getStorage, type StorageBucket } from '@/server/storage';
+import { hasAdminRow } from '@/server/db-context';
 
 export const runtime = 'nodejs';
 
@@ -71,6 +72,10 @@ export async function GET(_req: Request, { params }: Params) {
       'Content-Type': contentType,
       'Content-Length': String(bytes.byteLength),
       'Cache-Control': 'private, max-age=300',
+      // Bytes are user-uploaded: never let a browser sniff them into something
+      // executable (e.g. HTML smuggled in with an image extension).
+      'X-Content-Type-Options': 'nosniff',
+      'Content-Security-Policy': "default-src 'none'; img-src 'self'; style-src 'unsafe-inline'; sandbox",
     },
   });
 }
@@ -90,8 +95,9 @@ async function isAuthorized(args: {
     Boolean(session) && (row ? row.userId === session!.id : ownerId === session!.id);
   if (isOwner) return true;
 
-  // Admins may stream anything (payment-proof review).
-  if (session?.isAdmin) return true;
+  // Admins may stream anything (payment-proof review). The JWT flag alone can
+  // be stale after a role is revoked, so confirm against admin_users.
+  if (session?.isAdmin && (await hasAdminRow(db, session.id))) return true;
 
   // payment-proofs are NEVER public.
   if (bucket === 'payment-proofs') return false;

@@ -1,3 +1,4 @@
+import { cache } from 'react';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
 import type { Metadata } from 'next';
 import { Player } from '@/components/player';
@@ -5,7 +6,11 @@ import { Player } from '@/components/player';
 // additionally binds `media` rows to short-lived signed URLs so recipient photos
 // render. The gate (link active + not disabled + not expired + isUnlocked) means
 // paid+unapproved experiences still return null and render the neutral page.
-import { getPublicExperienceBySlug as loadPublicExperience } from '@/server/dashboard/share-service';
+import { getPublicExperienceBySlug } from '@/server/dashboard/share-service';
+
+// generateMetadata and the page both need the experience. Without request-level
+// dedupe every open ran the full load twice — and bumped the view counter twice.
+const loadPublicExperience = cache(getPublicExperienceBySlug);
 
 // Public player route. F0 owns this: it enforces the unlock gate SERVER-SIDE
 // and renders the shared Player. Recipients are unauthenticated.
@@ -15,15 +20,19 @@ export async function generateMetadata({
 }: {
   params: Promise<{ locale: string; slug: string }>;
 }): Promise<Metadata> {
-  const { slug } = await params;
+  const { locale, slug } = await params;
+  // Cards are private-by-link: keep them (and dead links) out of search indexes.
+  const robots = { index: false, follow: false };
   const exp = await loadPublicExperience(slug);
-  if (!exp) return { title: 'Congrats' };
+  if (!exp) return { title: 'Congrats', robots };
+  const t = await getTranslations({ locale, namespace: 'common' });
+  const title = exp.recipientName
+    ? t('player.metaFor', { name: exp.recipientName })
+    : t('player.metaGeneric');
   return {
-    title: exp.recipientName ? `For ${exp.recipientName}` : 'A message for you',
-    openGraph: {
-      title: exp.recipientName ? `For ${exp.recipientName}` : 'A message for you',
-      type: 'website',
-    },
+    title,
+    robots,
+    openGraph: { title, type: 'website' },
   };
 }
 

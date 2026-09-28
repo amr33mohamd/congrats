@@ -2,7 +2,7 @@ import { userContext } from '@/server/db-context';
 import { withErrors, created } from '@/server/dashboard/http';
 import { DashboardError } from '@/server/dashboard/errors';
 import { MediaKindSchema, MAX_MEDIA_BYTES } from '@/server/dashboard/schemas';
-import { uploadMedia } from '@/server/dashboard/media-service';
+import { uploadMedia, assertImageBytes } from '@/server/dashboard/media-service';
 
 export const runtime = 'nodejs';
 
@@ -17,6 +17,15 @@ export const runtime = 'nodejs';
 export async function POST(req: Request) {
   return withErrors(async () => {
     const ctx = await userContext();
+
+    // Reject obviously oversized bodies BEFORE buffering them: formData() reads
+    // the whole request into memory, so the per-file check below alone would
+    // still let a client make us allocate an arbitrarily large payload. The
+    // slack covers multipart boundaries and the small text fields.
+    const declared = Number(req.headers.get('content-length') ?? '');
+    if (Number.isFinite(declared) && declared > MAX_MEDIA_BYTES + 64 * 1024) {
+      throw DashboardError.validation(`file too large (max ${MAX_MEDIA_BYTES} bytes)`);
+    }
 
     const form = await req.formData().catch(() => {
       throw DashboardError.validation('expected multipart/form-data');
@@ -33,7 +42,6 @@ export async function POST(req: Request) {
     const kindParsed = MediaKindSchema.safeParse(form.get('kind') ?? 'step_image');
     if (!kindParsed.success) throw DashboardError.validation('invalid kind');
 
-    const mime = file.type || 'application/octet-stream';
     const experienceId = strOrUndefined(form.get('experienceId'));
     const stepId = strOrUndefined(form.get('stepId'));
     // Stable scene id + image-slot key for experience photos (non-UUID).
@@ -43,6 +51,10 @@ export async function POST(req: Request) {
     const height = numOrUndefined(form.get('height'));
 
     const data = Buffer.from(await file.arrayBuffer());
+    // Trust the bytes, not the browser-supplied `file.type`: anything that is
+    // not really a JPEG/PNG/WebP/GIF is rejected here, and the stored (and
+    // later served) Content-Type is the sniffed one.
+    const mime = assertImageBytes(data);
 
     const media = await uploadMedia(ctx, {
       kind: kindParsed.data,

@@ -26,7 +26,9 @@
     "tapToContinue": "Tap to continue",
     "replay": "Replay",
     "unavailableTitle": "This link isn't available",
-    "unavailableBody": "It may have been removed or isn't ready yet."
+    "unavailableBody": "It may have been removed or isn't ready yet.",
+    "metaFor": "For {name}",
+    "metaGeneric": "A message for you"
   },
   "order": {
     "status": {

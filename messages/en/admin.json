@@ -204,7 +204,14 @@
     "blockConfirm": "Block this user? They will lose access.",
     "unblockConfirm": "Unblock this user?",
     "empty": "No users found.",
-    "actionError": "Could not update the user."
+    "actionError": "Could not update the user.",
+    "colAccess": "Access",
+    "comped": "All templates free",
+    "standard": "Standard",
+    "grantAccess": "Give free access",
+    "revokeAccess": "Remove free access",
+    "grantConfirm": "Give this user free access to every paid template? They will publish without paying.",
+    "revokeConfirm": "Remove this user’s free access? Paid templates will need payment again."
   },
   "audit": {
     "title": "Audit log",

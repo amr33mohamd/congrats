@@ -33,6 +33,7 @@ export interface EditorExperienceView {
   templateName: string | null;
   shareSlug: string | null;
   orderId: string | null;
+  allAccess: boolean;
 }
 
 export async function toEditorExperienceView(
@@ -107,5 +108,6 @@ export async function toEditorExperienceView(
     templateName: template.slug,
     shareSlug: shareLink?.slug ?? null,
     orderId: order?.id ?? null,
+    allAccess: payload.allAccess,
   };
 }

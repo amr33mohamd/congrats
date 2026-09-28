@@ -20,6 +20,7 @@ import {
 } from '@/lib/template-contract';
 import type { Experience, Step, Media } from '@/db/schema';
 import { DashboardError } from './errors';
+import { defaultTextForScene, reconcileSteps } from './step-reconcile';
 import * as repo from './repositories';
 
 export interface EditorStepPayload {
@@ -43,22 +44,12 @@ export interface EditorPayload {
   };
   steps: EditorStepPayload[];
   shareLink: { slug: string; isActive: boolean; visibility: string } | null;
-}
-
-/**
- * Build the default text map for a scene from its slot defaults. We store the
- * RAW default with the `{recipient}` token intact (not yet substituted) so that
- * later changes to the recipient name flow through — tokens are resolved at
- * render time (live preview, share page, order view) via `applyTokens`.
- */
-function defaultTextForScene(scene: SceneDef, locale: Locale): Record<string, string> {
-  const out: Record<string, string> = {};
-  for (const slot of scene.slots) {
-    if (slot.type !== 'text' && slot.type !== 'date') continue;
-    const def = locale === 'ar' ? slot.defaultAr : slot.defaultEn;
-    if (def != null) out[slot.key] = def;
-  }
-  return out;
+  /**
+   * The caller's comped (`users.all_access`) flag, read from the DB. Display
+   * only: the review step uses it to label the button "Publish" instead of
+   * "Continue to payment". The server still decides entitlement at publish.
+   */
+  allAccess: boolean;
 }
 
 export async function createExperience(
@@ -127,7 +118,7 @@ export async function getEditorPayload(ctx: UserContext, id: string): Promise<Ed
   if (!tpl) throw DashboardError.notFound('template not found');
   const def = parseTemplateDefinition(tpl.definition);
 
-  const stepRows = await repo.listSteps(ctx.db, experience.id);
+  const stepRows = await loadReconciledSteps(ctx, experience, def);
   const mediaRows = await repo.listExperienceMedia(ctx.db, ctx.user.id, experience.id);
   const mediaByStep = new Map<string, Media[]>();
   for (const m of mediaRows) {
@@ -137,7 +128,7 @@ export async function getEditorPayload(ctx: UserContext, id: string): Promise<Ed
     mediaByStep.set(m.stepId, list);
   }
 
-  const steps: EditorStepPayload[] = stepRows.map((s: Step) => ({
+  const steps: EditorStepPayload[] = stepRows.map((s) => ({
     id: s.id,
     templateStepId: s.templateStepId,
     orderIndex: s.orderIndex,
@@ -154,6 +145,7 @@ export async function getEditorPayload(ctx: UserContext, id: string): Promise<Ed
   }));
 
   const link = await repo.getShareLinkByExperience(ctx.db, experience.id);
+  const allAccess = await repo.getUserAllAccess(ctx.db, ctx.user.id);
 
   return {
     experience,
@@ -167,7 +159,66 @@ export async function getEditorPayload(ctx: UserContext, id: string): Promise<Ed
     },
     steps,
     shareLink: link ? { slug: link.slug, isActive: link.isActive, visibility: link.visibility } : null,
+    allAccess,
   };
+}
+
+/**
+ * The experience's steps, reconciled against the CURRENT template definition
+ * (see step-reconcile.ts) and persisted when they drifted, so sections added to
+ * the template after the card was created show up in the editor AND are saved
+ * as real rows the user can edit. Orphaned rows (scene removed) are parked
+ * after the live scenes rather than deleted — the next editor save replaces the
+ * full step set anyway, and until then nothing is lost if a scene comes back.
+ *
+ * Persistence is best-effort: if a concurrent load wins the race (unique
+ * order-index violation), we re-read what it wrote instead of failing the page.
+ */
+async function loadReconciledSteps(
+  ctx: UserContext,
+  experience: Experience,
+  def: TemplateDefinition,
+): Promise<Step[]> {
+  const locale = experience.locale as Locale;
+  const saved = await repo.listSteps(ctx.db, experience.id);
+  const plan = reconcileSteps(def, saved, locale);
+  if (!plan.needsPersist) return plan.steps.map((s) => s.existing!);
+
+  const moves: Array<{ id: string; orderIndex: number }> = [];
+  for (const s of plan.steps) {
+    if (s.existing && s.existing.orderIndex !== s.orderIndex) {
+      moves.push({ id: s.existing.id, orderIndex: s.orderIndex });
+    }
+  }
+  plan.orphans.forEach((o, i) => {
+    const parked = def.scenes.length + i;
+    if (o.orderIndex !== parked) moves.push({ id: o.id, orderIndex: parked });
+  });
+  const inserts = plan.steps
+    .filter((s) => !s.existing)
+    .map((s) => ({
+      experienceId: experience.id,
+      templateStepId: s.scene.id,
+      orderIndex: s.orderIndex,
+      recipientName: experience.recipientName ?? null,
+      textContent: s.defaultText,
+      animationConfig: {},
+    }));
+
+  try {
+    await repo.applyStepPlan(ctx.db, experience.id, { moves, inserts });
+  } catch (err) {
+    console.warn('[experiences] step reconciliation not persisted', {
+      experienceId: experience.id,
+      error: err instanceof Error ? err.message : String(err),
+    });
+  }
+
+  // Re-read and keep only the live scenes, in definition order. Anything still
+  // missing (persist failed and nobody else wrote it) is simply not editable
+  // on this load; it will be retried on the next one.
+  const fresh = reconcileSteps(def, await repo.listSteps(ctx.db, experience.id), locale);
+  return fresh.steps.flatMap((s) => (s.existing ? [{ ...s.existing, orderIndex: s.orderIndex }] : []));
 }
 
 export async function updateExperience(

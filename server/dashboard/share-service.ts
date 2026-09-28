@@ -19,7 +19,7 @@ import { eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import type { UserContext } from '@/server/db-context';
 import { getDb } from '@/db';
-import { shareLinks, experiences, templates, steps, media, users } from '@/db/schema';
+import { shareLinks, experiences, templates, steps, media } from '@/db/schema';
 import type { Media } from '@/db/schema';
 import {
   parseTemplateDefinition,
@@ -32,6 +32,7 @@ import {
 import { createOrder, type CreatedOrder } from './orders-service';
 import { signedUrlForMedia } from './media-service';
 import { DashboardError } from './errors';
+import { reconcileSteps } from './step-reconcile';
 import * as repo from './repositories';
 
 const SLUG_SIZE = 10;
@@ -100,7 +101,7 @@ export async function publishExperience(
   // A comped account publishes paid templates as if they were free. Read from
   // the DB, never the session: `all_access` must be revocable without waiting
   // for a stateless JWT to expire.
-  const comped = await isAllAccess(ctx);
+  const comped = await repo.getUserAllAccess(ctx.db, ctx.user.id);
 
   if (!tpl.isPaid || tpl.pricePiastres <= 0 || comped) {
     // FREE (or comped) → publish directly: unlock + activate link.
@@ -123,20 +124,6 @@ export async function publishExperience(
   // PAID → create (or reuse) a pending order; link stays inactive until approval.
   const order = await createOrder(ctx, experienceId);
   return { kind: 'payment_required', order, slug };
-}
-
-/**
- * Is this account comped? Checked per request against the row rather than the
- * session, so revoking access takes effect immediately instead of whenever the
- * user's JWT happens to expire.
- */
-async function isAllAccess(ctx: UserContext): Promise<boolean> {
-  const row = await ctx.db
-    .select({ allAccess: users.allAccess })
-    .from(users)
-    .where(eq(users.id, ctx.user.id))
-    .limit(1);
-  return row[0]?.allAccess === true;
 }
 
 /* ───────────────────── Public render (gated) ──────────────────────────── */
@@ -166,7 +153,6 @@ export async function getPublicExperienceBySlug(slug: string): Promise<BoundExpe
   if (!tpl) return null;
 
   const def = parseTemplateDefinition(tpl.definition);
-  const sceneById = new Map<string, SceneDef>(def.scenes.map((s) => [s.id, s]));
 
   const stepRows = await db.select().from(steps).where(eq(steps.experienceId, exp.id));
   stepRows.sort((a, b) => a.orderIndex - b.orderIndex);
@@ -193,20 +179,24 @@ export async function getPublicExperienceBySlug(slug: string): Promise<BoundExpe
 
   const recipient = exp.recipientName ?? '';
 
+  // Reconcile against the CURRENT definition in memory only: sections added to
+  // the template since the card was made render with their defaults, and rows
+  // for removed scenes are skipped. No write here — an anonymous viewer must
+  // never mutate someone else's card (the editor persists on next open).
+  const plan = reconcileSteps(def, stepRows, exp.locale === 'ar' ? 'ar' : 'en');
+
   const boundSteps: BoundStep[] = await Promise.all(
-    stepRows.map(async (s): Promise<BoundStep> => {
-      const scene = sceneById.get(s.templateStepId);
-      const rawText = (s.textContent as Record<string, string> | null) ?? {};
+    plan.steps.map(async ({ scene, orderIndex, existing, defaultText }): Promise<BoundStep> => {
+      const rawText =
+        (existing ? (existing.textContent as Record<string, string> | null) : defaultText) ?? {};
       const text: Record<string, string> = {};
       for (const [k, v] of Object.entries(rawText)) text[k] = applyTokens(String(v), recipient);
       // Fill any unset text slots from scene defaults so the Player always has copy.
-      if (scene) {
-        for (const slot of scene.slots) {
-          if (slot.type === 'text' || slot.type === 'date') {
-            if (text[slot.key] == null) {
-              const d = exp.locale === 'ar' ? slot.defaultAr : slot.defaultEn;
-              if (d != null) text[slot.key] = applyTokens(d, recipient);
-            }
+      for (const slot of scene.slots) {
+        if (slot.type === 'text' || slot.type === 'date') {
+          if (text[slot.key] == null) {
+            const d = exp.locale === 'ar' ? slot.defaultAr : slot.defaultEn;
+            if (d != null) text[slot.key] = applyTokens(d, recipient);
           }
         }
       }
@@ -217,7 +207,7 @@ export async function getPublicExperienceBySlug(slug: string): Promise<BoundExpe
       // fall back to the scene's first image-slot key. Per-slot capacity is
       // enforced (single-photo slots keep only the NEWEST; galleries keep up to
       // `max`, oldest-first) so a replaced photo can't double-bind.
-      const mediaForScene = capMediaPerSlot(scene, mediaByScene.get(s.templateStepId) ?? []);
+      const mediaForScene = capMediaPerSlot(scene, mediaByScene.get(scene.id) ?? []);
       const boundMedia: BoundMedia[] = await Promise.all(
         mediaForScene.map(async ({ row, slot }) => ({
           slot,
@@ -228,11 +218,11 @@ export async function getPublicExperienceBySlug(slug: string): Promise<BoundExpe
       );
 
       return {
-        templateStepId: s.templateStepId,
-        orderIndex: s.orderIndex,
+        templateStepId: scene.id,
+        orderIndex,
         text,
         media: boundMedia,
-        animationConfig: (s.animationConfig as Record<string, unknown> | null) ?? {},
+        animationConfig: (existing?.animationConfig as Record<string, unknown> | null) ?? {},
       };
     }),
   );
@@ -251,15 +241,7 @@ export async function getPublicExperienceBySlug(slug: string): Promise<BoundExpe
     recipientName: recipient,
     theme: def.theme,
     scenes: def.scenes,
-    steps: boundSteps.length
-      ? boundSteps
-      : def.scenes.map((sc, i) => ({
-          templateStepId: sc.id,
-          orderIndex: i,
-          text: {},
-          media: [],
-          animationConfig: {},
-        })),
+    steps: boundSteps,
   };
 }
 

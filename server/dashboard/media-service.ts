@@ -23,6 +23,7 @@ import type { Media } from '@/db/schema';
 import { DashboardError } from './errors';
 import { ALLOWED_IMAGE_MIME, MAX_MEDIA_BYTES, type SignMediaInput, type ConfirmMediaInput } from './schemas';
 import * as repo from './repositories';
+import { sniffImageMime, type SniffedImageMime } from './image-sniff';
 
 const EXT_BY_MIME: Record<string, string> = {
   'image/jpeg': 'jpg',
@@ -49,6 +50,25 @@ function assertSize(bytes: number): void {
       `file too large: ${bytes} bytes (max ${MAX_MEDIA_BYTES})`,
     );
   }
+}
+
+/**
+ * Verify uploaded bytes are really one of the accepted image formats and return
+ * the type the BYTES say (not what the client declared). A declared/actual
+ * mismatch between two allowed types (a JPEG named .png) is harmless and we
+ * simply record the real type; anything that is not a recognised image is
+ * rejected. Also rejects empty and oversized payloads.
+ */
+export function assertImageBytes(data: Uint8Array): SniffedImageMime {
+  if (data.byteLength === 0) throw DashboardError.validation('empty file');
+  assertSize(data.byteLength);
+  const sniffed = sniffImageMime(data);
+  if (!sniffed || !(ALLOWED_IMAGE_MIME as readonly string[]).includes(sniffed)) {
+    throw DashboardError.validation(
+      `file is not a supported image; allowed: ${ALLOWED_IMAGE_MIME.join(', ')}`,
+    );
+  }
+  return sniffed;
 }
 
 export interface SignResult {
@@ -158,6 +178,18 @@ export async function confirmMedia(ctx: UserContext, input: ConfirmMediaInput): 
   const exists = await storage.exists(input.bucket, input.key);
   if (!exists) throw DashboardError.unprocessable('uploaded object not found for key');
 
+  // The client uploaded straight to storage, so its declared mime/bytes are
+  // unverified claims. Check the object itself: real size, real image type. A
+  // bad object is removed so it can't be served later by key.
+  const stored = await storage.get(input.bucket, input.key);
+  let actualMime: SniffedImageMime;
+  try {
+    actualMime = assertImageBytes(stored);
+  } catch (err) {
+    await storage.remove(input.bucket, input.key).catch(() => undefined);
+    throw err;
+  }
+
   const kind =
     input.kind ?? (input.bucket === 'payment-proofs' ? 'payment_screenshot' : 'step_image');
 
@@ -170,10 +202,10 @@ export async function confirmMedia(ctx: UserContext, input: ConfirmMediaInput): 
     kind,
     storagePath: input.key,
     bucket: input.bucket,
-    mimeType: input.mime,
+    mimeType: actualMime,
     width: input.width ?? null,
     height: input.height ?? null,
-    bytes: input.bytes,
+    bytes: stored.byteLength,
   });
 }
 
