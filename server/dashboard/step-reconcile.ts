@@ -141,10 +141,10 @@ export function reconcileText(
         }
       }
     }
-    if (value == null) {
-      const def = (locale === 'ar' ? slot.defaultAr : slot.defaultEn) ?? slot.defaultEn ?? slot.defaultAr;
-      if (def != null) value = def;
-    }
+    const def = (locale === 'ar' ? slot.defaultAr : slot.defaultEn) ?? slot.defaultEn ?? slot.defaultAr;
+    if (value == null && def != null) value = def;
+    // Never typed by the sender — it is an old default; show the current one.
+    if (value != null && def != null && slot.formerDefaults?.includes(value)) value = def;
     if (value != null) out[slot.key] = String(value);
   }
   const changed =

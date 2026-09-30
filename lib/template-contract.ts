@@ -184,6 +184,13 @@ export const SlotSchema = z.object({
    */
   formerKeys: z.array(z.string()).optional(),
   /**
+   * Defaults this slot shipped with in earlier versions. A saved value equal to
+   * one of them was never typed by the sender, so reconciliation swaps it for
+   * the current default ("Friday · 5:00 PM" became just "5:00 PM" once the
+   * day came from the wedding date).
+   */
+  formerDefaults: z.array(z.string()).optional(),
+  /**
    * Take the value from a card-level field (TemplateDefinition.fields) instead
    * of asking for it here. The builder does not show a bound slot at all —
    * that is how a card asks for the wedding date once, not three times.
@@ -235,6 +242,13 @@ export const TemplateThemeSchema = z.object({
   palette: z.array(z.string()).default([]),
   fontHeading: z.string().optional(),
   fontBody: z.string().optional(),
+  /**
+   * The fonts for each language, for a card switched to the language it was
+   * not designed in (an English display face has no Arabic glyphs).
+   */
+  localeFonts: z
+    .record(z.enum(['ar', 'en']), z.object({ heading: z.string().optional(), body: z.string().optional() }))
+    .optional(),
   music: z.string().optional(),
   accent: z.string().optional(),
   /** Default background for every scene that doesn't declare its own. */
@@ -358,12 +372,64 @@ export function applyTokens(
   fields?: Record<string, string>,
 ): string {
   let out = text.replaceAll('{recipient}', recipientName).replaceAll('{name}', recipientName);
+  if (!recipientName.trim() && /\{(recipient|name)\}/.test(text)) out = tidyWithoutName(out);
   if (fields) {
     for (const [key, value] of Object.entries(fields)) {
       if (value) out = out.replaceAll(`{${key}}`, value);
     }
   }
   return out;
+}
+
+/**
+ * Copy written around a name ("Dear {recipient},", "مستنيينك يا {recipient}")
+ * must still read naturally when the sender leaves the name blank — e.g. one
+ * invitation link for every guest. Drops the vocative "يا" left with no name,
+ * spaces left before punctuation, and a comma stranded against other
+ * punctuation ("Happy Birthday, !" → "Happy Birthday!").
+ */
+function tidyWithoutName(s: string): string {
+  return s
+    // "يا" with nothing after it but punctuation, an emoji or the end.
+    .replace(/\s*يا\s*(?=[^\p{L}\p{N}\s]|$)/gu, ' ')
+    // A comma whose only follower is a symbol/emoji ("For you, ❤").
+    .replace(/[،,](?=\s*[^\p{L}\p{N}\s،,.!؟?]+\s*$)/u, '')
+    // An English salutation left with no name reads as addressing everyone.
+    .replace(/^Dear\s*,/, 'Dear friends,')
+    .replace(/[ \t]{2,}/g, ' ')
+    .replace(/\s+([،,.!؟?])/g, '$1')
+    .replace(/[،,](?=[.!؟?])/g, '')
+    .replace(/^[\s،,.]+/, '') // the name opened the line: "{recipient}, there's…"
+    .trim()
+    // A trailing comma survives only on a salutation ("Dear friends," / "عزيزنا،").
+    .replace(/[،,]$/, (c, _i, str: string) => (/^(Dear|عزيز)/.test(str) ? c : ''))
+    .replace(/^[a-z]/, (c) => c.toUpperCase());
+}
+
+/**
+ * The experience as it should look in ITS language. A card switched away from
+ * the language its template was designed in takes the sibling template's
+ * fonts, and drops per-section heading faces picked for the other script.
+ */
+export function withLocaleFonts(exp: BoundExperience): BoundExperience {
+  const fonts = exp.theme?.localeFonts?.[exp.locale];
+  if (!fonts?.heading || fonts.heading === exp.theme.fontHeading) return exp;
+  return {
+    ...exp,
+    theme: { ...exp.theme, fontHeading: fonts.heading, fontBody: fonts.body ?? exp.theme.fontBody },
+    scenes: exp.scenes.map((sc) =>
+      sc.style?.headingFont ? { ...sc, style: { ...sc.style, headingFont: undefined } } : sc,
+    ),
+  };
+}
+
+/**
+ * The sender turned this section off in the builder. Stored on the step's
+ * animationConfig (which already travels editor → DB → player) so hiding a
+ * section needs no schema change and keeps everything typed into it.
+ */
+export function isStepHidden(step: { animationConfig?: Record<string, unknown> | null }): boolean {
+  return step.animationConfig?.hidden === true;
 }
 
 /**

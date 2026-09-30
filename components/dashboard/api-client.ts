@@ -100,8 +100,8 @@ export const dashboardApi = {
   patchExperience: (
     id: string,
     body: Partial<{
-      title: string;
-      recipientName: string;
+      title: string | null;
+      recipientName: string | null;
       locale: AppLocale;
       fields: Record<string, string>;
     }>,

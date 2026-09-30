@@ -189,6 +189,18 @@ describe('experiences', () => {
     await expect(publishExperience(ctxA, exp.id)).rejects.toThrow(/Greeting.*Wedding date|Wedding date.*Greeting/);
   });
 
+  // Regression: a blank recipient failed the whole Details save, so the
+  // couple's names and the wedding date saved with it were lost too.
+  it('a blank recipient (one link for every guest) saves along with the card fields', async () => {
+    const exp = await experiencesService.createExperience(ctxA, { templateId: inviteTemplateId, recipientName: 'X' });
+    const updated = await experiencesService.updateExperience(ctxA, exp.id, {
+      recipientName: null,
+      fields: { couple: 'Amr & Walaa', weddingDate: '2027-12-15T19:00' },
+    });
+    expect(updated.recipientName).toBeNull();
+    expect(updated.fields).toEqual({ couple: 'Amr & Walaa', weddingDate: '2027-12-15T19:00' });
+  });
+
   it('card-level fields are asked once and flow into every section that uses them', async () => {
     const exp = await experiencesService.createExperience(ctxA, { templateId: inviteTemplateId, recipientName: 'Salma' });
     await experiencesService.updateExperience(ctxA, exp.id, {

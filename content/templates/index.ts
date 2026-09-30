@@ -119,8 +119,48 @@ function validateEntry(t: CatalogTemplate): ValidatedTemplate {
 }
 
 /** The validated catalog. Importing this module asserts every entry. */
-export const TEMPLATE_CATALOG: ReadonlyArray<ValidatedTemplate> =
-  RAW_CATALOG.map(validateEntry);
+export const TEMPLATE_CATALOG: ReadonlyArray<ValidatedTemplate> = withBothLanguages(
+  RAW_CATALOG.map(validateEntry),
+);
+
+/**
+ * Each template is authored in one language, with a sibling in the other
+ * (same category; for invitations, the same style). Sections line up by
+ * position, so copy each slot's and field's default across from the sibling.
+ * That is what lets a sender switch an English card to Arabic in the builder
+ * and get Arabic text, not the English copy in a right-to-left layout.
+ */
+function withBothLanguages(list: ValidatedTemplate[]): ValidatedTemplate[] {
+  const base = (slug: string) => slug.replace(/-(ar|en)$/, '');
+  const siblingOf = (t: ValidatedTemplate) => {
+    const others = list.filter((o) => o.category === t.category && o.locale !== t.locale);
+    return others.find((o) => base(o.slug) === base(t.slug)) ?? (others.length === 1 ? others[0] : undefined);
+  };
+  return list.map((t) => {
+    const sib = siblingOf(t);
+    if (!sib) return t;
+    const other = sib.locale === 'ar' ? 'defaultAr' : 'defaultEn';
+    const scenes = t.definition.scenes.map((scene, i) => {
+      const twin = sib.definition.scenes[i];
+      if (!twin || twin.type !== scene.type) return scene;
+      return {
+        ...scene,
+        slots: scene.slots.map((slot) => {
+          const match = twin.slots.find((x) => x.key === slot.key && x.type === slot.type);
+          const value = match?.[other];
+          return slot[other] == null && value != null ? { ...slot, [other]: value } : slot;
+        }),
+      };
+    });
+    const fields = t.definition.fields?.map((f) => {
+      const value = sib.definition.fields?.find((x) => x.key === f.key)?.[other];
+      return f[other] == null && value != null ? { ...f, [other]: value } : f;
+    });
+    const fontsOf = (x: ValidatedTemplate) => ({ heading: x.definition.theme.fontHeading, body: x.definition.theme.fontBody });
+    const theme = { ...t.definition.theme, localeFonts: { [t.locale]: fontsOf(t), [sib.locale]: fontsOf(sib) } };
+    return { ...t, definition: { ...t.definition, theme, scenes, ...(fields ? { fields } : {}) } };
+  });
+}
 
 /* ─────────────────────────── lookup helpers ──────────────────────────── */
 

@@ -29,6 +29,8 @@ import {
   type BoundStep,
   type Decoration,
   type SceneDef,
+  isStepHidden,
+  withLocaleFonts,
 } from '@/lib/template-contract';
 import { bodyFamily, cssFamily, googleFontsHref } from '@/lib/fonts';
 import { SceneRenderer, hexLuminance, readableOn } from './SceneRenderer';
@@ -100,6 +102,7 @@ export function isSectionVisible(
   step: BoundStep,
   cardFields: Record<string, string> = {},
 ): boolean {
+  if (isStepHidden(step)) return false; // turned off in the builder
   const ownArt = scene.background?.type === 'image' && Boolean(scene.background.imageUrl);
   if (scene.type === 'PhotoReveal' || scene.type === 'Gallery') {
     return ownArt || step.media.length > 0;
@@ -393,12 +396,13 @@ function OpenGate({
 /* ─────────────────────────────── the player ─────────────────────────────── */
 
 export function Player({
-  experience,
+  experience: given,
   startPaused = true,
   startAtStepId,
   onComplete,
   embedded = false,
 }: PlayerProps) {
+  const experience = React.useMemo(() => withLocaleFonts(given), [given]);
   const reducedMotion = usePrefersReducedMotion();
   const rootRef = React.useRef<HTMLDivElement>(null);
   const [started, setStarted] = React.useState(!startPaused);

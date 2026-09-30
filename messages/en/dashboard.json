@@ -83,7 +83,10 @@
       "localeAr": "العربية (right to left)",
       "localeEn": "English (left to right)",
       "cardDetails": "Event details",
-      "cardDetailsHint": "Filled in once and used everywhere on the card — the names, the date and the countdown all come from here."
+      "cardDetailsHint": "Filled in once and used everywhere on the card — the names, the date and the countdown all come from here.",
+      "guestLabel": "Guest name (optional)",
+      "guestPlaceholder": "e.g. Layla — or leave blank",
+      "guestHint": "Leave it blank to send one invitation link to all your guests; the wording adjusts so it reads naturally without a name."
     },
     "content": {
       "title": "Personalize each scene",
@@ -102,7 +105,10 @@
       "previewHint": "Tap the phone to play",
       "tokenHint": "Tip: type '{recipient}' to insert their name automatically.",
       "required": "Required",
-      "charsLeft": "{count} left"
+      "charsLeft": "{count} left",
+      "showSection": "Show this section",
+      "sectionHidden": "Hidden — not on the card",
+      "sectionHiddenHint": "This section is hidden and won't appear on the card. What you typed is kept — switch it back on any time."
     },
     "review": {
       "title": "Ready to share?",

@@ -26,6 +26,7 @@ import {
   applyTokens,
   resolveFields,
   slotValue,
+  isStepHidden,
   type TemplateDefinition,
   type BoundExperience,
   type BoundStep,
@@ -84,7 +85,7 @@ export type PublishResult =
  */
 export function missingRequired(
   def: TemplateDefinition,
-  stepRows: Array<{ templateStepId: string; textContent: unknown }>,
+  stepRows: Array<{ templateStepId: string; textContent: unknown; animationConfig?: unknown }>,
   fields: Record<string, string>,
   locale: 'ar' | 'en',
 ): string[] {
@@ -95,7 +96,9 @@ export function missingRequired(
   for (const f of def.fields ?? []) {
     if (f.required && !resolved[f.key]?.trim()) out.push(label(f));
   }
-  const byScene = new Map(stepRows.map((r) => [r.templateStepId, (r.textContent ?? {}) as Record<string, string>]));
+  // A section the sender turned off is not on the card, so it asks for nothing.
+  const shown = stepRows.filter((r) => !isStepHidden({ animationConfig: r.animationConfig as Record<string, unknown> | null }));
+  const byScene = new Map(shown.map((r) => [r.templateStepId, (r.textContent ?? {}) as Record<string, string>]));
   for (const scene of def.scenes) {
     const text = byScene.get(scene.id);
     if (!text) continue;

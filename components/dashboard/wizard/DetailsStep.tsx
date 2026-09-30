@@ -18,6 +18,7 @@ export function DetailsStep({
   fieldDefs = [],
   fields = {},
   onField,
+  isInvitation = false,
 }: {
   recipientName: string;
   title: string;
@@ -30,6 +31,11 @@ export function DetailsStep({
   fieldDefs?: Field[];
   fields?: Record<string, string>;
   onField?: (key: string, value: string) => void;
+  /**
+   * On an invitation the "recipient" is the GUEST, and leaving it blank is a
+   * real choice (one link for every guest), so it is labelled that way.
+   */
+  isInvitation?: boolean;
 }) {
   const t = useTranslations('dashboard.wizard.details');
   const uiLocale = useLocale();
@@ -44,15 +50,16 @@ export function DetailsStep({
       <div className="mt-token-6 flex flex-col gap-token-6">
         <div>
           <label htmlFor="w-recipient" className="mb-token-2 block text-sm font-medium text-ink">
-            {t('recipientLabel')}
+            {isInvitation ? t('guestLabel') : t('recipientLabel')}
           </label>
           <Input
             id="w-recipient"
             value={recipientName}
             onChange={(e) => onRecipient(e.target.value)}
-            placeholder={t('recipientPlaceholder')}
+            placeholder={isInvitation ? t('guestPlaceholder') : t('recipientPlaceholder')}
             autoFocus
           />
+          {isInvitation ? <p className="mt-token-2 text-xs text-muted">{t('guestHint')}</p> : null}
         </div>
 
         {fieldDefs.length > 0 ? (

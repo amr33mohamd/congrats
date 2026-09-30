@@ -116,3 +116,39 @@ describe('reconcileSteps', () => {
     expect(saved).toEqual(copy);
   });
 });
+
+describe('builder follow-ups', () => {
+  it('an old default the sender never touched is replaced by the current one', async () => {
+    const { reconcileText } = await import('./step-reconcile');
+    const { templateBySlug } = await import('@/content/templates');
+    const tpl = templateBySlug('invitation-qasr-gold-ar')!;
+    const ceremony = tpl.definition.scenes.find((s) => s.id === 'ceremony')!;
+    const { text } = reconcileText(
+      ceremony,
+      { label: 'كتب الكتاب', when: 'الجمعة · ٥:٠٠ مساءً', date: '2027-06-18T17:00' },
+      'ar',
+    );
+    expect(text.when).toBe('٥:٠٠ مساءً'); // no stale weekday
+    expect(text.label).toBe('كتب الكتاب'); // edited text kept
+    expect(text.date).toBeUndefined(); // the day comes from the wedding date
+  });
+
+  it('every template carries its text in both languages', async () => {
+    const { TEMPLATE_CATALOG } = await import('@/content/templates');
+    for (const t of TEMPLATE_CATALOG) {
+      const heading = t.definition.scenes[0].slots.find((s) => s.key === 'heading' && !s.bind);
+      if (!heading) continue;
+      expect(heading.defaultAr, t.slug).toBeTruthy();
+      expect(heading.defaultEn, t.slug).toBeTruthy();
+      expect(t.definition.theme.localeFonts?.ar?.heading, t.slug).toBeTruthy();
+    }
+  });
+
+  it('a section switched off in the builder is left off the card', async () => {
+    const { isSectionVisible } = await import('@/components/player/Player');
+    const scene = def.scenes[0];
+    const step = { templateStepId: 'cover', orderIndex: 0, text: { heading: 'Hi' }, media: [], animationConfig: {} };
+    expect(isSectionVisible(scene, step)).toBe(true);
+    expect(isSectionVisible(scene, { ...step, animationConfig: { hidden: true } })).toBe(false);
+  });
+});

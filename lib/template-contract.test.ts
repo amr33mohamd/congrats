@@ -51,3 +51,23 @@ describe('template contract', () => {
     expect(scene?.type).toBe('Finale');
   });
 });
+
+describe('applyTokens without a name', () => {
+  // Copy is written around a name; with none it must still read naturally.
+  it.each([
+    ['عزيزنا {recipient}،', 'عزيزنا،'],
+    ['مستنيينك يا {recipient}', 'مستنيينك'],
+    ['ليكِ إنتِ يا {recipient} ❤', 'ليكِ إنتِ ❤'],
+    ['Happy Birthday, {recipient}!', 'Happy Birthday!'],
+    ['Dear {recipient},', 'Dear friends,'],
+    ['{recipient}, there’s something I need to say', 'There’s something I need to say'],
+    ['Welcome to the world, {recipient}', 'Welcome to the world'],
+  ])('%s → %s', (input, expected) => {
+    expect(applyTokens(input, '')).toBe(expected);
+  });
+
+  it('leaves copy untouched when a name is given', () => {
+    expect(applyTokens('مستنيينك يا {recipient}', 'سلمى')).toBe('مستنيينك يا سلمى');
+    expect(applyTokens('Dear {recipient},', 'Sam')).toBe('Dear Sam,');
+  });
+});

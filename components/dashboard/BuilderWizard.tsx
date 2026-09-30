@@ -60,8 +60,8 @@ export function BuilderWizard({
   );
   const metaSave = useAutosave(meta, async (m) => {
     await dashboardApi.patchExperience(initial.id, {
-      title: m.title,
-      recipientName: m.recipientName,
+      title: m.title.trim() || null,
+      recipientName: m.recipientName.trim() || null,
       locale: m.locale,
       ...(Object.keys(m.fields).length ? { fields: m.fields } : {}),
     });
@@ -97,6 +97,47 @@ export function BuilderWizard({
   // Surface a background autosave failure too, not only the ones on Next.
   const bgError = metaSave.state === 'error' || stepsSave.state === 'error';
   const shownError = saveError ?? (bgError ? t('saveFailed') : null);
+
+  /**
+   * Switching the card's language rewrites every piece of text the sender has
+   * not touched into the new language's default (edited text is theirs and is
+   * kept). Without this, picking Arabic flipped the layout to right-to-left
+   * and left the English wording in it.
+   */
+  const changeLocale = (next: AppLocale) => {
+    if (next === expLocale) return;
+    const pick = (x: { defaultAr?: string; defaultEn?: string }, l: AppLocale) =>
+      l === 'ar' ? x.defaultAr : x.defaultEn;
+    const swap = (value: string | undefined, x: { defaultAr?: string; defaultEn?: string }) => {
+      const to = pick(x, next);
+      if (to == null) return value;
+      return value == null || value === '' || value === pick(x, expLocale) ? to : value;
+    };
+    const sceneById = new Map(initial.scenes.map((sc) => [sc.id, sc]));
+    setSteps((prev) =>
+      prev.map((s) => {
+        const scene = sceneById.get(s.templateStepId);
+        if (!scene) return s;
+        const text = { ...s.text };
+        for (const slot of scene.slots) {
+          if (slot.type !== 'text' || slot.bind) continue;
+          const v = swap(text[slot.key], slot);
+          if (v != null) text[slot.key] = v;
+        }
+        return { ...s, text };
+      }),
+    );
+    setFields((prev) => {
+      const out = { ...prev };
+      for (const f of initial.fieldDefs ?? []) {
+        if (f.type !== 'text') continue;
+        const v = swap(out[f.key], f);
+        if (v != null) out[f.key] = v;
+      }
+      return out;
+    });
+    setExpLocale(next);
+  };
 
   const updateStep = React.useCallback((stepId: string, updater: (s: LocalStep) => LocalStep) => {
     setSteps((prev) => prev.map((s) => (s.templateStepId === stepId ? updater(s) : s)));
@@ -171,8 +212,9 @@ export function BuilderWizard({
             isPaidTemplate={initial.isPaid}
             onRecipient={setRecipientName}
             onTitle={setTitle}
-            onLocale={setExpLocale}
+            onLocale={changeLocale}
             fieldDefs={initial.fieldDefs ?? []}
+            isInvitation={initial.scenes.some((sc) => sc.type === 'Rsvp' || sc.type === 'Families')}
             fields={fields}
             onField={(key, value) => setFields((prev) => ({ ...prev, [key]: value }))}
           />

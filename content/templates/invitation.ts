@@ -315,11 +315,9 @@ function buildDefinition(s: Style, locale: 'ar' | 'en'): TemplateDefinitionInput
         slots: [
           { ...f('ceremonyLabel', ['Event name', 'اسم الحفل']), key: 'label' },
           { ...f('ceremonyVenue', ['Place', 'المكان']), key: 'venue' },
-          { ...f('ceremonyWhen', ['Time', 'الوقت']), key: 'when' },
-          {
-            ...slot('date', locale, '', ['Different date? (optional)', 'في يوم مختلف؟ (اختياري)'], { type: 'date' }),
-            fallback: 'weddingDate',
-          },
+          { ...f('ceremonyWhen', ['Starts at', 'الساعة']), key: 'when', formerDefaults: ['Friday · 5:00 PM', 'الجمعة · ٥:٠٠ مساءً'] },
+          // The day is the wedding date, asked once in Details — never again here.
+          { key: 'date', type: 'date' as const, editable: true, required: false, bind: 'weddingDate' },
         ],
       },
       {
@@ -332,11 +330,9 @@ function buildDefinition(s: Style, locale: 'ar' | 'en'): TemplateDefinitionInput
         slots: [
           { ...f('receptionLabel', ['Event name', 'اسم الحفل']), key: 'label' },
           { ...f('receptionVenue', ['Place', 'المكان']), key: 'venue' },
-          { ...f('receptionWhen', ['Time', 'الوقت']), key: 'when' },
-          {
-            ...slot('date', locale, '', ['Different date? (optional)', 'في يوم مختلف؟ (اختياري)'], { type: 'date' }),
-            fallback: 'weddingDate',
-          },
+          { ...f('receptionWhen', ['Starts at', 'الساعة']), key: 'when', formerDefaults: ['Friday · 8:00 PM', 'الجمعة · ٨:٠٠ مساءً'] },
+          // The day is the wedding date, asked once in Details — never again here.
+          { key: 'date', type: 'date' as const, editable: true, required: false, bind: 'weddingDate' },
         ],
       },
       {

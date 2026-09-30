@@ -10,6 +10,7 @@ import {
   type LocalStep,
   type LocalMedia,
 } from '../editor-state';
+import { isStepHidden } from '@/lib/template-contract';
 import { ImageUpload } from '../ImageUpload';
 import { MultiImageUpload } from '../MultiImageUpload';
 import { BuilderPreview } from '../BuilderPreview';
@@ -37,6 +38,13 @@ export function ContentStep({
 
   const active = scenes[activeIdx];
   if (!active) return null;
+
+  const hidden = isStepHidden(active.step);
+  const setHidden = (value: boolean) =>
+    onUpdateStep(active.scene.id, (s) => ({
+      ...s,
+      animationConfig: { ...s.animationConfig, hidden: value },
+    }));
 
   const setText = (key: string, value: string) =>
     onUpdateStep(active.scene.id, (s) => ({ ...s, text: { ...s.text, [key]: value } }));
@@ -86,11 +94,13 @@ export function ContentStep({
                 role="tab"
                 aria-selected={i === activeIdx}
                 onClick={() => setActiveIdx(i)}
+                title={isStepHidden(sc.step) ? t('sectionHidden') : undefined}
                 className={cn(
                   'rounded-pill border px-token-3 py-token-1 text-sm font-medium transition-colors',
                   i === activeIdx
                     ? 'border-brand bg-brand text-white'
                     : 'border-border bg-surface text-muted hover:border-brand/40',
+                  isStepHidden(sc.step) && 'line-through opacity-50',
                 )}
               >
                 {i + 1}
@@ -102,11 +112,29 @@ export function ContentStep({
             <p className="text-xs font-medium uppercase tracking-wide text-muted">
               {t('stepLabel', { index: activeIdx + 1, total: scenes.length })}
             </p>
-            <h3 className="mt-token-1 font-heading text-lg font-semibold text-ink">
-              {sceneName(active.scene.type)}
-            </h3>
+            <div className="mt-token-1 flex items-center justify-between gap-token-3">
+              <h3 className="font-heading text-lg font-semibold text-ink">
+                {sceneName(active.scene.type)}
+              </h3>
+              <label className="flex shrink-0 cursor-pointer items-center gap-token-2 text-sm text-muted">
+                <input
+                  type="checkbox"
+                  role="switch"
+                  className="h-4 w-4 accent-[var(--color-brand)]"
+                  checked={!hidden}
+                  onChange={(e) => setHidden(!e.target.checked)}
+                />
+                {t('showSection')}
+              </label>
+            </div>
 
-            <div className="mt-token-6 flex flex-col gap-token-6">
+            {hidden ? (
+              <p className="mt-token-4 rounded-md bg-surface-2 px-token-3 py-token-2 text-sm text-muted">
+                {t('sectionHiddenHint')}
+              </p>
+            ) : null}
+
+            <div className={cn('mt-token-6 flex flex-col gap-token-6', hidden && 'pointer-events-none opacity-40')} aria-disabled={hidden || undefined}>
               {active.textSlots.map((slot) => {
                 const value = active.step.text[slot.key] ?? '';
                 const remaining = slot.maxLen ? slot.maxLen - value.length : null;

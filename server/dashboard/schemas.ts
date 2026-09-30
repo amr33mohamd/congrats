@@ -20,10 +20,25 @@ export const createExperienceSchema = z.object({
 });
 export type CreateExperienceInput = z.infer<typeof createExperienceSchema>;
 
+/**
+ * Trimmed, and an empty string means "none" (null). A blank recipient is a real
+ * choice — one invitation link sent to every guest — and rejecting it used to
+ * fail the whole Details autosave, taking the couple's names and the wedding
+ * date down with it.
+ */
+const optionalText = (max: number) =>
+  z
+    .string()
+    .trim()
+    .max(max)
+    .transform((v) => (v === '' ? null : v))
+    .nullable()
+    .optional();
+
 export const updateExperienceSchema = z
   .object({
-    title: z.string().trim().min(1).max(160).nullable().optional(),
-    recipientName: z.string().trim().min(1).max(120).nullable().optional(),
+    title: optionalText(160),
+    recipientName: optionalText(120),
     locale: LocaleSchema.optional(),
     // Card-level details (couple's names, wedding date). Keys are validated
     // against the template's fields in the service.
