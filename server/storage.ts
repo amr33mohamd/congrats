@@ -5,10 +5,12 @@
  *   - 'payment-proofs'   : payment screenshots (reviewers only — never public)
  *
  * Dev/local: LocalDiskStorageAdapter writes under .data/uploads/<bucket>/...
- * Prod: an R2 adapter (same interface) is added later by the reviewer.
+ * Vercel (STORAGE_DRIVER=vercel-blob): VercelBlobStorageAdapter, because a
+ * serverless function has no disk that outlives the request.
  */
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
+import { put as blobPut, get as blobGet, head as blobHead, del as blobDel, BlobNotFoundError } from '@vercel/blob';
 
 export type StorageBucket = 'experience-media' | 'payment-proofs';
 
@@ -141,6 +143,59 @@ export class LocalDiskStorageAdapter implements StorageAdapter {
   }
 }
 
+/* ───────────────────── Vercel Blob adapter ─────────────────────── */
+
+/**
+ * Objects live in a PRIVATE Blob store (payment screenshots must never be
+ * public), under `<bucket>/<key>`. Readers still go through
+ * /api/storage/<bucket>/<key>, which checks who may see the object and then
+ * streams it from here — the same URL shape as the local adapter.
+ * Auth comes from BLOB_READ_WRITE_TOKEN, which Vercel sets when a Blob store
+ * is connected to the project.
+ */
+export class VercelBlobStorageAdapter implements StorageAdapter {
+  private pathname(bucket: StorageBucket, key: string): string {
+    assertSafeStorageKey(key);
+    return `${bucket}/${key}`;
+  }
+
+  async put(input: PutObjectInput): Promise<StoredObject> {
+    const buf = Buffer.from(input.data);
+    await blobPut(this.pathname(input.bucket, input.key), buf, {
+      access: 'private',
+      addRandomSuffix: false,
+      allowOverwrite: true,
+      contentType: input.contentType,
+    });
+    return { bucket: input.bucket, key: input.key, bytes: buf.byteLength, contentType: input.contentType };
+  }
+
+  async get(bucket: StorageBucket, key: string): Promise<Buffer> {
+    const res = await blobGet(this.pathname(bucket, key), { access: 'private' });
+    if (!res || !res.stream) throw new Error('not found');
+    return Buffer.from(await new Response(res.stream).arrayBuffer());
+  }
+
+  async remove(bucket: StorageBucket, key: string): Promise<void> {
+    await blobDel(this.pathname(bucket, key));
+  }
+
+  async getSignedUrl(bucket: StorageBucket, key: string, expiresInSeconds = 3600): Promise<SignedUrl> {
+    // Same auth-checked route as local; the Blob URL itself is never handed out.
+    return new LocalDiskStorageAdapter().getSignedUrl(bucket, key, expiresInSeconds);
+  }
+
+  async exists(bucket: StorageBucket, key: string): Promise<boolean> {
+    try {
+      await blobHead(this.pathname(bucket, key));
+      return true;
+    } catch (err) {
+      if (err instanceof BlobNotFoundError) return false;
+      throw err;
+    }
+  }
+}
+
 /* ────────────────────────── Factory + helpers ─────────────────────── */
 
 let _adapter: StorageAdapter | undefined;
@@ -149,11 +204,13 @@ export function getStorage(): StorageAdapter {
   if (_adapter) return _adapter;
   const driver = process.env.STORAGE_DRIVER ?? 'local';
   switch (driver) {
+    case 'vercel-blob':
+      _adapter = new VercelBlobStorageAdapter();
+      return _adapter;
     case 'local':
     default:
       _adapter = new LocalDiskStorageAdapter();
       return _adapter;
-    // case 'r2': _adapter = new R2StorageAdapter(); — added in prod by reviewer.
   }
 }
 

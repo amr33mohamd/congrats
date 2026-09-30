@@ -86,6 +86,19 @@ export function checkEnv(env: Env = process.env): EnvReport {
     errors.push('DATABASE_URL must start with postgres:// or postgresql://');
   }
 
+  // Vercel functions have no disk that outlives a request: an upload written
+  // to local storage or PGlite is gone on the next cold start.
+  if (isSet(env.VERCEL)) {
+    if (env.STORAGE_DRIVER !== 'vercel-blob') {
+      errors.push('On Vercel, set STORAGE_DRIVER=vercel-blob — local storage loses every uploaded photo.');
+    } else if (!isSet(env.BLOB_READ_WRITE_TOKEN)) {
+      errors.push('BLOB_READ_WRITE_TOKEN is not set — connect a Blob store to the project (Storage → Blob).');
+    }
+    if (!isSet(env.DATABASE_URL)) {
+      errors.push('On Vercel, DATABASE_URL must point at Postgres (Storage → Neon); PGlite cannot persist there.');
+    }
+  }
+
   if (!isSet(env.INSTAPAY_HANDLE)) {
     errors.push('INSTAPAY_HANDLE is not set — buyers would have nowhere to pay for paid templates.');
   }

@@ -212,6 +212,7 @@ export async function uploadAndConfirm(
     slotKey?: string;
   },
 ): Promise<ConfirmedMedia> {
+  file = await shrinkForUpload(file);
   const dims = await readImageDimensions(file).catch(() => ({ width: 0, height: 0 }));
   const target = await dashboardApi.signMedia({
     kind: ctx.kind,
@@ -248,6 +249,44 @@ export async function uploadAndConfirm(
     templateStepId: ctx.templateStepId,
     slotKey: ctx.slotKey,
   });
+}
+
+/** Longest side kept for an uploaded photo — sharper than any phone screen needs. */
+const MAX_UPLOAD_SIDE = 2400;
+/** Re-encode anything above this. Vercel rejects request bodies over 4.5 MB. */
+const SHRINK_ABOVE_BYTES = 3 * 1024 * 1024;
+
+/**
+ * Phone photos are routinely 5–12 MB. Downscale and re-encode large JPEG /
+ * PNG / WebP images in the browser before they are sent: uploads stay under
+ * the host's request limit and cards load faster for guests. GIFs are left
+ * alone (re-encoding would drop the animation), as is anything that fails to
+ * decode — the server's size check then has the final word.
+ */
+async function shrinkForUpload(file: File): Promise<File> {
+  if (!/^image\/(jpeg|png|webp)$/.test(file.type) || typeof createImageBitmap !== 'function') return file;
+  let bitmap: ImageBitmap;
+  try {
+    bitmap = await createImageBitmap(file);
+  } catch {
+    return file;
+  }
+  const scale = Math.min(1, MAX_UPLOAD_SIDE / Math.max(bitmap.width, bitmap.height));
+  if (scale === 1 && file.size <= SHRINK_ABOVE_BYTES) {
+    bitmap.close();
+    return file;
+  }
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.round(bitmap.width * scale);
+  canvas.height = Math.round(bitmap.height * scale);
+  canvas.getContext('2d')?.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  bitmap.close();
+  // WebP keeps a PNG's transparency; JPEG is smallest for photos.
+  const type = file.type === 'image/jpeg' ? 'image/jpeg' : 'image/webp';
+  const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, type, 0.86));
+  if (!blob || blob.size >= file.size) return file;
+  const name = file.name.replace(/\.[^.]+$/, '') + (type === 'image/jpeg' ? '.jpg' : '.webp');
+  return new File([blob], name, { type });
 }
 
 function readImageDimensions(file: File): Promise<{ width: number; height: number }> {

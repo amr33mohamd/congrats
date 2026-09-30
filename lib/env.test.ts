@@ -92,3 +92,25 @@ describe('assertEnv', () => {
     expect(() => assertEnv({ NODE_ENV: 'development' })).not.toThrow();
   });
 });
+
+describe('checkEnv on Vercel', () => {
+  const base = {
+    NODE_ENV: 'production',
+    VERCEL: '1',
+    AUTH_SECRET: 'x'.repeat(40),
+    AUTH_URL: 'https://congrats.vercel.app',
+    DATABASE_URL: 'postgres://u:p@h/db',
+    INSTAPAY_HANDLE: 'shop@instapay',
+  };
+  it('refuses local storage, which would lose every upload', () => {
+    expect(checkEnv(base).errors.join(' ')).toMatch(/STORAGE_DRIVER=vercel-blob/);
+  });
+  it('needs the Blob token once the driver is set', () => {
+    expect(checkEnv({ ...base, STORAGE_DRIVER: 'vercel-blob' }).errors.join(' ')).toMatch(/BLOB_READ_WRITE_TOKEN/);
+    expect(checkEnv({ ...base, STORAGE_DRIVER: 'vercel-blob', BLOB_READ_WRITE_TOKEN: 't' }).errors).toEqual([]);
+  });
+  it('refuses PGlite even when explicitly allowed', () => {
+    const env = { ...base, STORAGE_DRIVER: 'vercel-blob', BLOB_READ_WRITE_TOKEN: 't', DATABASE_URL: '', ALLOW_PGLITE_IN_PRODUCTION: 'true' };
+    expect(checkEnv(env).errors.join(' ')).toMatch(/Postgres/);
+  });
+});

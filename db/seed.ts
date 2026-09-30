@@ -65,6 +65,12 @@ export async function seed() {
   // Demo admin user (+ admin_users row for createdBy FK). Seeded with a password
   // so it can sign in via the email+password provider. Override via env in prod.
   const adminEmail = (process.env.SEED_ADMIN_EMAIL ?? 'admin@congrats.dev').toLowerCase();
+  // The fallback password is in this public repo: fine on a laptop, an open
+  // door on a real site. Production must supply its own.
+  const inProduction = process.env.NODE_ENV === 'production' || Boolean(process.env.VERCEL);
+  if (inProduction && !process.env.SEED_ADMIN_PASSWORD) {
+    throw new Error('SEED_ADMIN_PASSWORD must be set in production (the default admin password is public).');
+  }
   const adminPassword = process.env.SEED_ADMIN_PASSWORD ?? 'congrats-admin';
   const adminHash = await hashPassword(adminPassword);
   let admin = (await db.select().from(users).where(eq(users.email, adminEmail)).limit(1))[0];
