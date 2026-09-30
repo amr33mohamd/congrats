@@ -106,7 +106,8 @@ describe('checkEnv on Vercel', () => {
     expect(checkEnv(base).errors.join(' ')).toMatch(/STORAGE_DRIVER=vercel-blob/);
   });
   it('needs the Blob token once the driver is set', () => {
-    expect(checkEnv({ ...base, STORAGE_DRIVER: 'vercel-blob' }).errors.join(' ')).toMatch(/BLOB_READ_WRITE_TOKEN/);
+    expect(checkEnv({ ...base, STORAGE_DRIVER: 'vercel-blob' }).errors.join(' ')).toMatch(/No Blob store/);
+    expect(checkEnv({ ...base, STORAGE_DRIVER: 'vercel-blob', BLOB_STORE_ID: 'store_x' }).errors).toEqual([]);
     expect(checkEnv({ ...base, STORAGE_DRIVER: 'vercel-blob', BLOB_READ_WRITE_TOKEN: 't' }).errors).toEqual([]);
   });
   it('refuses PGlite even when explicitly allowed', () => {

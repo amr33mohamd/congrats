@@ -91,8 +91,10 @@ export function checkEnv(env: Env = process.env): EnvReport {
   if (isSet(env.VERCEL)) {
     if (env.STORAGE_DRIVER !== 'vercel-blob') {
       errors.push('On Vercel, set STORAGE_DRIVER=vercel-blob — local storage loses every uploaded photo.');
-    } else if (!isSet(env.BLOB_READ_WRITE_TOKEN)) {
-      errors.push('BLOB_READ_WRITE_TOKEN is not set — connect a Blob store to the project (Storage → Blob).');
+    } else if (!isSet(env.BLOB_READ_WRITE_TOKEN) && !isSet(env.BLOB_STORE_ID)) {
+      // A connected store sets BLOB_STORE_ID (keyless, via Vercel OIDC); older
+      // stores set BLOB_READ_WRITE_TOKEN. Either one is enough.
+      errors.push('No Blob store is connected — Storage → Blob → connect it to this project.');
     }
     if (!isSet(env.DATABASE_URL)) {
       errors.push('On Vercel, DATABASE_URL must point at Postgres (Storage → Neon); PGlite cannot persist there.');
