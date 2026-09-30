@@ -81,7 +81,9 @@
       "titlePlaceholder": "e.g. Layla's anniversary",
       "localeLabel": "Language & direction",
       "localeAr": "العربية (right to left)",
-      "localeEn": "English (left to right)"
+      "localeEn": "English (left to right)",
+      "cardDetails": "Event details",
+      "cardDetailsHint": "Filled in once and used everywhere on the card — the names, the date and the countdown all come from here."
     },
     "content": {
       "title": "Personalize each scene",
@@ -120,7 +122,9 @@
       "included": "Included with your account",
       "alreadyPaid": "Paid",
       "compedNote": "Your account includes every template, so publishing this one is free."
-    }
+    },
+    "saveFailed": "Your last changes could not be saved. Check your connection and try again — nothing was lost on this screen.",
+    "retrySave": "Try again"
   },
   "checkout": {
     "title": "Complete your payment",

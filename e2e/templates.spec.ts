@@ -45,11 +45,13 @@ function sentinel(tIdx: number, sIdx: number): string {
   return `Zq${tIdx}s${sIdx}`;
 }
 
+// Bound slots read a card-level field and are never stored on the step, so a
+// sentinel written into one would never render — stamp the next slot instead.
 function firstEditableTextSlot(scene: SceneDef): Slot | undefined {
-  return scene.slots.find((s) => s.type === 'text' && s.editable);
+  return scene.slots.find((s) => s.type === 'text' && s.editable && !s.bind);
 }
 function firstEditableDateSlot(scene: SceneDef): Slot | undefined {
-  return scene.slots.find((s) => s.type === 'date' && s.editable);
+  return scene.slots.find((s) => s.type === 'date' && s.editable && !s.bind);
 }
 function firstImageSlot(scene: SceneDef): Slot | undefined {
   return scene.slots.find((s) => s.type === 'image' && s.editable);
@@ -61,6 +63,21 @@ function isPhotoScene(scene: SceneDef): boolean {
 function usesRecipientToken(t: ValidatedTemplate): boolean {
   const s = JSON.stringify(t.definition);
   return s.includes('{recipient}') || s.includes('{name}');
+}
+
+/**
+ * Fill the template's card-level fields (couple's names, wedding / party date)
+ * the way the builder's Details step does. Sections that read a bound field —
+ * the cover's names, the countdown's date — only show once these are set.
+ */
+async function fillCardFields(req: APIRequestContext, expId: string, template: ValidatedTemplate) {
+  const fields: Record<string, string> = {};
+  for (const f of template.definition.fields ?? []) {
+    fields[f.key] = f.type === 'date' ? '2099-06-18T20:00' : `QA ${f.key}`;
+  }
+  if (Object.keys(fields).length === 0) return;
+  const res = await req.patch(`/api/dashboard/experiences/${expId}`, { data: { fields } });
+  expect(res.ok(), `set card fields failed: ${res.status()} ${await res.text()}`).toBeTruthy();
 }
 
 async function createExperience(
@@ -233,6 +250,7 @@ test.describe('All templates render user-filled data in every section', () => {
       expect(dbId, `no seeded template for ${template.slug} ("${expectedName}")`).toBeTruthy();
 
       const expId = await createExperience(page.request, dbId!, template.locale);
+      await fillCardFields(page.request, expId, template);
       const sentinelByScene = await fillScenes(page.request, expId, template, tIdx);
       const slug = await publishAndUnlock(page, expId, template, via);
       expect(slug, 'no slug after publish').toBeTruthy();

@@ -4,6 +4,7 @@ import * as React from 'react';
 import { motion } from 'framer-motion';
 import {
   applyTokens,
+  slotValue,
   type BoundStep,
   type BoundMedia,
   type SceneDef,
@@ -28,6 +29,8 @@ export interface SceneRenderProps {
   recipientName: string;
   reducedMotion: boolean;
   active: boolean;
+  /** Card-level field values (couple's names, wedding date…). */
+  fields?: Record<string, string>;
 }
 
 /* ─────────────────────────── slot-driven readers ────────────────────────── */
@@ -38,21 +41,33 @@ interface TextBlock {
   animation?: string;
 }
 
-function textBlocks(scene: SceneDef, step: BoundStep, recipient: string): TextBlock[] {
+function textBlocks(
+  scene: SceneDef,
+  step: BoundStep,
+  recipient: string,
+  fields: Record<string, string> = {},
+): TextBlock[] {
   return scene.slots
     .filter((s) => s.type === 'text')
     .map((s) => ({
       key: s.key,
-      value: applyTokens(step.text?.[s.key] ?? '', recipient),
+      // slotValue honours bind/fallback to card-level fields; applyTokens then
+      // resolves {recipient} and {field} tokens inside free text.
+      value: applyTokens(slotValue(scene, step, s.key, fields), recipient, fields),
       animation: s.animation,
     }))
     .filter((b) => b.value.trim().length > 0);
 }
 
-function dateValue(scene: SceneDef, step: BoundStep, recipient: string): string {
+function dateValue(
+  scene: SceneDef,
+  step: BoundStep,
+  recipient: string,
+  fields: Record<string, string> = {},
+): string {
   const slot = scene.slots.find((s) => s.type === 'date');
   if (!slot) return '';
-  return applyTokens(step.text?.[slot.key] ?? '', recipient).trim();
+  return applyTokens(slotValue(scene, step, slot.key, fields), recipient, fields).trim();
 }
 
 /**
@@ -347,7 +362,7 @@ function CoverScene(p: SceneRenderProps) {
     reducedMotion: p.reducedMotion,
   });
   const images = sceneImages(p.scene, p.step);
-  const blocks = textBlocks(p.scene, p.step, p.recipientName);
+  const blocks = textBlocks(p.scene, p.step, p.recipientName, p.fields);
   return (
     <Frame r={r}>
       <motion.div
@@ -375,7 +390,7 @@ function PhotoRevealScene(p: SceneRenderProps) {
     reducedMotion: p.reducedMotion,
   });
   const images = sceneImages(p.scene, p.step);
-  const blocks = textBlocks(p.scene, p.step, p.recipientName);
+  const blocks = textBlocks(p.scene, p.step, p.recipientName, p.fields);
   return (
     <Frame r={r}>
       {images[0] ? (
@@ -398,10 +413,10 @@ function PhotoRevealScene(p: SceneRenderProps) {
 
 function TextRevealScene(p: SceneRenderProps) {
   const r = resolveStyle(p.scene, p.theme);
-  const blocks = textBlocks(p.scene, p.step, p.recipientName);
+  const blocks = textBlocks(p.scene, p.step, p.recipientName, p.fields);
   // A date slot here is a fact in the list ("born 12 March"), so it is shown
   // formatted as the last line rather than silently dropped.
-  const date = formatDate(dateValue(p.scene, p.step, p.recipientName), p.direction);
+  const date = formatDate(dateValue(p.scene, p.step, p.recipientName, p.fields), p.direction);
   return (
     <Frame r={r}>
       <SectionRule theme={p.theme} r={r} />
@@ -413,8 +428,8 @@ function TextRevealScene(p: SceneRenderProps) {
 
 function CountdownScene(p: SceneRenderProps) {
   const r = resolveStyle(p.scene, p.theme);
-  const target = dateValue(p.scene, p.step, p.recipientName);
-  const blocks = textBlocks(p.scene, p.step, p.recipientName);
+  const target = dateValue(p.scene, p.step, p.recipientName, p.fields);
+  const blocks = textBlocks(p.scene, p.step, p.recipientName, p.fields);
   const [remaining, setRemaining] = React.useState<{ d: number; h: number; m: number } | null>(null);
   React.useEffect(() => {
     if (!target) return;
@@ -487,7 +502,7 @@ const GALLERY_INTERVAL_MS = 1800;
 function GalleryScene(p: SceneRenderProps) {
   const r = resolveStyle(p.scene, p.theme, 'md');
   const images = sceneImages(p.scene, p.step);
-  const blocks = textBlocks(p.scene, p.step, p.recipientName);
+  const blocks = textBlocks(p.scene, p.step, p.recipientName, p.fields);
   const count = images.length;
   const [index, setIndex] = React.useState(0);
 
@@ -576,7 +591,7 @@ function GiftRevealScene(p: SceneRenderProps) {
     durationMs: p.scene.transitionIn?.durationMs,
     reducedMotion: p.reducedMotion,
   });
-  const blocks = textBlocks(p.scene, p.step, p.recipientName);
+  const blocks = textBlocks(p.scene, p.step, p.recipientName, p.fields);
   // The sender's own photo of the gift, when they add one, IS the reveal; the
   // emoji is only the stand-in until then.
   const image = sceneImages(p.scene, p.step)[0];
@@ -612,7 +627,7 @@ function GiftRevealScene(p: SceneRenderProps) {
 function FinaleScene(p: SceneRenderProps) {
   const r = resolveStyle(p.scene, p.theme, 'xl');
   const variants = getVariants(p.scene.transitionIn?.preset ?? 'glow', { direction: p.direction, reducedMotion: p.reducedMotion });
-  const blocks = textBlocks(p.scene, p.step, p.recipientName);
+  const blocks = textBlocks(p.scene, p.step, p.recipientName, p.fields);
   return (
     <Frame r={r}>
       <motion.div
@@ -635,7 +650,7 @@ function QuoteScene(p: SceneRenderProps) {
     durationMs: p.scene.transitionIn?.durationMs,
     reducedMotion: p.reducedMotion,
   });
-  const blocks = textBlocks(p.scene, p.step, p.recipientName);
+  const blocks = textBlocks(p.scene, p.step, p.recipientName, p.fields);
   const [quote, ...rest] = blocks;
   return (
     <Frame r={r}>
@@ -680,7 +695,7 @@ function LetterScene(p: SceneRenderProps) {
     durationMs: p.scene.transitionIn?.durationMs,
     reducedMotion: p.reducedMotion,
   });
-  const blocks = textBlocks(p.scene, p.step, p.recipientName);
+  const blocks = textBlocks(p.scene, p.step, p.recipientName, p.fields);
   const [heading, ...body] = blocks;
   // The letter is a sheet of paper laid on the card: take the lightest palette
   // entry for the sheet and whatever reads on it for the writing.

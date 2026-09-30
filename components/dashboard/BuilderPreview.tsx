@@ -17,17 +17,20 @@ export function BuilderPreview({
   experience,
   steps,
   recipientName,
+  fields,
   focusStepId,
 }: {
   experience: EditorExperience;
   steps: LocalStep[];
   recipientName: string;
+  /** Live card-level field values (couple names, wedding date…). */
+  fields?: Record<string, string>;
   /** When set, preview starts at this scene so editing jumps straight to it. */
   focusStepId?: string | null;
 }) {
   const bound: BoundExperience = React.useMemo(
-    () => toBoundExperience(experience, steps, recipientName),
-    [experience, steps, recipientName],
+    () => toBoundExperience(experience, steps, recipientName, fields ?? experience.fields ?? {}),
+    [experience, steps, recipientName, fields],
   );
 
   // Remount when textual content changes so edits are reflected on replay.
@@ -35,10 +38,11 @@ export function BuilderPreview({
     () =>
       JSON.stringify({
         r: recipientName,
+        fl: fields,
         f: focusStepId,
         s: steps.map((s) => [s.templateStepId, s.text, s.media.map((m) => m.url)]),
       }),
-    [steps, recipientName, focusStepId],
+    [steps, recipientName, fields, focusStepId],
   );
 
   return (

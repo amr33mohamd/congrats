@@ -46,7 +46,22 @@ function imageSlots(scene: SceneDef) {
   return scene.slots.filter((s) => s.type === 'image' && s.editable);
 }
 function firstEditableTextSlot(scene: SceneDef) {
-  return scene.slots.find((s) => s.type === 'text' && s.editable);
+  return scene.slots.find((s) => s.type === 'text' && s.editable && !s.bind);
+}
+
+/**
+ * Fill the template's card-level fields (couple's names, wedding / party date)
+ * the way the builder's Details step does. Sections that read a bound field —
+ * the cover's names, the countdown's date — only show once these are set.
+ */
+async function fillCardFields(req: APIRequestContext, expId: string, template: ValidatedTemplate) {
+  const fields: Record<string, string> = {};
+  for (const f of template.definition.fields ?? []) {
+    fields[f.key] = f.type === 'date' ? '2099-06-18T20:00' : `QA ${f.key}`;
+  }
+  if (Object.keys(fields).length === 0) return;
+  const res = await req.patch(`/api/dashboard/experiences/${expId}`, { data: { fields } });
+  expect(res.ok(), `set card fields failed: ${res.status()} ${await res.text()}`).toBeTruthy();
 }
 
 async function createExperience(req: APIRequestContext, templateId: string): Promise<string> {
@@ -98,6 +113,7 @@ test.describe('Experiences are fully fillable (name + text + photos across scene
     await login(page, userEmail('fill-ui'));
     const template = targetTemplate();
     const expId = await createExperience(page.request, await templateDbId(page, template));
+    await fillCardFields(page.request, expId, template);
 
     await page.goto(`/en/builder/${expId}?step=content`);
     const tablist = page.getByRole('tablist');
@@ -130,6 +146,7 @@ test.describe('Experiences are fully fillable (name + text + photos across scene
     const template = targetTemplate();
     const req = page.request;
     const expId = await createExperience(req, await templateDbId(page, template));
+    await fillCardFields(req, expId, template);
     await stampText(req, expId, template);
 
     const singleScene = template.definition.scenes.find(
@@ -184,6 +201,7 @@ test.describe('Experiences are fully fillable (name + text + photos across scene
     const template = targetTemplate();
     const req = page.request;
     const expId = await createExperience(req, await templateDbId(page, template));
+    await fillCardFields(req, expId, template);
     await stampText(req, expId, template);
 
     const pub = await req.post(`/api/dashboard/experiences/${expId}/publish`);

@@ -22,6 +22,7 @@ import * as React from 'react';
 import { motion, useInView } from 'framer-motion';
 import {
   applyTokens,
+  slotValue,
   sceneForStep,
   type Background,
   type BoundExperience,
@@ -94,23 +95,31 @@ const filled = (v: string | undefined) => (v ?? '').trim().length > 0;
  *  - any section whose every field the sender cleared is how a sender removes
  *    an optional section (a party venue they don't need, say).
  */
-export function isSectionVisible(scene: SceneDef, step: BoundStep): boolean {
+export function isSectionVisible(
+  scene: SceneDef,
+  step: BoundStep,
+  cardFields: Record<string, string> = {},
+): boolean {
   const ownArt = scene.background?.type === 'image' && Boolean(scene.background.imageUrl);
   if (scene.type === 'PhotoReveal' || scene.type === 'Gallery') {
     return ownArt || step.media.length > 0;
   }
+  // Values are read through slotValue: a slot bound to a card-level field (the
+  // countdown's date is the wedding date) holds nothing on the step itself, and
+  // reading step.text directly hid those sections as "empty".
+  const value = (key: string) => slotValue(scene, step, key, cardFields);
   if (scene.type === 'Countdown') {
     const dateSlot = scene.slots.find((s) => s.type === 'date');
     if (dateSlot) {
-      const raw = step.text?.[dateSlot.key];
-      if (!filled(raw) || Number.isNaN(new Date(raw!).getTime())) return false;
+      const raw = value(dateSlot.key);
+      if (!filled(raw) || Number.isNaN(new Date(raw).getTime())) return false;
     }
   }
   const fields = scene.slots.filter((s) => s.type === 'text' || s.type === 'date');
   // A scene with no fillable fields is pure decoration; keep it.
   if (fields.length === 0) return true;
   if (ownArt || step.media.length > 0) return true;
-  return fields.some((s) => filled(step.text?.[s.key]));
+  return fields.some((s) => filled(value(s.key)));
 }
 
 /**
@@ -252,6 +261,7 @@ function SceneSection({
           theme={theme}
           direction={experience.direction}
           recipientName={experience.recipientName}
+          fields={experience.fields}
           reducedMotion={reducedMotion}
           active={revealed}
         />
@@ -401,7 +411,7 @@ export function Player({
     const out: Array<{ scene: SceneDef; step: BoundStep }> = [];
     for (const step of sorted) {
       const scene = sceneForStep(experience, step);
-      if (scene && isSectionVisible(scene, step)) out.push({ scene, step });
+      if (scene && isSectionVisible(scene, step, experience.fields ?? {})) out.push({ scene, step });
     }
     return out;
   }, [experience]);
@@ -453,8 +463,16 @@ export function Player({
   );
 
   const baseBg = backgroundCss(theme.background, palette);
-  const coverStep = sections[0]?.step;
-  const coverHeading = coverStep ? applyTokens(coverStep.text?.heading ?? '', experience.recipientName) : '';
+  const cover = sections[0];
+  // Through slotValue: on an invitation the cover heading is bound to the
+  // card-level couple field, so the step itself holds no heading text.
+  const coverHeading = cover
+    ? applyTokens(
+        slotValue(cover.scene, cover.step, 'heading', experience.fields ?? {}),
+        experience.recipientName,
+        experience.fields ?? {},
+      )
+    : '';
   const progress = ((activeIndex + 1) / Math.max(sections.length, 1)) * 100;
 
   return (

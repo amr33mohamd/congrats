@@ -133,12 +133,11 @@ const COPY: Record<'en' | 'ar', Copy> = {
     brideFamily: 'Mr. & Mrs.\nHany Farouk',
     ceremonyLabel: 'The Ceremony',
     ceremonyVenue: 'Al-Azhar Park — Lakeside Terrace',
-    ceremonyWhen: 'Friday · 5:00 PM',
+    ceremonyWhen: '5:00 PM',
     receptionLabel: 'The Reception',
     receptionVenue: 'The Grand Nile Ballroom',
-    receptionWhen: 'Friday · 8:00 PM',
+    receptionWhen: '8:00 PM',
     countdown: 'Counting down',
-    countdownBody: 'Friday, 18 June 2027',
     caption: 'Where it all began',
     moments: 'A few of our favourites',
     venueHeading: 'Getting there',
@@ -148,7 +147,7 @@ const COPY: Record<'en' | 'ar', Copy> = {
     giftHeading: 'A gift, if you wish',
     giftBody:
       "Your presence is the greatest gift. If you'd like to give something more, you can send it here.",
-    finale: 'With love, Omar & Nour',
+    finale: 'With love, {couple}',
     finaleBody: "We can't wait to celebrate with you, {recipient}.",
   },
   ar: {
@@ -163,12 +162,11 @@ const COPY: Record<'en' | 'ar', Copy> = {
     brideFamily: 'السيد/ هاني فاروق\nوحرمه',
     ceremonyLabel: 'عقد القران',
     ceremonyVenue: 'حديقة الأزهر — تراس البحيرة',
-    ceremonyWhen: 'الجمعة · ٥:٠٠ مساءً',
+    ceremonyWhen: '٥:٠٠ مساءً',
     receptionLabel: 'حفل الزفاف',
     receptionVenue: 'قاعة النيل الكبرى',
-    receptionWhen: 'الجمعة · ٨:٠٠ مساءً',
+    receptionWhen: '٨:٠٠ مساءً',
     countdown: 'باقي على الفرح',
-    countdownBody: 'الجمعة ١٨ يونيو ٢٠٢٧',
     caption: 'من هنا بدأت الحكاية',
     moments: 'لحظات من حكايتنا',
     venueHeading: 'الطريق إلينا',
@@ -177,7 +175,7 @@ const COPY: Record<'en' | 'ar', Copy> = {
     rsvpBody: 'نرجو تأكيد الحضور قبل ١ مايو ٢٠٢٧.',
     giftHeading: 'هدية منك',
     giftBody: 'وجودك معنا هو أجمل هدية، ولو حابب تهادينا ممكن تحوّل هنا.',
-    finale: 'بكل حب، عمر & نور',
+    finale: 'بكل حب، {couple}',
     finaleBody: 'مستنيينك يا {recipient}',
   },
 };
@@ -238,6 +236,29 @@ function buildDefinition(s: Style, locale: 'ar' | 'en'): TemplateDefinitionInput
       decoration: { effect: 'sparkles', intensity: 'low', color: s.accent },
       ...(s.art ? { art: s.art } : {}),
     },
+    // Asked ONCE in the builder's first step and used everywhere: the cover
+    // shows the names, the sign-off says them through {couple}, and the events
+    // and countdown take the date — so the sender never types the same date
+    // three times.
+    fields: [
+      {
+        key: 'couple',
+        type: 'text',
+        required: true,
+        maxLen: 44,
+        labelEn: "Couple's names",
+        labelAr: 'اسم العروسين',
+        ...(locale === 'ar' ? { defaultAr: c.names } : { defaultEn: c.names }),
+      },
+      {
+        key: 'weddingDate',
+        type: 'date',
+        required: true,
+        labelEn: 'Wedding date & time',
+        labelAr: 'تاريخ ووقت الفرح',
+        ...(locale === 'ar' ? { defaultAr: '2027-06-18T20:00' } : { defaultEn: '2027-06-18T20:00' }),
+      },
+    ],
     // One continuous card, read top to bottom: who → the ask → families →
     // when & where → the countdown → the couple → moments → directions →
     // RSVP → gift → sign-off. Ornaments sit at the two ends; the sections in
@@ -252,8 +273,9 @@ function buildDefinition(s: Style, locale: 'ar' | 'en'): TemplateDefinitionInput
         // `xl`, not `2xl`: the names have to sit INSIDE the arch/frame ornament.
         style: { headingSize: 'xl', headingColor: s.accent, bodyColor: s.text },
         slots: [
-          { ...f('names', ['Couple names', 'اسم العروسين'], { required: true, maxLen: 44 }), animation: 'blurIn' as const },
-          f('sub', ['Line under the names', 'سطر تحت الأسماء'], { maxLen: 48 }),
+          // Bound: the couple's names come from the card-level field.
+          { key: 'heading', type: 'text' as const, editable: true, required: false, bind: 'couple', animation: 'blurIn' as const },
+          { ...f('sub', ['Line under the names', 'سطر تحت الأسماء'], { maxLen: 48 }), key: 'subheading', formerKeys: ['sub'] },
         ],
       },
       {
@@ -264,8 +286,8 @@ function buildDefinition(s: Style, locale: 'ar' | 'en'): TemplateDefinitionInput
         ornament: { kind: 'none' },
         style: { headingSize: 'md', textAlign: 'center' },
         slots: [
-          f('dear', ['Greeting', 'التحية'], { required: true }),
-          f('invite', ['Invitation wording', 'نص الدعوة'], { maxLen: 200 }),
+          { ...f('dear', ['Greeting', 'التحية'], { required: true }), key: 'heading', formerKeys: ['dear'] },
+          { ...f('invite', ['Invitation wording', 'نص الدعوة'], { maxLen: 200 }), key: 'body', formerKeys: ['invite'] },
         ],
       },
       {
@@ -293,8 +315,11 @@ function buildDefinition(s: Style, locale: 'ar' | 'en'): TemplateDefinitionInput
         slots: [
           { ...f('ceremonyLabel', ['Event name', 'اسم الحفل']), key: 'label' },
           { ...f('ceremonyVenue', ['Place', 'المكان']), key: 'venue' },
-          { ...f('ceremonyWhen', ['Day & time', 'اليوم والوقت']), key: 'when' },
-          slot('date', locale, '2027-06-18T17:00', ['Date', 'التاريخ'], { type: 'date' }),
+          { ...f('ceremonyWhen', ['Time', 'الوقت']), key: 'when' },
+          {
+            ...slot('date', locale, '', ['Different date? (optional)', 'في يوم مختلف؟ (اختياري)'], { type: 'date' }),
+            fallback: 'weddingDate',
+          },
         ],
       },
       {
@@ -307,8 +332,11 @@ function buildDefinition(s: Style, locale: 'ar' | 'en'): TemplateDefinitionInput
         slots: [
           { ...f('receptionLabel', ['Event name', 'اسم الحفل']), key: 'label' },
           { ...f('receptionVenue', ['Place', 'المكان']), key: 'venue' },
-          { ...f('receptionWhen', ['Day & time', 'اليوم والوقت']), key: 'when' },
-          slot('date', locale, '2027-06-18T20:00', ['Date', 'التاريخ'], { type: 'date' }),
+          { ...f('receptionWhen', ['Time', 'الوقت']), key: 'when' },
+          {
+            ...slot('date', locale, '', ['Different date? (optional)', 'في يوم مختلف؟ (اختياري)'], { type: 'date' }),
+            fallback: 'weddingDate',
+          },
         ],
       },
       {
@@ -320,8 +348,7 @@ function buildDefinition(s: Style, locale: 'ar' | 'en'): TemplateDefinitionInput
         style: { headingColor: s.accent, headingSize: 'lg', bodyColor: s.text },
         slots: [
           { ...f('countdown', ['Title', 'العنوان']), key: 'heading' },
-          slot('date', locale, '2027-06-18T20:00', ['Counts down to', 'العدّ حتى'], { type: 'date' }),
-          { ...f('countdownBody', ['Date as text', 'التاريخ كنص']), key: 'body' },
+          { key: 'date', type: 'date' as const, editable: true, required: false, bind: 'weddingDate' },
         ],
       },
       {

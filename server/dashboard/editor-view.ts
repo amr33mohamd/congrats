@@ -11,7 +11,7 @@
 import type { UserContext } from '@/server/db-context';
 import type { EditorPayload } from './experiences-service';
 import type { Media } from '@/db/schema';
-import type { SceneDef, BoundStep } from '@/lib/template-contract';
+import { resolveFields, type SceneDef, type BoundStep, type Field } from '@/lib/template-contract';
 import { signedUrlForMedia } from './media-service';
 import * as repo from './repositories';
 
@@ -30,6 +30,9 @@ export interface EditorExperienceView {
   theme: EditorPayload['template']['definition']['theme'];
   scenes: SceneDef[];
   steps: BoundStep[];
+  /** Card-level fields the builder asks once, and their current values. */
+  fieldDefs: Field[];
+  fields: Record<string, string>;
   templateName: string | null;
   shareSlug: string | null;
   orderId: string | null;
@@ -105,6 +108,12 @@ export async function toEditorExperienceView(
     theme: def.theme,
     scenes: def.scenes,
     steps: boundSteps,
+    fieldDefs: def.fields ?? [],
+    fields: resolveFields(
+      def,
+      (experience.fields ?? {}) as Record<string, string>,
+      experience.locale === 'ar' ? 'ar' : 'en',
+    ),
     templateName: template.slug,
     shareSlug: shareLink?.slug ?? null,
     orderId: order?.id ?? null,

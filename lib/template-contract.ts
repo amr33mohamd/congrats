@@ -176,6 +176,24 @@ export const SlotSchema = z.object({
   // with five of them.
   labelEn: z.string().optional(),
   labelAr: z.string().optional(),
+  /**
+   * Keys this slot was saved under in earlier versions of the template. When a
+   * template renames a field, saved cards still hold the old key; listing it
+   * here lets reconciliation carry the value across instead of the card
+   * failing validation (which used to block every save on that card).
+   */
+  formerKeys: z.array(z.string()).optional(),
+  /**
+   * Take the value from a card-level field (TemplateDefinition.fields) instead
+   * of asking for it here. The builder does not show a bound slot at all —
+   * that is how a card asks for the wedding date once, not three times.
+   */
+  bind: z.string().optional(),
+  /**
+   * Like `bind`, but the slot stays editable: an empty slot falls back to the
+   * field. For "same as the wedding date, unless this event is another day".
+   */
+  fallback: z.string().optional(),
   // localized defaults; {recipient} token is substituted at render time
   defaultEn: z.string().optional(),
   defaultAr: z.string().optional(),
@@ -249,11 +267,30 @@ export type TemplateTheme = z.infer<typeof TemplateThemeSchema>;
 
 /* ──────────────────── TemplateDefinition (frozen) ──────────────────── */
 
+/**
+ * A detail that belongs to the whole card — the couple's names, the wedding
+ * date — asked once in the builder's first step. Scenes use it through slot
+ * `bind`/`fallback` or as a `{key}` token inside any text.
+ */
+export const FieldSchema = z.object({
+  key: z.string().regex(/^[a-zA-Z][a-zA-Z0-9]*$/),
+  type: z.enum(['text', 'date']).default('text'),
+  required: z.boolean().default(false),
+  maxLen: z.number().int().positive().optional(),
+  labelEn: z.string().optional(),
+  labelAr: z.string().optional(),
+  defaultEn: z.string().optional(),
+  defaultAr: z.string().optional(),
+});
+export type Field = z.infer<typeof FieldSchema>;
+
 export const TemplateDefinitionSchema = z.object({
   version: z.number().int().positive().default(1),
   locale: LocaleSchema,
   direction: DirectionSchema,
   theme: TemplateThemeSchema.default({}),
+  /** Card-level details, asked once (see FieldSchema). */
+  fields: z.array(FieldSchema).default([]),
   scenes: z.array(SceneDefSchema).min(1), // ORDERED scene defs
 });
 export type TemplateDefinition = z.infer<typeof TemplateDefinitionSchema>;
@@ -290,6 +327,8 @@ export const BoundExperienceSchema = z.object({
   locale: LocaleSchema,
   direction: DirectionSchema,
   recipientName: z.string().default(''),
+  /** Values of the card-level fields, keyed by field key. */
+  fields: z.record(z.string()).default({}),
   theme: TemplateThemeSchema.default({}),
   // The TemplateDefinition scenes the steps bind to (so the Player is self-contained).
   scenes: z.array(SceneDefSchema).min(1),
@@ -313,10 +352,51 @@ export function safeParseBoundExperience(input: unknown) {
 }
 
 /** Substitute {recipient} (and {name}) tokens in any default/resolved string. */
-export function applyTokens(text: string, recipientName: string): string {
-  return text
-    .replaceAll('{recipient}', recipientName)
-    .replaceAll('{name}', recipientName);
+export function applyTokens(
+  text: string,
+  recipientName: string,
+  fields?: Record<string, string>,
+): string {
+  let out = text.replaceAll('{recipient}', recipientName).replaceAll('{name}', recipientName);
+  if (fields) {
+    for (const [key, value] of Object.entries(fields)) {
+      if (value) out = out.replaceAll(`{${key}}`, value);
+    }
+  }
+  return out;
+}
+
+/**
+ * The value a scene should show for one slot, honouring `bind` (always the
+ * card-level field) and `fallback` (the slot, or the field when empty). Raw —
+ * tokens are not substituted here.
+ */
+export function slotValue(
+  scene: Pick<SceneDef, 'slots'>,
+  step: Pick<BoundStep, 'text'>,
+  key: string,
+  fields: Record<string, string> = {},
+): string {
+  const slot = scene.slots.find((s) => s.key === key);
+  if (slot?.bind) return fields[slot.bind] ?? '';
+  const own = step.text?.[key] ?? '';
+  if (!own.trim() && slot?.fallback) return fields[slot.fallback] ?? '';
+  return own;
+}
+
+/** Field values with each field's default filled in where none is saved. */
+export function resolveFields(
+  def: Pick<TemplateDefinition, 'fields'>,
+  saved: Record<string, string> | null | undefined,
+  locale: Locale,
+): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const f of def.fields ?? []) {
+    const value = saved?.[f.key];
+    const fallback = (locale === 'ar' ? f.defaultAr : f.defaultEn) ?? f.defaultEn ?? f.defaultAr ?? '';
+    out[f.key] = value != null && value !== '' ? value : fallback;
+  }
+  return out;
 }
 
 /** Resolve a scene def by a bound step's templateStepId. */

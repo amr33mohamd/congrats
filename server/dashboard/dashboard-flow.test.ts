@@ -57,7 +57,49 @@ const paidDef = parseTemplateDefinition({
   scenes: [{ id: 'cover', type: 'Cover', holdMs: 3000, slots: [{ key: 'heading', type: 'text', editable: true, defaultEn: 'Hi' }] }],
 });
 
+// Mirrors the wedding invitation: names + date asked once at card level,
+// the cover heading bound to the names, an event date that falls back to the
+// wedding date, a slot renamed since cards were made, and a required greeting.
+const inviteDef = parseTemplateDefinition({
+  version: 1,
+  locale: 'en',
+  direction: 'ltr',
+  theme: { palette: ['#fff'] },
+  fields: [
+    { key: 'couple', type: 'text', required: true, labelEn: "Couple's names", defaultEn: 'Omar & Nour' },
+    { key: 'weddingDate', type: 'date', required: true, labelEn: 'Wedding date' },
+  ],
+  scenes: [
+    {
+      id: 'cover',
+      type: 'Cover',
+      holdMs: 3000,
+      slots: [
+        { key: 'heading', type: 'text', editable: true, bind: 'couple' },
+        { key: 'subheading', type: 'text', editable: true, formerKeys: ['sub'], defaultEn: 'are getting married' },
+      ],
+    },
+    {
+      id: 'letter',
+      type: 'Letter',
+      holdMs: 3000,
+      slots: [{ key: 'heading', type: 'text', editable: true, required: true, labelEn: 'Greeting', maxLen: 60 }],
+    },
+    {
+      id: 'party',
+      type: 'Event',
+      holdMs: 3000,
+      slots: [
+        { key: 'label', type: 'text', editable: true, defaultEn: 'The Reception' },
+        { key: 'date', type: 'date', editable: true, fallback: 'weddingDate' },
+      ],
+    },
+    { id: 'finale', type: 'Finale', holdMs: 3000, slots: [{ key: 'heading', type: 'text', editable: true, defaultEn: 'With love, {couple}' }] },
+  ],
+});
+
 let db: Awaited<ReturnType<typeof getDb>>;
+let inviteTemplateId = '';
 let ctxA: UserContext;
 let ctxB: UserContext;
 let freeTemplateId = '';
@@ -82,6 +124,11 @@ beforeAll(async () => {
     .returning();
   freeTemplateId = free.id;
   paidTemplateId = paid.id;
+  const [invite] = await db
+    .insert(templates)
+    .values({ slug: 'invite-tpl', categoryId: cat.id, locale: 'en', direction: 'ltr', isPaid: false, pricePiastres: 0, definition: inviteDef, status: 'published' })
+    .returning();
+  inviteTemplateId = invite.id;
 });
 
 describe('experiences', () => {
@@ -113,11 +160,54 @@ describe('experiences', () => {
       ]),
     ).rejects.toThrow(/maxLen/);
 
+  });
+
+  // Regression: one stale field used to reject the WHOLE save, so every edit on
+  // the card was lost (the invitation rewrite renamed `subheading` → `sub`).
+  it('a stale or renamed field never blocks saving the rest of the card', async () => {
+    const exp = await experiencesService.createExperience(ctxA, { templateId: inviteTemplateId });
+    const saved = await experiencesService.upsertSteps(ctxA, exp.id, [
+      { templateStepId: 'cover', orderIndex: 0, text: { sub: 'renamed value', ghost: 'stale key' } },
+      { templateStepId: 'letter', orderIndex: 1, text: { heading: 'Dear friend,' } },
+      { templateStepId: 'gone', orderIndex: 2, text: { heading: 'section the template dropped' } },
+    ]);
+    const cover = saved.find((s) => s.templateStepId === 'cover')!;
+    expect(cover.textContent).toEqual({ subheading: 'renamed value' }); // carried across, stale dropped
+    expect(saved.find((s) => s.templateStepId === 'letter')!.textContent).toEqual({ heading: 'Dear friend,' });
+    expect(saved.some((s) => s.templateStepId === 'gone')).toBe(false);
+  });
+
+  it('saves an unfinished draft; publish is what enforces required fields', async () => {
+    const exp = await experiencesService.createExperience(ctxA, { templateId: inviteTemplateId });
+    // Empty required greeting: the draft save must still succeed.
     await expect(
       experiencesService.upsertSteps(ctxA, exp.id, [
-        { templateStepId: 'nope', orderIndex: 0, text: {} },
+        { templateStepId: 'letter', orderIndex: 1, text: { heading: '' } },
       ]),
-    ).rejects.toThrow(/unknown templateStepId/);
+    ).resolves.toBeDefined();
+    // …and publishing names what is missing, including the card-level date.
+    await expect(publishExperience(ctxA, exp.id)).rejects.toThrow(/Greeting.*Wedding date|Wedding date.*Greeting/);
+  });
+
+  it('card-level fields are asked once and flow into every section that uses them', async () => {
+    const exp = await experiencesService.createExperience(ctxA, { templateId: inviteTemplateId, recipientName: 'Salma' });
+    await experiencesService.updateExperience(ctxA, exp.id, {
+      fields: { couple: 'Ali & Mona', weddingDate: '2027-09-10T19:00', notAField: 'dropped' },
+    });
+    await experiencesService.upsertSteps(ctxA, exp.id, [
+      { templateStepId: 'letter', orderIndex: 1, text: { heading: 'Dear {recipient},' } },
+    ]);
+    const result = await publishExperience(ctxA, exp.id);
+    expect(result.kind).toBe('published');
+
+    const bound = (await getPublicExperienceBySlug((result as { slug: string }).slug))!;
+    expect(bound.fields).toEqual({ couple: 'Ali & Mona', weddingDate: '2027-09-10T19:00' });
+    const text = (id: string) => bound.steps.find((s) => s.templateStepId === id)!.text;
+    // A bound slot is never stored on the step — the renderer reads the field.
+    expect(text('cover').heading).toBeUndefined();
+    // Tokens inside free text resolve to field values.
+    expect(text('finale').heading).toBe('With love, Ali & Mona');
+    expect(text('letter').heading).toBe('Dear Salma,');
   });
 });
 

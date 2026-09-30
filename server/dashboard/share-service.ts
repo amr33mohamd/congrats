@@ -24,6 +24,9 @@ import type { Media } from '@/db/schema';
 import {
   parseTemplateDefinition,
   applyTokens,
+  resolveFields,
+  slotValue,
+  type TemplateDefinition,
   type BoundExperience,
   type BoundStep,
   type BoundMedia,
@@ -32,7 +35,7 @@ import {
 import { createOrder, type CreatedOrder } from './orders-service';
 import { signedUrlForMedia } from './media-service';
 import { DashboardError } from './errors';
-import { reconcileSteps } from './step-reconcile';
+import { reconcileSteps, reconcileText } from './step-reconcile';
 import * as repo from './repositories';
 
 const SLUG_SIZE = 10;
@@ -74,6 +77,36 @@ export type PublishResult =
   | { kind: 'published'; slug: string }
   | { kind: 'payment_required'; order: CreatedOrder; slug: string };
 
+/**
+ * Labels of required fields that are still empty — card-level fields and
+ * section slots alike. A bound slot is satisfied by its field; a fallback slot
+ * by either itself or its field.
+ */
+export function missingRequired(
+  def: TemplateDefinition,
+  stepRows: Array<{ templateStepId: string; textContent: unknown }>,
+  fields: Record<string, string>,
+  locale: 'ar' | 'en',
+): string[] {
+  const label = (x: { labelAr?: string; labelEn?: string; key: string }) =>
+    (locale === 'ar' ? x.labelAr : x.labelEn) ?? x.labelEn ?? x.labelAr ?? x.key;
+  const resolved = resolveFields(def, fields, locale);
+  const out: string[] = [];
+  for (const f of def.fields ?? []) {
+    if (f.required && !resolved[f.key]?.trim()) out.push(label(f));
+  }
+  const byScene = new Map(stepRows.map((r) => [r.templateStepId, (r.textContent ?? {}) as Record<string, string>]));
+  for (const scene of def.scenes) {
+    const text = byScene.get(scene.id);
+    if (!text) continue;
+    for (const slot of scene.slots) {
+      if (!slot.required || (slot.type !== 'text' && slot.type !== 'date') || slot.bind) continue;
+      if (!slotValue(scene, { text }, slot.key, resolved).trim()) out.push(label(slot));
+    }
+  }
+  return [...new Set(out)];
+}
+
 export async function publishExperience(
   ctx: UserContext,
   experienceId: string,
@@ -88,6 +121,23 @@ export async function publishExperience(
   const stepRows = await repo.listSteps(ctx.db, experienceId);
   if (stepRows.length === 0) {
     throw DashboardError.unprocessable('experience has no steps to publish');
+  }
+
+  // Required text is enforced HERE, at publish, not on every autosave (where it
+  // refused to save a half-finished draft). The message names each missing
+  // field in the card's language so the builder can show it as-is.
+  const missing = missingRequired(
+    parseTemplateDefinition(tpl.definition),
+    stepRows,
+    (exp.fields ?? {}) as Record<string, string>,
+    exp.locale === 'ar' ? 'ar' : 'en',
+  );
+  if (missing.length > 0) {
+    throw DashboardError.unprocessable(
+      exp.locale === 'ar'
+        ? `أكمل الحقول المطلوبة قبل النشر: ${missing.join('، ')}`
+        : `Fill in the required fields before publishing: ${missing.join(', ')}`,
+    );
   }
 
   // NOTE: we intentionally do NOT hard-block publishing when photo slots are
@@ -183,23 +233,19 @@ export async function getPublicExperienceBySlug(slug: string): Promise<BoundExpe
   // the template since the card was made render with their defaults, and rows
   // for removed scenes are skipped. No write here — an anonymous viewer must
   // never mutate someone else's card (the editor persists on next open).
-  const plan = reconcileSteps(def, stepRows, exp.locale === 'ar' ? 'ar' : 'en');
+  const locale = exp.locale === 'ar' ? 'ar' : 'en';
+  const plan = reconcileSteps(def, stepRows, locale);
+  // Card-level details (couple's names, wedding date), defaults filled in.
+  const cardFields = resolveFields(def, (exp.fields ?? {}) as Record<string, string>, locale);
 
   const boundSteps: BoundStep[] = await Promise.all(
     plan.steps.map(async ({ scene, orderIndex, existing, defaultText }): Promise<BoundStep> => {
-      const rawText =
-        (existing ? (existing.textContent as Record<string, string> | null) : defaultText) ?? {};
+      // Same slot-level reconciliation the editor persists (renamed keys carried
+      // across, stale keys dropped, missing slots defaulted) — in memory here.
+      const saved = existing ? (existing.textContent as Record<string, string> | null) : defaultText;
+      const { text: rawText } = reconcileText(scene, saved ?? {}, locale);
       const text: Record<string, string> = {};
-      for (const [k, v] of Object.entries(rawText)) text[k] = applyTokens(String(v), recipient);
-      // Fill any unset text slots from scene defaults so the Player always has copy.
-      for (const slot of scene.slots) {
-        if (slot.type === 'text' || slot.type === 'date') {
-          if (text[slot.key] == null) {
-            const d = exp.locale === 'ar' ? slot.defaultAr : slot.defaultEn;
-            if (d != null) text[slot.key] = applyTokens(d, recipient);
-          }
-        }
-      }
+      for (const [k, v] of Object.entries(rawText)) text[k] = applyTokens(String(v), recipient, cardFields);
 
       // Bind media → signed URLs. Each media files under its own slotKey (so a
       // scene with several image slots — avatar + photo — and gallery slots with
@@ -239,6 +285,7 @@ export async function getPublicExperienceBySlug(slug: string): Promise<BoundExpe
     locale: exp.locale as 'ar' | 'en',
     direction: exp.direction as 'rtl' | 'ltr',
     recipientName: recipient,
+    fields: cardFields,
     theme: def.theme,
     scenes: def.scenes,
     steps: boundSteps,

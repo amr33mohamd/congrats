@@ -1,7 +1,8 @@
 'use client';
 
 import * as React from 'react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
+import type { Field } from '@/lib/template-contract';
 import { Input } from '@/components/ui';
 import { cn } from '@/components/ui/cn';
 import type { AppLocale } from '../types';
@@ -14,6 +15,9 @@ export function DetailsStep({
   onRecipient,
   onTitle,
   onLocale,
+  fieldDefs = [],
+  fields = {},
+  onField,
 }: {
   recipientName: string;
   title: string;
@@ -22,8 +26,15 @@ export function DetailsStep({
   onRecipient: (v: string) => void;
   onTitle: (v: string) => void;
   onLocale: (v: AppLocale) => void;
+  /** Card-level details — asked here once instead of in every section. */
+  fieldDefs?: Field[];
+  fields?: Record<string, string>;
+  onField?: (key: string, value: string) => void;
 }) {
   const t = useTranslations('dashboard.wizard.details');
+  const uiLocale = useLocale();
+  const label = (f: Field) =>
+    (uiLocale === 'ar' ? f.labelAr : f.labelEn) ?? f.labelEn ?? f.labelAr ?? f.key;
 
   return (
     <div className="mx-auto max-w-xl">
@@ -43,6 +54,29 @@ export function DetailsStep({
             autoFocus
           />
         </div>
+
+        {fieldDefs.length > 0 ? (
+          <fieldset className="flex flex-col gap-token-6 rounded-xl border border-border bg-surface p-token-6">
+            <legend className="px-token-2 text-sm font-semibold text-ink">{t('cardDetails')}</legend>
+            <p className="-mt-token-3 text-xs text-muted">{t('cardDetailsHint')}</p>
+            {fieldDefs.map((f) => (
+              <div key={f.key}>
+                <label htmlFor={`w-field-${f.key}`} className="mb-token-2 block text-sm font-medium text-ink">
+                  {label(f)}
+                  {f.required ? <span className="ms-token-1 text-danger">*</span> : null}
+                </label>
+                <Input
+                  id={`w-field-${f.key}`}
+                  type={f.type === 'date' ? 'datetime-local' : 'text'}
+                  value={fields[f.key] ?? ''}
+                  maxLength={f.maxLen}
+                  onChange={(e) => onField?.(f.key, e.target.value)}
+                  dir={f.type === 'date' ? 'ltr' : undefined}
+                />
+              </div>
+            ))}
+          </fieldset>
+        ) : null}
 
         <div>
           <label htmlFor="w-title" className="mb-token-2 block text-sm font-medium text-ink">

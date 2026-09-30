@@ -1,3 +1,4 @@
+import { resolveFields } from './template-contract';
 import type {
   BoundExperience,
   BoundMedia,
@@ -99,6 +100,23 @@ export interface PreviewOptions {
   recipientName: string;
 }
 
+/**
+ * Card-level field values for a gallery preview. Defaults first; an optional
+ * date field with no default (a birthday's party date) gets a sample date a
+ * couple of months out, the same way empty photo slots get sample photos —
+ * otherwise the preview hides the countdown and party sections it depends on.
+ */
+function previewFields(def: TemplateDefinition): Record<string, string> {
+  const out = resolveFields(def, {}, def.locale);
+  const sample = new Date(Date.now() + 60 * 24 * 60 * 60 * 1000);
+  sample.setUTCHours(19, 0, 0, 0);
+  const iso = sample.toISOString().slice(0, 16); // YYYY-MM-DDTHH:mm
+  for (const f of def.fields ?? []) {
+    if (f.type === 'date' && !out[f.key]) out[f.key] = iso;
+  }
+  return out;
+}
+
 export function buildPreviewExperience(
   def: TemplateDefinition,
   { templateId, category, recipientName }: PreviewOptions,
@@ -120,6 +138,7 @@ export function buildPreviewExperience(
     locale: def.locale,
     direction: def.direction,
     recipientName,
+    fields: previewFields(def),
     theme: def.theme,
     scenes: def.scenes,
     steps,

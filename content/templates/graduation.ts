@@ -110,6 +110,16 @@ function definition(loc: Loc): TemplateDefinitionInput {
     locale: loc,
     direction: loc === 'ar' ? 'rtl' : 'ltr',
     theme: theme(look),
+    // Asked once: the countdown and the party section both use this date.
+    fields: [
+      {
+        key: 'partyDate',
+        type: 'date',
+        required: false,
+        labelEn: 'Party date & time (optional)',
+        labelAr: 'تاريخ ووقت الحفلة (اختياري)',
+      },
+    ],
     scenes: [
       {
         id: 'cover',
@@ -196,7 +206,7 @@ function definition(loc: Loc): TemplateDefinitionInput {
         style: { headingColor: look.accent, bodyColor: look.ink, headingSize: 'md' },
         slots: [
           t('lead', LABEL.countdownTitle, c.countdown, { maxLen: 44 }),
-          date('targetDate', LABEL.countdownDate),
+          { ...date('targetDate', LABEL.countdownDate), bind: 'partyDate' },
           t('body', LABEL.countdownNote, c.countdownNote, { maxLen: 80 }),
         ],
       },
@@ -211,7 +221,7 @@ function definition(loc: Loc): TemplateDefinitionInput {
           t('label', LABEL.eventName, c.eventName, { maxLen: 48 }),
           t('venue', LABEL.eventPlace, c.eventPlace, { maxLen: 60 }),
           t('when', LABEL.eventWhen, c.eventWhen, { maxLen: 48 }),
-          date('date', LABEL.eventDate),
+          { ...date('date', LABEL.eventDate), bind: 'partyDate' },
         ],
       },
       {

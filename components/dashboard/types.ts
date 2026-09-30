@@ -4,7 +4,7 @@
  * permissive where the backend payload shape isn't fully nailed down yet, so the
  * UI is resilient to additive fields.
  */
-import type { SceneDef, BoundStep, TemplateTheme, TemplateDefinition } from '@/lib/template-contract';
+import type { SceneDef, BoundStep, TemplateTheme, TemplateDefinition, Field } from '@/lib/template-contract';
 
 export type AppLocale = 'ar' | 'en';
 
@@ -68,6 +68,9 @@ export interface EditorExperience {
   theme: TemplateTheme;
   scenes: SceneDef[];
   steps: BoundStep[];
+  /** Card-level details asked once in the Details step (see TemplateDefinition.fields). */
+  fieldDefs?: Field[];
+  fields?: Record<string, string>;
   templateName?: string | null;
   shareSlug?: string | null;
   orderId?: string | null;

@@ -99,7 +99,12 @@ export const dashboardApi = {
 
   patchExperience: (
     id: string,
-    body: Partial<{ title: string; recipientName: string; locale: AppLocale }>,
+    body: Partial<{
+      title: string;
+      recipientName: string;
+      locale: AppLocale;
+      fields: Record<string, string>;
+    }>,
   ) =>
     request<EditorExperience>(`/api/dashboard/experiences/${id}`, {
       method: 'PATCH',

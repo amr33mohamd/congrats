@@ -25,6 +25,9 @@ export const updateExperienceSchema = z
     title: z.string().trim().min(1).max(160).nullable().optional(),
     recipientName: z.string().trim().min(1).max(120).nullable().optional(),
     locale: LocaleSchema.optional(),
+    // Card-level details (couple's names, wedding date). Keys are validated
+    // against the template's fields in the service.
+    fields: z.record(z.string().max(500)).optional(),
   })
   .refine((v) => Object.keys(v).length > 0, { message: 'no fields to update' });
 export type UpdateExperienceInput = z.infer<typeof updateExperienceSchema>;

@@ -103,3 +103,52 @@ export function reconcileSteps<S extends StepLike>(
 
   return { steps, added, orphans, needsPersist };
 }
+
+/* ───────────────────────── slot-level text reconciliation ───────────────── */
+
+/**
+ * Bring ONE step's saved text in line with its scene's CURRENT slots.
+ *
+ * `reconcileSteps` fixes which sections a card has; this fixes what is inside
+ * them. Without it, a template that renamed a field (the invitation rewrite
+ * turned `subheading` into `sub`) left old cards holding a key the scene no
+ * longer declares — and because saving validated every section in one request,
+ * that single stale key made EVERY edit on the card fail.
+ *
+ *  - a value saved under one of a slot's `formerKeys` moves to the slot's key;
+ *  - keys the scene no longer declares (or now binds to a card-level field)
+ *    are dropped;
+ *  - editable text/date slots with no value get their default (the card's
+ *    locale first, then the other one, so a required heading is never blank
+ *    just because the template was authored in the other language).
+ */
+export function reconcileText(
+  scene: SceneDef,
+  text: Record<string, string> | null | undefined,
+  locale: Locale,
+): { text: Record<string, string>; changed: boolean } {
+  const src = { ...(text ?? {}) };
+  const out: Record<string, string> = {};
+  for (const slot of scene.slots) {
+    if (slot.type !== 'text' && slot.type !== 'date') continue;
+    if (slot.bind) continue; // edited once, at card level
+    let value = src[slot.key];
+    if (value == null) {
+      for (const former of slot.formerKeys ?? []) {
+        if (src[former] != null) {
+          value = src[former];
+          break;
+        }
+      }
+    }
+    if (value == null) {
+      const def = (locale === 'ar' ? slot.defaultAr : slot.defaultEn) ?? slot.defaultEn ?? slot.defaultAr;
+      if (def != null) value = def;
+    }
+    if (value != null) out[slot.key] = String(value);
+  }
+  const changed =
+    Object.keys(out).length !== Object.keys(src).length ||
+    Object.entries(out).some(([k, v]) => src[k] !== v);
+  return { text: out, changed };
+}

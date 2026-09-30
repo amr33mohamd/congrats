@@ -20,7 +20,7 @@ import {
 } from '@/lib/template-contract';
 import type { Experience, Step, Media } from '@/db/schema';
 import { DashboardError } from './errors';
-import { defaultTextForScene, reconcileSteps } from './step-reconcile';
+import { defaultTextForScene, reconcileSteps, reconcileText } from './step-reconcile';
 import * as repo from './repositories';
 
 export interface EditorStepPayload {
@@ -182,7 +182,17 @@ async function loadReconciledSteps(
   const locale = experience.locale as Locale;
   const saved = await repo.listSteps(ctx.db, experience.id);
   const plan = reconcileSteps(def, saved, locale);
-  if (!plan.needsPersist) return plan.steps.map((s) => s.existing!);
+
+  // Inside each surviving section, carry renamed fields across and drop stale
+  // ones — otherwise the next autosave is rejected for the whole card.
+  const texts: Array<{ id: string; textContent: Record<string, string> }> = [];
+  for (const s of plan.steps) {
+    if (!s.existing) continue;
+    const r = reconcileText(s.scene, s.existing.textContent as Record<string, string>, locale);
+    if (r.changed) texts.push({ id: s.existing.id, textContent: r.text });
+  }
+
+  if (!plan.needsPersist && texts.length === 0) return plan.steps.map((s) => s.existing!);
 
   const moves: Array<{ id: string; orderIndex: number }> = [];
   for (const s of plan.steps) {
@@ -206,7 +216,7 @@ async function loadReconciledSteps(
     }));
 
   try {
-    await repo.applyStepPlan(ctx.db, experience.id, { moves, inserts });
+    await repo.applyStepPlan(ctx.db, experience.id, { moves, inserts, texts });
   } catch (err) {
     console.warn('[experiences] step reconciliation not persisted', {
       experienceId: experience.id,
@@ -224,10 +234,30 @@ async function loadReconciledSteps(
 export async function updateExperience(
   ctx: UserContext,
   id: string,
-  patch: { title?: string | null; recipientName?: string | null; locale?: Locale },
+  patch: {
+    title?: string | null;
+    recipientName?: string | null;
+    locale?: Locale;
+    fields?: Record<string, string>;
+  },
 ): Promise<Experience> {
-  await requireOwnedExperience(ctx, id);
+  const current = await requireOwnedExperience(ctx, id);
   const dbPatch: Record<string, unknown> = {};
+  if (patch.fields !== undefined) {
+    const tpl = await repo.getTemplateById(ctx.db, current.templateId);
+    const def = tpl ? parseTemplateDefinition(tpl.definition) : null;
+    const allowed = new Map((def?.fields ?? []).map((f) => [f.key, f]));
+    const next: Record<string, string> = { ...((current.fields ?? {}) as Record<string, string>) };
+    for (const [key, value] of Object.entries(patch.fields)) {
+      const f = allowed.get(key);
+      if (!f) continue; // unknown key — drop, never fail a draft save
+      if (f.maxLen != null && value.length > f.maxLen) {
+        throw DashboardError.validation(`field '${key}' exceeds maxLen ${f.maxLen}`);
+      }
+      next[key] = value;
+    }
+    dbPatch.fields = next;
+  }
   if (patch.title !== undefined) dbPatch.title = patch.title;
   if (patch.recipientName !== undefined) dbPatch.recipientName = patch.recipientName;
   if (patch.locale !== undefined) {
@@ -280,11 +310,15 @@ export async function upsertSteps(
   const seenStepIds = new Set<string>();
   const seenOrder = new Set<number>();
 
+  // Autosave is a DRAFT save: it must never refuse the whole card because one
+  // section is stale or unfinished. Sections the template no longer has are
+  // skipped, unknown fields are dropped (reconcileText), and required fields
+  // are enforced at publish — not here, where they blocked every keystroke on
+  // a half-filled invitation.
+  const accepted: IncomingStep[] = [];
   for (const step of incoming) {
     const scene = sceneById.get(step.templateStepId);
-    if (!scene) {
-      throw DashboardError.validation(`unknown templateStepId '${step.templateStepId}'`);
-    }
+    if (!scene) continue; // editor opened before a template change; harmless
     if (seenStepIds.has(step.templateStepId)) {
       throw DashboardError.validation(`duplicate templateStepId '${step.templateStepId}'`);
     }
@@ -295,10 +329,11 @@ export async function upsertSteps(
     }
     seenOrder.add(step.orderIndex);
 
-    validateSceneText(scene, step.text ?? {}, locale);
+    const text = sanitizeSceneText(scene, step.text ?? {}, locale);
+    accepted.push({ ...step, text });
   }
 
-  const rows = incoming.map((step) => ({
+  const rows = accepted.map((step) => ({
     experienceId,
     templateStepId: step.templateStepId,
     orderIndex: step.orderIndex,
@@ -310,39 +345,40 @@ export async function upsertSteps(
   return repo.replaceSteps(ctx.db, experienceId, rows);
 }
 
-function validateSceneText(scene: SceneDef, text: Record<string, string>, locale: Locale): void {
-  const textSlots = new Map(scene.slots.filter((s) => s.type === 'text' || s.type === 'date').map((s) => [s.key, s]));
-
+/**
+ * Clean one step's text for a draft save: stale/unknown or bound keys are
+ * dropped (after carrying renamed keys across), values must be strings within
+ * the slot's maxLen. Required-ness is NOT checked here — see publish.
+ */
+function sanitizeSceneText(
+  scene: SceneDef,
+  text: Record<string, unknown>,
+  locale: Locale,
+): Record<string, string> {
+  const declared = new Map(
+    scene.slots
+      .filter((s) => (s.type === 'text' || s.type === 'date') && !s.bind && s.editable !== false)
+      .map((s) => [s.key, s]),
+  );
+  const strings: Record<string, string> = {};
   for (const [key, value] of Object.entries(text)) {
-    const slot = textSlots.get(key);
-    if (!slot) {
-      throw DashboardError.validation(`scene '${scene.id}' has no text slot '${key}'`);
-    }
-    if (!slot.editable) {
-      throw DashboardError.validation(`slot '${key}' in scene '${scene.id}' is not editable`);
-    }
     if (typeof value !== 'string') {
       throw DashboardError.validation(`slot '${key}' must be a string`);
     }
+    strings[key] = value;
+  }
+  // Only keys the scene declares survive; renamed keys are carried across.
+  const { text: reconciled } = reconcileText(scene, strings, locale);
+  const out: Record<string, string> = {};
+  for (const [key, value] of Object.entries(reconciled)) {
+    const slot = declared.get(key);
+    if (!slot) continue;
     if (slot.maxLen != null && value.length > slot.maxLen) {
       throw DashboardError.validation(
         `slot '${key}' exceeds maxLen ${slot.maxLen} (got ${value.length})`,
       );
     }
+    out[key] = value;
   }
-
-  // Required text slots must have a non-empty value (after token substitution a
-  // {recipient} placeholder still counts as provided).
-  for (const slot of textSlots.values()) {
-    if (!slot.required) continue;
-    const v = text[slot.key];
-    if (v == null || v.trim().length === 0) {
-      const fallback = locale === 'ar' ? slot.defaultAr : slot.defaultEn;
-      if (fallback == null || fallback.trim().length === 0) {
-        throw DashboardError.unprocessable(
-          `required slot '${slot.key}' in scene '${scene.id}' is empty`,
-        );
-      }
-    }
-  }
+  return out;
 }

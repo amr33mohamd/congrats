@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { motion } from 'framer-motion';
-import { applyTokens, type SceneRenderPropsLike } from './invitation-types';
+import { applyTokens, slotValue, type SceneRenderPropsLike } from './invitation-types';
 import { cssFamily } from '@/lib/fonts';
 import { readableOn } from './color';
 
@@ -20,7 +20,8 @@ import { readableOn } from './color';
 /* ─────────────────────────────── helpers ──────────────────────────────── */
 
 function t(p: SceneRenderPropsLike, key: string): string {
-  return applyTokens(p.step.text?.[key] ?? '', p.recipientName).trim();
+  const f = p.fields ?? {};
+  return applyTokens(slotValue(p.scene, p.step, key, f), p.recipientName, f).trim();
 }
 
 function colors(p: SceneRenderPropsLike) {
@@ -167,7 +168,8 @@ export function FamiliesScene(p: SceneRenderPropsLike) {
 /** Event — label, venue, time line, and the date set as a large numeral. */
 export function EventScene(p: SceneRenderPropsLike) {
   const c = colors(p);
-  const raw = p.step.text?.date ?? '';
+  // Falls back to the card's wedding date unless this event overrides it.
+  const raw = slotValue(p.scene, p.step, 'date', p.fields ?? {});
   const d = raw ? new Date(raw) : null;
   const valid = d && !Number.isNaN(d.getTime());
   const locale = isAr(p) ? 'ar-EG' : 'en-GB';

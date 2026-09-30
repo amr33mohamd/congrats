@@ -232,12 +232,42 @@ describe('template catalog (content/templates)', () => {
     for (const t of catalog) {
       for (const scene of t.definition.scenes) {
         for (const slot of scene.slots) {
-          if (slot.type === 'image') continue;
+          // Bound slots are never shown — their card-level field is (below).
+          if (slot.type === 'image' || slot.bind) continue;
           const where = `${t.slug} › ${scene.id} › ${slot.key}`;
           expect(slot.labelEn?.trim(), where).toBeTruthy();
           expect(slot.labelAr?.trim(), where).toBeTruthy();
         }
       }
+      for (const f of t.definition.fields ?? []) {
+        expect(f.labelEn?.trim(), `${t.slug} › field ${f.key}`).toBeTruthy();
+        expect(f.labelAr?.trim(), `${t.slug} › field ${f.key}`).toBeTruthy();
+      }
+    }
+  });
+
+  it('every bind/fallback points at a field the template declares', async () => {
+    const catalog = await load();
+    for (const t of catalog) {
+      const keys = new Set((t.definition.fields ?? []).map((f) => f.key));
+      for (const scene of t.definition.scenes) {
+        for (const slot of scene.slots) {
+          const ref = slot.bind ?? slot.fallback;
+          if (ref) expect(keys.has(ref), `${t.slug} › ${scene.id} › ${slot.key} → ${ref}`).toBe(true);
+        }
+      }
+    }
+  });
+
+  it('never asks for the same date twice unless the dates genuinely differ', async () => {
+    const catalog = await load();
+    for (const t of catalog) {
+      // Plain (unbound, no fallback) date questions per card. Newborn is the one
+      // template with two real dates: the birth and the naming party.
+      const plain = t.definition.scenes.flatMap((sc) =>
+        sc.slots.filter((s) => s.type === 'date' && !s.bind && !s.fallback),
+      );
+      expect(plain.length, t.slug).toBeLessThanOrEqual(t.category === 'newborn' ? 2 : 1);
     }
   });
 
@@ -248,7 +278,7 @@ describe('template catalog (content/templates)', () => {
       expect(t.definition.direction, t.slug).toBe(t.locale === 'ar' ? 'rtl' : 'ltr');
       for (const scene of t.definition.scenes) {
         for (const slot of scene.slots) {
-          if (slot.type !== 'text') continue;
+          if (slot.type !== 'text' || slot.bind) continue;
           const where = `${t.slug} › ${scene.id} › ${slot.key}`;
           const value = t.locale === 'ar' ? slot.defaultAr : slot.defaultEn;
           expect(value, where).toBeDefined();

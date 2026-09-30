@@ -144,9 +144,17 @@ export async function applyStepPlan(
   plan: {
     moves: Array<{ id: string; orderIndex: number }>;
     inserts: Array<typeof steps.$inferInsert>;
+    /** Text rewritten by slot-level reconciliation (renamed/stale keys). */
+    texts?: Array<{ id: string; textContent: Record<string, string> }>;
   },
 ): Promise<void> {
   await db.transaction(async (tx) => {
+    for (const t of plan.texts ?? []) {
+      await tx
+        .update(steps)
+        .set({ textContent: t.textContent, updatedAt: new Date() })
+        .where(and(eq(steps.id, t.id), eq(steps.experienceId, experienceId)));
+    }
     for (let i = 0; i < plan.moves.length; i++) {
       await tx
         .update(steps)

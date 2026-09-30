@@ -20,7 +20,9 @@ import {
   type BoundStep,
   type BoundMedia,
   type SceneDef,
+  resolveFields,
 } from '@/lib/template-contract';
+import { reconcileText } from '@/server/dashboard/step-reconcile';
 import type { QueueRow } from './orders-service';
 
 export interface AdminOrderView {
@@ -128,21 +130,18 @@ async function bindExperienceForReview(
   }
 
   const recipient = exp.recipientName ?? '';
+  const locale = exp.locale === 'ar' ? 'ar' : 'en';
+  // The admin reviews exactly what the recipient will see: same slot-level
+  // reconciliation and card-level fields as the public render.
+  const cardFields = resolveFields(def, (exp.fields ?? {}) as Record<string, string>, locale);
 
   const boundSteps: BoundStep[] = await Promise.all(
     stepRows.map(async (s): Promise<BoundStep> => {
       const scene = sceneById.get(s.templateStepId);
-      const rawText = (s.textContent as Record<string, string> | null) ?? {};
+      const saved = (s.textContent as Record<string, string> | null) ?? {};
+      const rawText = scene ? reconcileText(scene, saved, locale).text : saved;
       const text: Record<string, string> = {};
-      for (const [k, v] of Object.entries(rawText)) text[k] = applyTokens(String(v), recipient);
-      if (scene) {
-        for (const slot of scene.slots) {
-          if ((slot.type === 'text' || slot.type === 'date') && text[slot.key] == null) {
-            const d = exp.locale === 'ar' ? slot.defaultAr : slot.defaultEn;
-            if (d != null) text[slot.key] = applyTokens(d, recipient);
-          }
-        }
-      }
+      for (const [k, v] of Object.entries(rawText)) text[k] = applyTokens(String(v), recipient, cardFields);
       const imageSlotKey = scene?.slots.find((sl) => sl.type === 'image')?.key ?? 'image';
       const boundMedia: BoundMedia[] = await Promise.all(
         (mediaByStep.get(s.id) ?? []).map(async (m) => ({
@@ -168,6 +167,7 @@ async function bindExperienceForReview(
     locale: exp.locale as 'ar' | 'en',
     direction: exp.direction as 'rtl' | 'ltr',
     recipientName: recipient,
+    fields: cardFields,
     theme: def.theme,
     scenes: def.scenes,
     steps: boundSteps.length

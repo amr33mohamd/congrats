@@ -145,6 +145,7 @@ export function TemplateStage({
           theme={theme}
           direction={experience.direction}
           recipientName={experience.recipientName}
+          fields={experience.fields}
           reducedMotion={reduced}
           active
         />

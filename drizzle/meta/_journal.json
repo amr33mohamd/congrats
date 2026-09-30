@@ -15,6 +15,13 @@
       "when": 1790550627974,
       "tag": "0001_silly_king_bedlam",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790803771013,
+      "tag": "0002_stiff_harrier",
+      "breakpoints": true
     }
   ]
 }

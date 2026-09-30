@@ -139,6 +139,7 @@ async function ensurePgliteSchema(pg: { exec: (sql: string) => Promise<unknown> 
       status text NOT NULL DEFAULT 'draft'
         CHECK (status IN ('draft','awaiting_payment','locked','published')),
       is_unlocked boolean NOT NULL DEFAULT false,
+      fields jsonb NOT NULL DEFAULT '{}'::jsonb,
       created_at timestamptz NOT NULL DEFAULT now(),
       updated_at timestamptz NOT NULL DEFAULT now()
     );
@@ -236,6 +237,7 @@ async function ensurePgliteSchema(pg: { exec: (sql: string) => Promise<unknown> 
   await pg.exec(/* sql */ `
     ALTER TABLE users ADD COLUMN IF NOT EXISTS password_hash text;
     ALTER TABLE users ADD COLUMN IF NOT EXISTS all_access boolean NOT NULL DEFAULT false;
+    ALTER TABLE experiences ADD COLUMN IF NOT EXISTS fields jsonb NOT NULL DEFAULT '{}'::jsonb;
   `);
 }
 

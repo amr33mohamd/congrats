@@ -119,6 +119,9 @@ export const experiences = pgTable(
     status: text('status').notNull().default('draft'),
     // Server-set ONLY by order approval (or free templates). The unlock gate reads this.
     isUnlocked: boolean('is_unlocked').notNull().default(false),
+    // Card-level details asked once (couple's names, wedding date…), keyed by
+    // the template's field keys. See TemplateDefinition.fields.
+    fields: jsonb('fields').$type<Record<string, string>>().notNull().default({}),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },

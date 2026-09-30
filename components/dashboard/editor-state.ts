@@ -87,7 +87,9 @@ export function editableScenes(exp: EditorExperience, steps: LocalStep[]): Edita
           media: [],
           animationConfig: {},
         };
-      const editable = scene.slots.filter((s) => s.editable !== false);
+      // A slot bound to a card-level field is asked once in the Details step,
+      // so it never appears in the per-scene editor.
+      const editable = scene.slots.filter((s) => s.editable !== false && !s.bind);
       return {
         scene,
         step,
@@ -103,6 +105,7 @@ export function toBoundExperience(
   exp: EditorExperience,
   steps: LocalStep[],
   recipientName: string,
+  fields: Record<string, string> = exp.fields ?? {},
 ): BoundExperience {
   return {
     experienceId: exp.id,
@@ -110,6 +113,7 @@ export function toBoundExperience(
     locale: exp.locale,
     direction: exp.direction,
     recipientName,
+    fields,
     theme: exp.theme ?? {},
     scenes: exp.scenes,
     steps: steps
@@ -118,9 +122,9 @@ export function toBoundExperience(
       .map((s) => ({
         templateStepId: s.templateStepId,
         orderIndex: s.orderIndex,
-        // Resolve {recipient} tokens for an accurate preview.
+        // Resolve {recipient} and card-field tokens for an accurate preview.
         text: Object.fromEntries(
-          Object.entries(s.text).map(([k, v]) => [k, applyTokens(v ?? '', recipientName)]),
+          Object.entries(s.text).map(([k, v]) => [k, applyTokens(v ?? '', recipientName, fields)]),
         ),
         media: s.media.map((m) => ({
           slot: m.slot,

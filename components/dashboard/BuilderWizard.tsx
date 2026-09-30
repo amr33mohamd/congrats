@@ -36,6 +36,9 @@ export function BuilderWizard({
   const [title, setTitle] = React.useState(initial.title ?? '');
   const [expLocale, setExpLocale] = React.useState<AppLocale>(initial.locale);
   const [steps, setSteps] = React.useState<LocalStep[]>(() => seedSteps(initial));
+  // Card-level details (couple's names, wedding date…), asked once.
+  const [fields, setFields] = React.useState<Record<string, string>>(() => initial.fields ?? {});
+  const [saveError, setSaveError] = React.useState<string | null>(null);
 
   // Experience meta (title/recipient/locale) lives at the experience level.
   const experience = React.useMemo<EditorExperience>(
@@ -45,20 +48,22 @@ export function BuilderWizard({
       title,
       locale: expLocale,
       direction: expLocale === 'ar' ? 'rtl' : 'ltr',
+      fields,
     }),
-    [initial, recipientName, title, expLocale],
+    [initial, recipientName, title, expLocale, fields],
   );
 
   /* ── autosave: experience meta ── */
   const meta = React.useMemo(
-    () => ({ title, recipientName, locale: expLocale }),
-    [title, recipientName, expLocale],
+    () => ({ title, recipientName, locale: expLocale, fields }),
+    [title, recipientName, expLocale, fields],
   );
   const metaSave = useAutosave(meta, async (m) => {
     await dashboardApi.patchExperience(initial.id, {
       title: m.title,
       recipientName: m.recipientName,
       locale: m.locale,
+      ...(Object.keys(m.fields).length ? { fields: m.fields } : {}),
     });
   });
 
@@ -74,9 +79,24 @@ export function BuilderWizard({
         ? 'error'
         : 'saved';
 
+  /**
+   * Save everything, and THROW if any of it failed. Previously this used
+   * allSettled and swallowed failures, so Next / Save & exit / Publish carried
+   * on as if the edits were saved — they were not.
+   */
   const flushAll = React.useCallback(async () => {
-    await Promise.allSettled([metaSave.flush(), stepsSave.flush()]);
-  }, [metaSave, stepsSave]);
+    const [a, b] = await Promise.all([metaSave.flush(), stepsSave.flush()]);
+    if (!a || !b) {
+      const message = t('saveFailed');
+      setSaveError(message);
+      throw new Error(message);
+    }
+    setSaveError(null);
+  }, [metaSave, stepsSave, t]);
+
+  // Surface a background autosave failure too, not only the ones on Next.
+  const bgError = metaSave.state === 'error' || stepsSave.state === 'error';
+  const shownError = saveError ?? (bgError ? t('saveFailed') : null);
 
   const updateStep = React.useCallback((stepId: string, updater: (s: LocalStep) => LocalStep) => {
     setSteps((prev) => prev.map((s) => (s.templateStepId === stepId ? updater(s) : s)));
@@ -85,7 +105,11 @@ export function BuilderWizard({
   const goNext = async () => {
     const idx = ORDER.indexOf(step);
     if (idx < ORDER.length - 1) {
-      await flushAll();
+      try {
+        await flushAll();
+      } catch {
+        return; // stay put — the error banner explains why
+      }
       setStep(ORDER[idx + 1]);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
@@ -99,8 +123,21 @@ export function BuilderWizard({
   };
 
   const exit = async () => {
-    await flushAll();
+    try {
+      await flushAll();
+    } catch {
+      return;
+    }
     router.push('/dashboard');
+  };
+
+  const jumpTo = async (target: WizardStep) => {
+    try {
+      await flushAll();
+    } catch {
+      return;
+    }
+    setStep(target);
   };
 
   return (
@@ -110,8 +147,20 @@ export function BuilderWizard({
         order={ORDER}
         saveState={saveState}
         onExit={exit}
-        onStep={(s) => setStep(s)}
+        onStep={(s) => void jumpTo(s)}
       />
+
+      {shownError ? (
+        <div
+          role="alert"
+          className="mt-token-4 flex items-center justify-between gap-token-3 rounded-lg border border-danger/40 bg-danger/10 px-token-4 py-token-3 text-sm text-danger"
+        >
+          <span>{shownError}</span>
+          <Button size="sm" variant="secondary" onClick={() => void flushAll().catch(() => {})}>
+            {t('retrySave')}
+          </Button>
+        </div>
+      ) : null}
 
       <div className="mt-token-6">
         {step === 'details' ? (
@@ -123,6 +172,9 @@ export function BuilderWizard({
             onRecipient={setRecipientName}
             onTitle={setTitle}
             onLocale={setExpLocale}
+            fieldDefs={initial.fieldDefs ?? []}
+            fields={fields}
+            onField={(key, value) => setFields((prev) => ({ ...prev, [key]: value }))}
           />
         ) : null}
 
