@@ -38,7 +38,16 @@ export interface CreatedOrder {
 }
 
 function instapayHandle(): string {
-  return process.env.INSTAPAY_HANDLE ?? 'congrats@instapay';
+  const handle = process.env.INSTAPAY_HANDLE?.trim();
+  if (handle) return handle;
+  // Never show a made-up account in production — a buyer would send real
+  // money to it. Checkout stays closed until the owner sets the handle.
+  if (process.env.NODE_ENV === 'production' || process.env.VERCEL) {
+    throw DashboardError.unprocessable(
+      'Paid checkout is not open yet — please try again soon. / الدفع لسه مش متاح، جرّب تاني قريب.',
+    );
+  }
+  return 'congrats@instapay';
 }
 
 export async function createOrder(ctx: UserContext, experienceId: string): Promise<CreatedOrder> {

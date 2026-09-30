@@ -16,10 +16,7 @@ import { categories, templates, users, adminUsers } from './schema';
 import { TEMPLATE_CATALOG, CATALOG_CATEGORIES } from '@/content/templates';
 import { hashPassword } from '@/lib/password';
 
-async function upsertCategory(
-  db: Awaited<ReturnType<typeof getDb>>,
-  c: (typeof CATALOG_CATEGORIES)[number],
-) {
+async function upsertCategory(db: Awaited<ReturnType<typeof getDb>>, c: (typeof CATALOG_CATEGORIES)[number]) {
   const existing = await db.select().from(categories).where(eq(categories.slug, c.slug)).limit(1);
   if (existing[0]) return existing[0];
   const [row] = await db.insert(categories).values(c).returning();
@@ -68,24 +65,34 @@ export async function seed() {
   // The fallback password is in this public repo: fine on a laptop, an open
   // door on a real site. Production must supply its own.
   const inProduction = process.env.NODE_ENV === 'production' || Boolean(process.env.VERCEL);
-  if (inProduction && !process.env.SEED_ADMIN_PASSWORD) {
-    throw new Error('SEED_ADMIN_PASSWORD must be set in production (the default admin password is public).');
-  }
+  // No admin until the owner configures one (SEED_ADMIN_EMAIL + _PASSWORD and
+  // redeploy). Templates still need a createdBy, which stays null.
+  const skipAdmin = inProduction && !(process.env.SEED_ADMIN_PASSWORD && process.env.SEED_ADMIN_EMAIL);
+  if (skipAdmin)
+    console.warn('[seed] SEED_ADMIN_EMAIL/SEED_ADMIN_PASSWORD not set — no admin account created.');
   const adminPassword = process.env.SEED_ADMIN_PASSWORD ?? 'congrats-admin';
-  const adminHash = await hashPassword(adminPassword);
-  let admin = (await db.select().from(users).where(eq(users.email, adminEmail)).limit(1))[0];
-  if (!admin) {
-    [admin] = await db
-      .insert(users)
-      .values({ email: adminEmail, passwordHash: adminHash, displayName: 'Demo Admin', locale: 'ar' })
-      .returning();
-  } else if (!admin.passwordHash) {
-    // Back-fill a password for admins created before password auth existed.
-    [admin] = await db
-      .update(users)
-      .set({ passwordHash: adminHash })
-      .where(eq(users.id, admin.id))
-      .returning();
+  let admin: typeof users.$inferSelect | undefined;
+  if (!skipAdmin) {
+    const adminHash = await hashPassword(adminPassword);
+    admin = (await db.select().from(users).where(eq(users.email, adminEmail)).limit(1))[0];
+    if (!admin) {
+      [admin] = await db
+        .insert(users)
+        .values({
+          email: adminEmail,
+          passwordHash: adminHash,
+          displayName: 'Demo Admin',
+          locale: 'ar',
+        })
+        .returning();
+    } else if (!admin.passwordHash) {
+      // Back-fill a password for admins created before password auth existed.
+      [admin] = await db
+        .update(users)
+        .set({ passwordHash: adminHash })
+        .where(eq(users.id, admin.id))
+        .returning();
+    }
   }
   // Comped QA account: an ordinary (non-admin) user with `all_access`, so the
   // full buyer journey can be walked on PAID templates without an InstaPay
@@ -95,9 +102,7 @@ export async function seed() {
     const testerEmail = (process.env.SEED_TESTER_EMAIL ?? 'tester@congrats.dev').toLowerCase();
     const testerPassword = process.env.SEED_TESTER_PASSWORD ?? 'congrats-tester';
     const testerHash = await hashPassword(testerPassword);
-    const existingTester = (
-      await db.select().from(users).where(eq(users.email, testerEmail)).limit(1)
-    )[0];
+    const existingTester = (await db.select().from(users).where(eq(users.email, testerEmail)).limit(1))[0];
     if (!existingTester) {
       await db.insert(users).values({
         email: testerEmail,
@@ -115,8 +120,10 @@ export async function seed() {
     }
   }
 
-  let adminRow = (await db.select().from(adminUsers).where(eq(adminUsers.userId, admin.id)).limit(1))[0];
-  if (!adminRow) {
+  let adminRow = admin
+    ? (await db.select().from(adminUsers).where(eq(adminUsers.userId, admin.id)).limit(1))[0]
+    : undefined;
+  if (admin && !adminRow) {
     [adminRow] = await db.insert(adminUsers).values({ userId: admin.id, role: 'superadmin' }).returning();
   }
 
@@ -130,7 +137,11 @@ export async function seed() {
   let inserted = 0;
   let updated = 0;
   for (const t of TEMPLATE_CATALOG) {
-    const existing = await db.select({ id: templates.id }).from(templates).where(eq(templates.slug, t.slug)).limit(1);
+    const existing = await db
+      .select({ id: templates.id })
+      .from(templates)
+      .where(eq(templates.slug, t.slug))
+      .limit(1);
     const contentFields = {
       categoryId: catRows[t.category] ?? null,
       titleEn: t.titleEn,
@@ -154,7 +165,7 @@ export async function seed() {
         .where(eq(templates.id, existing[0].id));
       updated += 1;
     } else {
-      await db.insert(templates).values({ slug: t.slug, ...fields, createdBy: adminRow.id });
+      await db.insert(templates).values({ slug: t.slug, ...fields, createdBy: adminRow?.id ?? null });
       inserted += 1;
     }
   }
@@ -172,7 +183,7 @@ export async function seed() {
 
   return {
     categories: Object.keys(catRows).length,
-    admin: admin.email,
+    admin: admin?.email ?? null,
     templatesInCatalog: TEMPLATE_CATALOG.length,
     templatesInserted: inserted,
     templatesUpdated: updated,

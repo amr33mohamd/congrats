@@ -28,8 +28,8 @@ describe('checkEnv', () => {
   it('reports every missing required var at once', () => {
     const { errors } = checkEnv({ NODE_ENV: 'production' });
     const joined = errors.join('\n');
-    expect(errors).toHaveLength(4);
-    for (const key of ['AUTH_SECRET', 'AUTH_URL', 'DATABASE_URL', 'INSTAPAY_HANDLE']) {
+    expect(errors).toHaveLength(3);
+    for (const key of ['AUTH_SECRET', 'AUTH_URL', 'DATABASE_URL']) {
       expect(joined).toContain(key);
     }
   });
@@ -113,5 +113,19 @@ describe('checkEnv on Vercel', () => {
   it('refuses PGlite even when explicitly allowed', () => {
     const env = { ...base, STORAGE_DRIVER: 'vercel-blob', BLOB_READ_WRITE_TOKEN: 't', DATABASE_URL: '', ALLOW_PGLITE_IN_PRODUCTION: 'true' };
     expect(checkEnv(env).errors.join(' ')).toMatch(/Postgres/);
+  });
+});
+
+describe('first deploy without owner secrets', () => {
+  const env = {
+    NODE_ENV: 'production',
+    AUTH_URL: 'https://congrats.vercel.app',
+    DATABASE_URL: 'postgres://u:p@h/db',
+  };
+  it('runs on a derived auth secret and a closed checkout, with warnings', () => {
+    const r = checkEnv(env);
+    expect(r.errors).toEqual([]);
+    expect(r.warnings.join(' ')).toMatch(/derived from DATABASE_URL/);
+    expect(r.warnings.join(' ')).toMatch(/checkout is closed/);
   });
 });

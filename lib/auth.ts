@@ -1,3 +1,4 @@
+import { createHmac } from 'node:crypto';
 /**
  * Auth.js (NextAuth v5) config with a DEV Credentials provider so login works
  * offline with no external email/OAuth. Entering an email upserts a `users` row;
@@ -33,10 +34,14 @@ export async function resolveRole(
   db: Awaited<ReturnType<typeof getDb>>,
   user: { id: string; email: string },
 ): Promise<string | null> {
-  const seedAdmin = (process.env.SEED_ADMIN_EMAIL ?? 'admin@congrats.dev').toLowerCase();
   const adminRow = await db.select().from(adminUsers).where(eq(adminUsers.userId, user.id)).limit(1);
   if (adminRow[0]) return adminRow[0].role;
-  if (user.email.toLowerCase() === seedAdmin) {
+  // The fallback address is in this public repo: in production anyone could
+  // register it and walk in as superadmin. Only an explicitly configured
+  // SEED_ADMIN_EMAIL is promoted there.
+  const configured = process.env.SEED_ADMIN_EMAIL;
+  const seedAdmin = (configured ?? (isProduction() ? '' : 'admin@congrats.dev')).toLowerCase();
+  if (seedAdmin && user.email.toLowerCase() === seedAdmin) {
     const created = await db
       .insert(adminUsers)
       .values({ userId: user.id, role: 'superadmin' })
@@ -46,7 +51,25 @@ export async function resolveRole(
   return null;
 }
 
+const isProduction = () => process.env.NODE_ENV === 'production' || Boolean(process.env.VERCEL);
+
+/**
+ * AUTH_SECRET when set. Otherwise, on a deploy with a database, a secret
+ * derived from the database connection string: it is private to the host,
+ * stable across instances and restarts, and never in the repo — so a first
+ * deploy works before the owner has generated a secret. Setting AUTH_SECRET
+ * later takes over (signing everyone out once). Changing the database
+ * password also rotates the derived secret.
+ */
+export function resolveAuthSecret(env: Record<string, string | undefined> = process.env): string | undefined {
+  if (env.AUTH_SECRET) return env.AUTH_SECRET;
+  const source = env.DATABASE_URL_UNPOOLED || env.DATABASE_URL;
+  if (!source) return undefined;
+  return createHmac('sha256', source).update('congrats:auth-secret:v1').digest('base64');
+}
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  secret: resolveAuthSecret(),
   trustHost: true,
   session: { strategy: 'jwt' },
   providers: [

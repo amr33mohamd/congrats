@@ -48,7 +48,10 @@ export function checkEnv(env: Env = process.env): EnvReport {
 
   // ── Required ────────────────────────────────────────────────────────────
   const secret = env.AUTH_SECRET;
-  if (!isSet(secret)) {
+  if (!isSet(secret) && (isSet(env.DATABASE_URL) || isSet(env.DATABASE_URL_UNPOOLED))) {
+    // lib/auth.ts derives a private secret from the database URL.
+    warnings.push('AUTH_SECRET is not set — using a secret derived from DATABASE_URL. Set one to decouple them.');
+  } else if (!isSet(secret)) {
     errors.push('AUTH_SECRET is not set. Generate one with: openssl rand -base64 32');
   } else if (PLACEHOLDER_SECRET_MARKERS.some((m) => secret.includes(m))) {
     errors.push('AUTH_SECRET is a placeholder value from the repo. Generate a real one: openssl rand -base64 32');
@@ -102,7 +105,7 @@ export function checkEnv(env: Env = process.env): EnvReport {
   }
 
   if (!isSet(env.INSTAPAY_HANDLE)) {
-    errors.push('INSTAPAY_HANDLE is not set — buyers would have nowhere to pay for paid templates.');
+    warnings.push('INSTAPAY_HANDLE is not set — paid checkout is closed until it is.');
   }
 
   // ── Optional (warn only) ────────────────────────────────────────────────
