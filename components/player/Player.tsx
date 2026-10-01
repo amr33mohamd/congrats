@@ -450,7 +450,7 @@ export function Player({
     }
   }, [started, startAtStepId, reducedMotion, embedded]);
 
-  useAutoScroll({ enabled: started && !embedded && !reducedMotion, sections });
+  useAutoScroll({ enabled: started && !embedded && !reducedMotion });
 
   const completedRef = React.useRef(false);
   const onCompleteRef = React.useRef(onComplete);
@@ -597,79 +597,60 @@ export function Player({
 }
 
 /**
- * Once the guest opens the card, carry them down through it: each section
- * holds for its `holdMs`, then the page glides to the next one, the way a
- * printed invitation is read top to bottom without being asked to scroll.
+ * Once the guest opens the card, it drifts down on its own: one slow,
+ * continuous glide (no jumps between sections), the way a page eases past
+ * when you lean back and read.
  *
- * The guest is always in charge. Any touch, wheel, key or drag pauses the
- * glide; it picks up again after a few quiet seconds from wherever they are.
- * It stops at the last section, and never runs under reduced motion or in
- * the builder's preview (where the editor moves the frame itself).
+ * The guest is always in charge. Any touch, click, wheel or key pauses the
+ * glide at once; after a few quiet seconds it carries on from wherever they
+ * left off. It stops at the end of the card, and never runs under reduced
+ * motion or in the builder's preview (where the editor moves the frame).
  */
 const AUTO_SCROLL_FIRST_DELAY_MS = 2600;
-const AUTO_SCROLL_DEFAULT_HOLD_MS = 4500;
-const AUTO_SCROLL_RESUME_AFTER_MS = 6000;
+const AUTO_SCROLL_RESUME_AFTER_MS = 5000;
+/** Speed in screen-heights per second: about 30 px/s on a phone. */
+const AUTO_SCROLL_SPEED = 0.042;
 
 function useAutoScroll({
   enabled,
-  sections,
 }: {
   enabled: boolean;
-  sections: Array<{ scene: SceneDef; step: BoundStep }>;
+  sections?: unknown;
 }) {
-  const sectionsRef = React.useRef(sections);
-  sectionsRef.current = sections;
-
   React.useEffect(() => {
     if (!enabled) return;
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    let pausedUntil = 0;
-    let done = false;
+    let raf = 0;
+    let last = 0;
+    let pos = window.scrollY;
+    let pausedUntil = performance.now() + AUTO_SCROLL_FIRST_DELAY_MS;
 
     const onUser = () => {
-      pausedUntil = Date.now() + AUTO_SCROLL_RESUME_AFTER_MS;
+      pausedUntil = performance.now() + AUTO_SCROLL_RESUME_AFTER_MS;
     };
-    const events = ['wheel', 'touchstart', 'keydown', 'mousedown'] as const;
+    const events = ['pointerdown', 'touchstart', 'wheel', 'keydown'] as const;
     events.forEach((e) => window.addEventListener(e, onUser, { passive: true }));
 
-    const holdFor = (el: Element | undefined) => {
-      const id = (el as HTMLElement | undefined)?.dataset.scene;
-      const scene = sectionsRef.current.find((s) => s.scene.id === id)?.scene;
-      return Math.max(2500, scene?.holdMs ?? AUTO_SCROLL_DEFAULT_HOLD_MS);
+    const frame = (now: number) => {
+      const dt = last ? Math.min(now - last, 64) : 0;
+      last = now;
+      if (now < pausedUntil) {
+        // Paused: follow wherever the guest scrolled to, so the glide picks
+        // up from there rather than snapping back.
+        pos = window.scrollY;
+      } else {
+        const end = document.documentElement.scrollHeight - window.innerHeight;
+        if (pos >= end - 1) return; // reached the end of the card
+        // Fractional position kept here: scrollY rounds to whole pixels, and
+        // a slow glide adds less than one pixel per frame.
+        pos = Math.min(end, pos + (window.innerHeight * AUTO_SCROLL_SPEED * dt) / 1000);
+        window.scrollTo({ top: pos, behavior: 'instant' as ScrollBehavior });
+      }
+      raf = requestAnimationFrame(frame);
     };
+    raf = requestAnimationFrame(frame);
 
-    const step = () => {
-      if (done) return;
-      if (Date.now() < pausedUntil) {
-        timer = setTimeout(step, 800);
-        return;
-      }
-      const viewH = window.innerHeight;
-      const els = Array.from(document.querySelectorAll<HTMLElement>('section[data-scene]'));
-      // The section the reader is in: the last one whose top has reached the
-      // upper third of the screen.
-      let current = els[0];
-      for (const el of els) if (el.getBoundingClientRect().top <= viewH * 0.34) current = el;
-      const rect = current?.getBoundingClientRect();
-      if (rect && rect.bottom > viewH + 48) {
-        // A section taller than the screen is read in pages, not skipped.
-        window.scrollBy({ top: Math.min(viewH * 0.75, rect.bottom - viewH), behavior: 'smooth' });
-        timer = setTimeout(step, Math.max(2500, holdFor(current) * 0.6));
-        return;
-      }
-      const next = els[els.indexOf(current) + 1];
-      if (!next) {
-        done = true;
-        return;
-      }
-      window.scrollTo({ top: next.getBoundingClientRect().top + window.scrollY, behavior: 'smooth' });
-      timer = setTimeout(step, holdFor(next));
-    };
-
-    timer = setTimeout(step, AUTO_SCROLL_FIRST_DELAY_MS);
     return () => {
-      done = true;
-      if (timer) clearTimeout(timer);
+      cancelAnimationFrame(raf);
       events.forEach((e) => window.removeEventListener(e, onUser));
     };
   }, [enabled]);
