@@ -1,3 +1,7 @@
+// Tests get a throwaway in-memory database. Without this they used the dev
+// database (.data/pglite) and left their fixtures in the developer's data.
+process.env.PGLITE_PATH = 'memory://';
+
 import '@testing-library/jest-dom/vitest';
 
 // jsdom does not implement matchMedia; the Player reads it for reduced-motion.
