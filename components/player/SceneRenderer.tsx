@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { remainingUntil, type Remaining } from '@/lib/countdown';
 import { motion } from 'framer-motion';
 import {
   applyTokens,
@@ -430,23 +431,18 @@ function CountdownScene(p: SceneRenderProps) {
   const r = resolveStyle(p.scene, p.theme);
   const target = dateValue(p.scene, p.step, p.recipientName, p.fields);
   const blocks = textBlocks(p.scene, p.step, p.recipientName, p.fields);
-  const [remaining, setRemaining] = React.useState<{ d: number; h: number; m: number } | null>(null);
+  const [remaining, setRemaining] = React.useState<Remaining | null>(null);
   React.useEffect(() => {
     if (!target) return;
-    const tick = () => {
-      const diff = new Date(target).getTime() - Date.now();
-      // Invalid or already passed: a row of "00" tiles reads as broken, so the
-      // section keeps just its words.
-      if (Number.isNaN(diff) || diff <= 0) return setRemaining(null);
-      const clamped = diff;
-      setRemaining({
-        d: Math.floor(clamped / 86400000),
-        h: Math.floor((clamped % 86400000) / 3600000),
-        m: Math.floor((clamped % 3600000) / 60000),
-      });
-    };
+    // Wall-clock time in the event's zone (lib/countdown.ts): no hour lost to
+    // daylight saving, and the same count for a guest abroad. Invalid or
+    // already passed → null: a row of "00" tiles reads as broken, so the
+    // section keeps just its words.
+    const tick = () => setRemaining(remainingUntil(target));
     tick();
-    const id = setInterval(tick, 30000);
+    // Every second, with a seconds tile: refreshing every 30 s made the
+    // counter look frozen.
+    const id = setInterval(tick, 1000);
     return () => clearInterval(id);
   }, [target]);
 
@@ -455,15 +451,16 @@ function CountdownScene(p: SceneRenderProps) {
       <SectionRule theme={p.theme} r={r} />
       <TextStack blocks={blocks} r={r} direction={p.direction} reducedMotion={p.reducedMotion} active={p.active} />
       {remaining ? (
-        <div className="mt-token-6 flex gap-token-4">
+        <div className="mt-token-6 flex gap-token-3">
           {[
             { v: remaining.d, l: p.direction === 'rtl' ? 'يوم' : 'days' },
             { v: remaining.h, l: p.direction === 'rtl' ? 'ساعة' : 'hrs' },
             { v: remaining.m, l: p.direction === 'rtl' ? 'دقيقة' : 'min' },
+            { v: remaining.s, l: p.direction === 'rtl' ? 'ثانية' : 'sec' },
           ].map((u) => (
             <div
               key={u.l}
-              className="flex min-w-[4.5rem] flex-col items-center rounded-xl px-token-3 py-token-2"
+              className="flex min-w-[4rem] flex-col items-center rounded-xl px-token-2 py-token-2"
               // Tinted from the template accent: a white/12 tile vanished on
               // the light paper palettes.
               style={{ background: `color-mix(in srgb, ${r.accent} 14%, transparent)`, boxShadow: `inset 0 0 0 1px color-mix(in srgb, ${r.accent} 40%, transparent)` }}
