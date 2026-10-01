@@ -113,7 +113,7 @@ function Checkout({ order, onSubmitted }: { order: OrderInfo; onSubmitted: () =>
     setScreenshotUrl(preview);
     try {
       const media = await uploadAndConfirm(file, {
-        kind: 'payment-proof',
+        kind: 'payment_screenshot',
         experienceId: order.experienceId,
       });
       setScreenshotId(media.id);

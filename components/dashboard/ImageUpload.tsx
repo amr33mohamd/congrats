@@ -56,7 +56,7 @@ export function ImageUpload({
     const previousMediaId = value?.mediaId;
     try {
       const media = await uploadAndConfirm(file, {
-        kind: 'experience-media',
+        kind: 'step_image',
         experienceId,
         templateStepId,
         slotKey,

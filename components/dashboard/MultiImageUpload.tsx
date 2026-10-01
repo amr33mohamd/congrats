@@ -49,7 +49,7 @@ export function MultiImageUpload({
     for (const file of files.slice(0, room)) {
       try {
         const media = await uploadAndConfirm(file, {
-          kind: 'experience-media',
+          kind: 'step_image',
           experienceId,
           templateStepId,
           slotKey,

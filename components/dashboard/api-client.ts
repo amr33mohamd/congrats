@@ -198,13 +198,19 @@ export const dashboardApi = {
 };
 
 /**
- * Uploads a file to a signed target then confirms it, returning the persisted
- * media row. Handles both PUT (R2/local presigned) and POST (form) targets.
+ * Upload one image and return the stored media row.
+ *
+ * Sends the file to POST /api/dashboard/media, which checks the bytes, stores
+ * them (local disk or Vercel Blob) and records the media row in one request.
+ * The older sign → PUT → confirm path never worked from the browser: the sign
+ * response names its URL `uploadUrl` (the client read `url`, so every upload
+ * went to "undefined"), nothing accepted the PUT, and the kinds the client
+ * sent ('experience-media', 'payment-proof') were not valid media kinds.
  */
 export async function uploadAndConfirm(
   file: File,
   ctx: {
-    kind: string;
+    kind: 'step_image' | 'payment_screenshot';
     experienceId?: string;
     stepId?: string;
     // Stable scene id + image-slot key for experience photos (multi-slot / gallery).
@@ -214,41 +220,44 @@ export async function uploadAndConfirm(
 ): Promise<ConfirmedMedia> {
   file = await shrinkForUpload(file);
   const dims = await readImageDimensions(file).catch(() => ({ width: 0, height: 0 }));
-  const target = await dashboardApi.signMedia({
-    kind: ctx.kind,
-    mime: file.type,
-    bytes: file.size,
-    experienceId: ctx.experienceId,
-    stepId: ctx.stepId,
-  });
-
-  if (target.method === 'POST' && target.fields) {
-    const form = new FormData();
-    Object.entries(target.fields).forEach(([k, v]) => form.append(k, v));
-    form.append('file', file);
-    const up = await fetch(target.url, { method: 'POST', body: form });
-    if (!up.ok) throw new ApiError('upload failed', up.status);
-  } else {
-    const up = await fetch(target.url, {
-      method: 'PUT',
-      headers: { 'Content-Type': file.type },
-      body: file,
-    });
-    if (!up.ok) throw new ApiError('upload failed', up.status);
-  }
-
-  return dashboardApi.confirmMedia({
-    bucket: target.bucket,
-    key: target.key,
-    mime: file.type,
-    width: dims.width,
-    height: dims.height,
-    bytes: file.size,
+  const form = new FormData();
+  form.append('kind', ctx.kind);
+  for (const [k, v] of Object.entries({
     experienceId: ctx.experienceId,
     stepId: ctx.stepId,
     templateStepId: ctx.templateStepId,
     slotKey: ctx.slotKey,
-  });
+  })) {
+    if (v) form.append(k, v);
+  }
+  if (dims.width) form.append('width', String(dims.width));
+  if (dims.height) form.append('height', String(dims.height));
+  form.append('file', file);
+
+  let res: Response;
+  try {
+    // No Content-Type header: the browser sets the multipart boundary itself.
+    res = await fetch('/api/dashboard/media', { method: 'POST', body: form, cache: 'no-store' });
+  } catch {
+    throw new ApiError('Network error. Please try again.', 0);
+  }
+  const body = (await res.json().catch(() => ({}))) as {
+    media?: { id: string; bucket: string; storagePath: string; width?: number | null; height?: number | null };
+    error?: { message?: string } | string;
+    message?: string;
+  };
+  if (!res.ok || !body.media) {
+    const msg = typeof body.error === 'object' ? body.error?.message : body.message;
+    throw new ApiError(msg || 'Upload failed. Please try again.', res.status);
+  }
+  const m = body.media;
+  return {
+    id: m.id,
+    // Served through the auth-checked storage route (owner preview / shared card).
+    url: `/api/storage/${m.bucket}/${m.storagePath.split('/').map(encodeURIComponent).join('/')}`,
+    width: m.width ?? dims.width,
+    height: m.height ?? dims.height,
+  };
 }
 
 /** Longest side kept for an uploaded photo — sharper than any phone screen needs. */
