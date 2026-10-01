@@ -450,6 +450,8 @@ export function Player({
     }
   }, [started, startAtStepId, reducedMotion, embedded]);
 
+  useAutoScroll({ enabled: started && !embedded && !reducedMotion, sections });
+
   const completedRef = React.useRef(false);
   const onCompleteRef = React.useRef(onComplete);
   onCompleteRef.current = onComplete;
@@ -592,4 +594,83 @@ export function Player({
       ) : null}
     </div>
   );
+}
+
+/**
+ * Once the guest opens the card, carry them down through it: each section
+ * holds for its `holdMs`, then the page glides to the next one, the way a
+ * printed invitation is read top to bottom without being asked to scroll.
+ *
+ * The guest is always in charge. Any touch, wheel, key or drag pauses the
+ * glide; it picks up again after a few quiet seconds from wherever they are.
+ * It stops at the last section, and never runs under reduced motion or in
+ * the builder's preview (where the editor moves the frame itself).
+ */
+const AUTO_SCROLL_FIRST_DELAY_MS = 2600;
+const AUTO_SCROLL_DEFAULT_HOLD_MS = 4500;
+const AUTO_SCROLL_RESUME_AFTER_MS = 6000;
+
+function useAutoScroll({
+  enabled,
+  sections,
+}: {
+  enabled: boolean;
+  sections: Array<{ scene: SceneDef; step: BoundStep }>;
+}) {
+  const sectionsRef = React.useRef(sections);
+  sectionsRef.current = sections;
+
+  React.useEffect(() => {
+    if (!enabled) return;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let pausedUntil = 0;
+    let done = false;
+
+    const onUser = () => {
+      pausedUntil = Date.now() + AUTO_SCROLL_RESUME_AFTER_MS;
+    };
+    const events = ['wheel', 'touchstart', 'keydown', 'mousedown'] as const;
+    events.forEach((e) => window.addEventListener(e, onUser, { passive: true }));
+
+    const holdFor = (el: Element | undefined) => {
+      const id = (el as HTMLElement | undefined)?.dataset.scene;
+      const scene = sectionsRef.current.find((s) => s.scene.id === id)?.scene;
+      return Math.max(2500, scene?.holdMs ?? AUTO_SCROLL_DEFAULT_HOLD_MS);
+    };
+
+    const step = () => {
+      if (done) return;
+      if (Date.now() < pausedUntil) {
+        timer = setTimeout(step, 800);
+        return;
+      }
+      const viewH = window.innerHeight;
+      const els = Array.from(document.querySelectorAll<HTMLElement>('section[data-scene]'));
+      // The section the reader is in: the last one whose top has reached the
+      // upper third of the screen.
+      let current = els[0];
+      for (const el of els) if (el.getBoundingClientRect().top <= viewH * 0.34) current = el;
+      const rect = current?.getBoundingClientRect();
+      if (rect && rect.bottom > viewH + 48) {
+        // A section taller than the screen is read in pages, not skipped.
+        window.scrollBy({ top: Math.min(viewH * 0.75, rect.bottom - viewH), behavior: 'smooth' });
+        timer = setTimeout(step, Math.max(2500, holdFor(current) * 0.6));
+        return;
+      }
+      const next = els[els.indexOf(current) + 1];
+      if (!next) {
+        done = true;
+        return;
+      }
+      window.scrollTo({ top: next.getBoundingClientRect().top + window.scrollY, behavior: 'smooth' });
+      timer = setTimeout(step, holdFor(next));
+    };
+
+    timer = setTimeout(step, AUTO_SCROLL_FIRST_DELAY_MS);
+    return () => {
+      done = true;
+      if (timer) clearTimeout(timer);
+      events.forEach((e) => window.removeEventListener(e, onUser));
+    };
+  }, [enabled]);
 }

@@ -54,7 +54,9 @@ export function Soundtrack({
     // Still possible to be blocked (no gesture reached us, e.g. an automated
     // run). A rejected play is "not playing yet", not an error: the control
     // stays so the viewer can start it by hand, which IS a gesture.
-    el.play().catch(() => setMuted(true));
+    // Older engines return nothing from play() rather than a promise.
+    const playing = el.play() as Promise<void> | undefined;
+    playing?.catch?.(() => setMuted(true));
   }, [src, started, muted, failed]);
 
   if (!src || failed) return null;

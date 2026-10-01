@@ -44,3 +44,11 @@ if (typeof window !== 'undefined' && !('IntersectionObserver' in window)) {
   (globalThis as unknown as Record<string, unknown>).IntersectionObserver =
     StubIntersectionObserver;
 }
+
+// jsdom implements no media playback; the Player starts the soundtrack on open.
+if (typeof window !== 'undefined') {
+  window.HTMLMediaElement.prototype.play = function play() {
+    return Promise.resolve();
+  };
+  window.HTMLMediaElement.prototype.pause = function pause() {};
+}

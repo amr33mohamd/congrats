@@ -217,10 +217,17 @@ describe('Player render', () => {
   });
 
   it('renders no soundtrack control (and requests no file) when the track has not shipped', () => {
-    const withMusic = parseBoundExperience({ ...sample, theme: { ...sample.theme, music: 'wedding-strings' } });
+    const withMusic = parseBoundExperience({ ...sample, theme: { ...sample.theme, music: 'not-a-shipped-track' } });
     const { container } = render(<Player experience={withMusic} startPaused={false} />);
     expect(container.querySelector('audio')).toBeNull();
     expect(screen.queryByRole('button', { name: 'الموسيقى' })).not.toBeInTheDocument();
+  });
+
+  it('plays the template music, with its control, once the card is open', () => {
+    const withMusic = parseBoundExperience({ ...sample, theme: { ...sample.theme, music: 'wedding-strings' } });
+    const { container } = render(<Player experience={withMusic} startPaused={false} />);
+    expect(container.querySelector('audio')?.getAttribute('src')).toBe('/audio/wedding-strings.mp3');
+    expect(screen.getByRole('button', { name: 'الموسيقى' })).toBeInTheDocument();
   });
 
   it('keeps Arabic words whole in the typewriter heading (no per-letter split)', () => {

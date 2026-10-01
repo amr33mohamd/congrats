@@ -4,9 +4,11 @@
  * Templates declare a `music` key in their theme (e.g. `wedding-strings`),
  * which maps to a file under `public/audio/`.
  *
- * LICENSING: no audio ships with the repo. To light a track up, drop the
- * licensed file in as `public/audio/<key>.mp3` AND add its key to
- * `SHIPPED_TRACKS` below (a unit test fails if the two disagree).
+ * LICENSING: every shipped track is an original composition written for
+ * this project in code (scripts/compose-music.mjs: synthesised instruments,
+ * no samples, no third-party audio), so there is nothing to license. To
+ * replace one, drop a file in as `public/audio/<key>.mp3`; a key listed in
+ * `SHIPPED_TRACKS` must have its file (a unit test checks).
  *
  * Why a manifest instead of "try the URL and see": the browser logs every 404
  * as a console error, and it does so before any `onError` handler can hide
@@ -30,11 +32,8 @@ export const TRACK_KEYS = [
 
 export type TrackKey = (typeof TRACK_KEYS)[number];
 
-/**
- * Tracks whose file actually exists in `public/audio/`. Empty until licensed
- * audio is added — see public/audio/README.md.
- */
-export const SHIPPED_TRACKS: ReadonlySet<string> = new Set<TrackKey>([]);
+/** Tracks whose file exists in `public/audio/` — all of them. */
+export const SHIPPED_TRACKS: ReadonlySet<string> = new Set<TrackKey>(TRACK_KEYS);
 
 /**
  * Public URL for a template's soundtrack, or null when it declares none or
