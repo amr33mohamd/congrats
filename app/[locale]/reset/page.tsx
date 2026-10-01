@@ -65,7 +65,7 @@ function ResetForm() {
           {t('resetDone')}
         </p>
       ) : (
-        <form onSubmit={onSubmit} className="flex flex-col gap-token-4">
+        <form noValidate onSubmit={onSubmit} className="flex flex-col gap-token-4">
           <AuthField label={t('newPasswordLabel')}>
             <Input
               type="password"

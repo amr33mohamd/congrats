@@ -6,6 +6,7 @@ import { useTranslations, useLocale } from 'next-intl';
 import { useRouter, Link } from '@/i18n/navigation';
 import { Button, Input } from '@/components/ui';
 import { track } from '@/lib/track';
+import { validateEmail } from '@/lib/validate-email';
 
 type Mode = 'login' | 'signup';
 
@@ -28,6 +29,16 @@ export default function LoginPage() {
     e.preventDefault();
     setError(null);
 
+    // Our own messages instead of the browser's (English-only) bubbles.
+    const emailError = validateEmail(email);
+    if (emailError) {
+      setError(t(emailError));
+      return;
+    }
+    if (!password) {
+      setError(t('passwordRequired'));
+      return;
+    }
     if (password.length < 8) {
       setError(t('passwordTooShort'));
       return;
@@ -116,7 +127,7 @@ export default function LoginPage() {
             {isSignup ? t('signupSubtitle') : t('loginSubtitle')}
           </p>
 
-          <form onSubmit={onSubmit} className="mt-token-6 flex flex-col gap-token-4">
+          <form noValidate onSubmit={onSubmit} className="mt-token-6 flex flex-col gap-token-4">
             {isSignup ? (
               <Field label={t('nameLabel')}>
                 <Input
