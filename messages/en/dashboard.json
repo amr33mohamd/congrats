@@ -86,7 +86,11 @@
       "cardDetailsHint": "Filled in once and used everywhere on the card — the names, the date and the countdown all come from here.",
       "guestLabel": "Guest name (optional)",
       "guestPlaceholder": "e.g. Layla — or leave blank",
-      "guestHint": "Leave it blank to send one invitation link to all your guests; the wording adjusts so it reads naturally without a name."
+      "guestHint": "Leave it blank to send one invitation link to all your guests; the wording adjusts so it reads naturally without a name.",
+      "dateIn": "In {days, number} days",
+      "dateToday": "Today",
+      "datePast": "This date has already passed",
+      "dateCheckYear": "check the year"
     },
     "content": {
       "title": "Personalize each scene",

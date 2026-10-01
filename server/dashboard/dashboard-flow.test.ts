@@ -293,3 +293,9 @@ async function getEditorStatus(experienceId: string): Promise<boolean> {
   const row = (await db.select().from(experiences).where(eq(experiences.id, experienceId)).limit(1))[0];
   return row.isUnlocked;
 }
+
+describe('malformed ids', () => {
+  it('a card id that is not a uuid is not found, not a server error', async () => {
+    await expect(experiencesService.updateExperience(ctxA, 'undefined', { title: 'x' })).rejects.toMatchObject({ code: 'NOT_FOUND' });
+  });
+});

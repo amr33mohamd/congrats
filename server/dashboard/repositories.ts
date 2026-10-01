@@ -58,11 +58,16 @@ export async function listExperiences(db: DbClient, userId: string): Promise<Exp
 }
 
 /** Owner-scoped single fetch — returns undefined if missing OR not owned. */
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export async function getOwnedExperience(
   db: DbClient,
   userId: string,
   id: string,
 ): Promise<Experience | undefined> {
+  // A malformed id is simply "not yours / not found". Passed to Postgres it
+  // failed the uuid cast and surfaced as a 500.
+  if (!UUID.test(id)) return undefined;
   return (
     await db
       .select()

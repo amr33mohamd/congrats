@@ -143,7 +143,7 @@ const COPY: Record<'en' | 'ar', Copy> = {
     venueHeading: 'Getting there',
     address: 'Corniche El Nil, Garden City\nCairo, Egypt',
     rsvpHeading: 'Will you join us?',
-    rsvpBody: 'Kindly let us know by 1 May 2027.',
+    rsvpBody: 'Kindly let us know if you can make it.',
     giftHeading: 'A gift, if you wish',
     giftBody:
       "Your presence is the greatest gift. If you'd like to give something more, you can send it here.",
@@ -172,7 +172,7 @@ const COPY: Record<'en' | 'ar', Copy> = {
     venueHeading: 'الطريق إلينا',
     address: 'كورنيش النيل، جاردن سيتي\nالقاهرة',
     rsvpHeading: 'هتشرّفنا؟',
-    rsvpBody: 'نرجو تأكيد الحضور قبل ١ مايو ٢٠٢٧.',
+    rsvpBody: 'نرجو تأكيد الحضور برسالة.',
     giftHeading: 'هدية منك',
     giftBody: 'وجودك معنا هو أجمل هدية، ولو حابب تهادينا ممكن تحوّل هنا.',
     finale: 'بكل حب، {couple}',
@@ -256,7 +256,9 @@ function buildDefinition(s: Style, locale: 'ar' | 'en'): TemplateDefinitionInput
         required: true,
         labelEn: 'Wedding date & time',
         labelAr: 'تاريخ ووقت الفرح',
-        ...(locale === 'ar' ? { defaultAr: '2027-06-18T20:00' } : { defaultEn: '2027-06-18T20:00' }),
+        // No default: a sample year pre-filled here was kept by couples who
+        // only changed the day and month, so cards counted to the wrong year.
+        // The gallery preview supplies its own sample (lib/template-preview).
       },
     ],
     // One continuous card, read top to bottom: who → the ask → families →
@@ -393,7 +395,13 @@ function buildDefinition(s: Style, locale: 'ar' | 'en'): TemplateDefinitionInput
         style: info,
         slots: [
           { ...f('rsvpHeading', ['Title', 'العنوان']), key: 'heading' },
-          { ...f('rsvpBody', ['Note', 'ملاحظة'], { maxLen: 120 }), key: 'body' },
+          {
+            ...f('rsvpBody', ['Note', 'ملاحظة'], { maxLen: 120 }),
+            key: 'body',
+            // The old copy carried a fixed deadline, which contradicted any
+            // wedding not in mid-2027.
+            formerDefaults: ['Kindly let us know by 1 May 2027.', 'نرجو تأكيد الحضور قبل ١ مايو ٢٠٢٧.'],
+          },
           slot('phone', locale, '', ['WhatsApp number, with country code', 'رقم واتساب مع كود الدولة'], { maxLen: 20 }),
         ],
       },

@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { remainingUntil } from '@/lib/countdown';
 import { useLocale, useTranslations } from 'next-intl';
 import type { Field } from '@/lib/template-contract';
 import { Input } from '@/components/ui';
@@ -79,7 +80,9 @@ export function DetailsStep({
                   maxLength={f.maxLen}
                   onChange={(e) => onField?.(f.key, e.target.value)}
                   dir={f.type === 'date' ? 'ltr' : undefined}
+                  aria-describedby={f.type === 'date' ? `w-field-${f.key}-when` : undefined}
                 />
+                {f.type === 'date' ? <DateDistance id={`w-field-${f.key}-when`} value={fields[f.key] ?? ''} /> : null}
               </div>
             ))}
           </fieldset>
@@ -120,5 +123,32 @@ export function DetailsStep({
         </div>
       </div>
     </div>
+  );
+}
+
+/**
+ * "In 78 days" under a date field. The input shows 15/12/2027 and 15/12/2026
+ * almost alike; the distance makes a wrong year obvious before publishing.
+ */
+function DateDistance({ id, value }: { id: string; value: string }) {
+  const t = useTranslations('dashboard.wizard.details');
+  if (!value) return null;
+  const left = remainingUntil(value);
+  let text: string;
+  let warn = false;
+  if (!left) {
+    text = t('datePast');
+    warn = true;
+  } else if (left.d === 0) {
+    text = t('dateToday');
+  } else {
+    text = t('dateIn', { days: left.d });
+    warn = left.d > 365;
+  }
+  return (
+    <p id={id} className={`mt-token-2 text-xs ${warn ? 'text-warning' : 'text-muted'}`}>
+      {text}
+      {warn && left ? ` · ${t('dateCheckYear')}` : null}
+    </p>
   );
 }
