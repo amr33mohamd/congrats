@@ -14,7 +14,8 @@
     "categories": "Categories",
     "pricing": "Pricing",
     "users": "Users",
-    "audit": "Audit log"
+    "audit": "Audit log",
+    "import": "Import cards"
   },
   "common": {
     "loading": "Loading…",
@@ -225,5 +226,15 @@
     "actorAdmin": "Admin",
     "actorSystem": "System",
     "empty": "No audit entries yet."
+  },
+  "import": {
+    "title": "Import cards",
+    "hint": "Upload a cards export (JSON) from another install. Cards are added to your account; no accounts or passwords are imported. Uploading the same file twice is safe.",
+    "choose": "Choose export file",
+    "working": "Importing…",
+    "imported": "{count} cards imported",
+    "existing": "{count} already here (skipped)",
+    "links": "Share links kept: {kept}, dropped (slug taken): {dropped}",
+    "unknown": "Skipped — template not found: {names}"
   }
 }

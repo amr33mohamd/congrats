@@ -12,7 +12,7 @@ import { cn } from '@/components/ui';
 
 interface NavItem {
   href: string;
-  key: 'overview' | 'queue' | 'templates' | 'categories' | 'pricing' | 'users' | 'audit';
+  key: 'overview' | 'queue' | 'templates' | 'categories' | 'pricing' | 'users' | 'audit' | 'import';
   icon: string;
 }
 
@@ -24,6 +24,7 @@ const NAV: NavItem[] = [
   { href: '/admin/pricing', key: 'pricing', icon: '₤' },
   { href: '/admin/users', key: 'users', icon: '◍' },
   { href: '/admin/audit', key: 'audit', icon: '⎙' },
+  { href: '/admin/import', key: 'import', icon: '⇪' },
 ];
 
 export function AdminSidebar({
