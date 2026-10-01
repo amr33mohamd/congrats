@@ -15,7 +15,8 @@
     "pricing": "Pricing",
     "users": "Users",
     "audit": "Audit log",
-    "import": "Import cards"
+    "import": "Import cards",
+    "analytics": "Analytics"
   },
   "common": {
     "loading": "Loading…",
@@ -236,5 +237,47 @@
     "existing": "{count} already here (skipped)",
     "links": "Share links kept: {kept}, dropped (slug taken): {dropped}",
     "unknown": "Skipped — template not found: {names}"
+  },
+  "analytics": {
+    "title": "Analytics",
+    "subtitle": "What visitors do — counts are unique visitors. Tag ad links with utm_source / utm_campaign to see them here.",
+    "range": "{days, plural, =1 {Today} other {# days}}",
+    "funnel": "Funnel",
+    "funnelHint": "Percent = share of the step above. Anonymous: no names, phones or photos are recorded.",
+    "sources": "Traffic sources",
+    "direct": "Direct / unknown",
+    "colSource": "Source",
+    "colCampaign": "Campaign",
+    "colVisitors": "Visitors",
+    "colSignups": "Sign-ups",
+    "colCreated": "Started card",
+    "colPublished": "Published",
+    "colPaid": "Paid",
+    "colRevenue": "Approved revenue",
+    "daily": "Daily",
+    "dailyHint": "Visitors · started a card · paid",
+    "cards": "Shared cards",
+    "devices": "Devices",
+    "device": {
+      "mobile": "Mobile",
+      "desktop": "Desktop",
+      "unknown": "Unknown"
+    },
+    "pages": "Top pages",
+    "colPage": "Page",
+    "colViews": "Views",
+    "empty": "No data yet for this range.",
+    "events": {
+      "page_view": "Visited",
+      "template_view": "Opened a template",
+      "signup": "Signed up",
+      "create_started": "Started a card",
+      "publish": "Published",
+      "payment_submitted": "Sent payment",
+      "card_opened": "Card opened by guests",
+      "rsvp_click": "RSVP taps",
+      "directions_click": "Directions taps",
+      "share": "Shares"
+    }
   }
 }

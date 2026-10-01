@@ -4,6 +4,7 @@ import * as React from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import { Dialog, Button } from '@/components/ui';
 import { ShareQr } from './ShareQr';
+import { track } from '@/lib/track';
 
 /** Builds the absolute /[locale]/p/[slug] share URL for the current origin. */
 export function buildShareUrl(locale: string, slug: string): string {
@@ -32,6 +33,7 @@ export function ShareDialog({
     if (!url) return;
     try {
       await navigator.clipboard.writeText(url);
+      track('share', { method: 'copy' });
       setCopied(true);
       setTimeout(() => setCopied(false), 1800);
     } catch {
@@ -62,7 +64,7 @@ export function ShareDialog({
             <Button onClick={copy} variant="secondary" className="w-full">
               {copied ? t('copied') : t('copy')}
             </Button>
-            <a href={waHref} target="_blank" rel="noopener noreferrer">
+            <a href={waHref} target="_blank" rel="noopener noreferrer" onClick={() => track('share', { method: 'whatsapp' })}>
               <Button className="w-full">
                 <span aria-hidden>🟢</span> {t('whatsapp')}
               </Button>

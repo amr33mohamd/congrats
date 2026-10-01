@@ -18,6 +18,7 @@ const projectRoot = fileURLToPath(new URL('.', import.meta.url));
 const sentryDsn = process.env.NEXT_PUBLIC_SENTRY_DSN || process.env.SENTRY_DSN || '';
 const plausibleDomain = process.env.NEXT_PUBLIC_PLAUSIBLE_DOMAIN || '';
 const plausibleHost = (process.env.NEXT_PUBLIC_PLAUSIBLE_HOST || 'https://plausible.io').replace(/\/$/, '');
+const metaPixel = Boolean(process.env.NEXT_PUBLIC_META_PIXEL_ID);
 
 /** Origin + CSP report endpoint derived from a Sentry DSN (https://KEY@HOST/PROJECT). */
 function sentryEndpoints(dsn) {
@@ -39,7 +40,8 @@ const sentry = sentryDsn ? sentryEndpoints(sentryDsn) : null;
 //  - script 'unsafe-inline': the App Router streams RSC payloads as inline
 //    <script> tags. The nonce alternative forces every page to render
 //    dynamically (no static /ar, /en), which costs more than it buys here.
-//    Third-party script hosts are still locked down to Plausible only.
+//    Third-party script hosts are still locked down to Plausible and the
+//    Meta Pixel, each only when configured.
 //  - script 'unsafe-eval' (dev only): React Refresh / webpack HMR use eval.
 //  - style 'unsafe-inline': framer-motion and React `style={}` props write
 //    inline styles; next/font injects an inline @font-face block.
@@ -54,14 +56,15 @@ const sentry = sentryDsn ? sentryEndpoints(sentryDsn) : null;
 //  - ws: (dev only): HMR websocket.
 const cspDirectives = {
   'default-src': ["'self'"],
-  'script-src': ["'self'", "'unsafe-inline'", ...(isDev ? ["'unsafe-eval'"] : []), ...(plausibleDomain ? [plausibleHost] : [])],
+  'script-src': ["'self'", "'unsafe-inline'", ...(isDev ? ["'unsafe-eval'"] : []), ...(plausibleDomain ? [plausibleHost] : []), ...(metaPixel ? ['https://connect.facebook.net'] : [])],
   'style-src': ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
   'font-src': ["'self'", 'data:', 'https://fonts.gstatic.com'],
-  'img-src': ["'self'", 'data:', 'blob:', 'https://images.unsplash.com'],
+  'img-src': ["'self'", 'data:', 'blob:', 'https://images.unsplash.com', ...(metaPixel ? ['https://www.facebook.com'] : [])],
   'media-src': ["'self'", 'data:', 'blob:'],
   'connect-src': [
     "'self'",
     ...(plausibleDomain ? [plausibleHost] : []),
+    ...(metaPixel ? ['https://www.facebook.com', 'https://connect.facebook.net'] : []),
     ...(sentry ? [sentry.origin] : []),
     ...(isDev ? ['ws:', 'wss:'] : []),
   ],

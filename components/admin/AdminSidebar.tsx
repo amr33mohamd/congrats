@@ -12,12 +12,13 @@ import { cn } from '@/components/ui';
 
 interface NavItem {
   href: string;
-  key: 'overview' | 'queue' | 'templates' | 'categories' | 'pricing' | 'users' | 'audit' | 'import';
+  key: 'overview' | 'queue' | 'templates' | 'categories' | 'pricing' | 'users' | 'audit' | 'import' | 'analytics';
   icon: string;
 }
 
 const NAV: NavItem[] = [
   { href: '/admin', key: 'overview', icon: '◳' },
+  { href: '/admin/analytics', key: 'analytics', icon: '◔' },
   { href: '/admin/queue', key: 'queue', icon: '✓' },
   { href: '/admin/templates', key: 'templates', icon: '▤' },
   { href: '/admin/categories', key: 'categories', icon: '☰' },

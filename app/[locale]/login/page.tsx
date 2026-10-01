@@ -5,6 +5,7 @@ import { signIn } from 'next-auth/react';
 import { useTranslations, useLocale } from 'next-intl';
 import { useRouter, Link } from '@/i18n/navigation';
 import { Button, Input } from '@/components/ui';
+import { track } from '@/lib/track';
 
 type Mode = 'login' | 'signup';
 
@@ -50,6 +51,7 @@ export default function LoginPage() {
           setLoading(false);
           return;
         }
+        track('signup');
       }
 
       const result = await signIn('password', { email, password, redirect: false });

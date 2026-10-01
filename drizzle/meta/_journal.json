@@ -22,6 +22,13 @@
       "when": 1790803771013,
       "tag": "0002_stiff_harrier",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1790827410068,
+      "tag": "0003_events",
+      "breakpoints": true
     }
   ]
 }

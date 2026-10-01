@@ -227,6 +227,24 @@ async function ensurePgliteSchema(pg: { exec: (sql: string) => Promise<unknown> 
       used_at timestamptz,
       created_at timestamptz NOT NULL DEFAULT now()
     );
+
+    CREATE TABLE IF NOT EXISTS events (
+      id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+      name text NOT NULL,
+      visitor_id text NOT NULL,
+      path text,
+      props jsonb,
+      utm_source text,
+      utm_medium text,
+      utm_campaign text,
+      utm_content text,
+      referrer text,
+      device text,
+      country text,
+      created_at timestamptz NOT NULL DEFAULT now()
+    );
+    CREATE INDEX IF NOT EXISTS events_created_idx ON events (created_at);
+    CREATE INDEX IF NOT EXISTS events_name_idx ON events (name, created_at);
   `);
 
   // ── Idempotent migrations ───────────────────────────────────────────

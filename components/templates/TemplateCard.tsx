@@ -5,6 +5,7 @@ import { Link } from '@/i18n/navigation';
 import { Spinner } from '@/components/ui';
 import type { BoundExperience } from '@/lib/template-contract';
 import { TemplateStage } from './TemplateStage';
+import { track } from '@/lib/track';
 
 export interface TemplateCardData {
   slug: string;
@@ -124,7 +125,10 @@ export function TemplateCard({
         data-testid="template-card"
         aria-label={data.title}
         disabled={busy}
-        onClick={onSelect}
+        onClick={() => {
+          track('template_view', { template: data.slug });
+          onSelect();
+        }}
         {...engageProps}
         className={shell}
       >
@@ -134,7 +138,14 @@ export function TemplateCard({
   }
 
   return (
-    <Link href={href} data-testid="template-card" aria-label={data.title} {...engageProps} className={shell}>
+    <Link
+      href={href}
+      data-testid="template-card"
+      aria-label={data.title}
+      onClick={() => track('template_view', { template: data.slug })}
+      {...engageProps}
+      className={shell}
+    >
       {body}
     </Link>
   );

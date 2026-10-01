@@ -283,6 +283,32 @@ export const passwordResetTokens = pgTable(
   (t) => [index('password_reset_user_idx').on(t.userId)],
 );
 
+/* ───────────────────────────── ANALYTICS ───────────────────────────── */
+
+// Anonymous product events (page views, funnel steps) for ad attribution.
+// `visitorId` is a random id kept in the browser — never a user id, name,
+// phone or photo. `props` holds small non-personal values (template slug,
+// experience id, amount).
+export const events = pgTable(
+  'events',
+  {
+    id: id(),
+    name: text('name').notNull(),
+    visitorId: text('visitor_id').notNull(),
+    path: text('path'),
+    props: jsonb('props'),
+    utmSource: text('utm_source'),
+    utmMedium: text('utm_medium'),
+    utmCampaign: text('utm_campaign'),
+    utmContent: text('utm_content'),
+    referrer: text('referrer'),
+    device: text('device'),
+    country: text('country'),
+    createdAt: createdAt(),
+  },
+  (t) => [index('events_created_idx').on(t.createdAt), index('events_name_idx').on(t.name, t.createdAt)],
+);
+
 /* ───────────────────────────── INFERRED TYPES ─────────────────────── */
 
 export type User = typeof users.$inferSelect;
@@ -300,6 +326,7 @@ export type NewOrder = typeof orders.$inferInsert;
 export type ShareLink = typeof shareLinks.$inferSelect;
 export type AuditLogRow = typeof auditLog.$inferSelect;
 export type PasswordResetToken = typeof passwordResetTokens.$inferSelect;
+export type EventRow = typeof events.$inferSelect;
 
 export const schema = {
   users,
@@ -313,4 +340,5 @@ export const schema = {
   shareLinks,
   auditLog,
   passwordResetTokens,
+  events,
 };

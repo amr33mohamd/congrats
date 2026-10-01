@@ -9,6 +9,7 @@ import type { LocalStep } from '../editor-state';
 import { dashboardApi, ApiError } from '../api-client';
 import { formatEgp } from '../money';
 import { BuilderPreview } from '../BuilderPreview';
+import { track } from '@/lib/track';
 
 export function ReviewStep({
   experience,
@@ -47,6 +48,11 @@ export function ReviewStep({
       // comped account was still sent to checkout for a template it already
       // had. Publish answers `published` or `payment_required`; we just route.
       const res = await dashboardApi.publish(experience.id);
+      track('publish', {
+        experienceId: experience.id,
+        templateId: experience.templateId,
+        paymentRequired: Boolean(res.order?.id),
+      });
       if (res.order?.id) {
         router.push(`/orders/${res.order.id}`);
       } else {

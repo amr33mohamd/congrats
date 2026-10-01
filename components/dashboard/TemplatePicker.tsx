@@ -9,6 +9,7 @@ import { buildPreviewExperience } from '@/lib/template-preview';
 import { dashboardApi, ApiError } from './api-client';
 import type { TemplateCard as TemplateRow, AppLocale } from './types';
 import { formatEgp } from './money';
+import { track } from '@/lib/track';
 
 /**
  * Template chooser for the builder.
@@ -54,6 +55,7 @@ export function TemplatePicker() {
       });
       const id = res.experience?.id ?? res.id;
       if (!id) throw new Error('no id');
+      track('create_started', { templateId: tpl.id, experienceId: id, ...(tpl.categorySlug ? { category: tpl.categorySlug } : {}) });
       router.push(`/builder/${id}`);
     } catch {
       setError(t('create.error'));

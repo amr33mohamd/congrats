@@ -8,6 +8,7 @@ import { dashboardApi, uploadAndConfirm, ApiError } from './api-client';
 import type { OrderInfo, AppLocale } from './types';
 import { formatEgp } from './money';
 import { CopyField } from './CopyField';
+import { track } from '@/lib/track';
 
 export function OrderStatus({ orderId }: { orderId: string }) {
   const t = useTranslations('dashboard');
@@ -136,6 +137,11 @@ function Checkout({ order, onSubmitted }: { order: OrderInfo; onSubmitted: () =>
       await dashboardApi.submitOrder(order.id, {
         screenshotMediaId: screenshotId,
         paymentRef: paymentRef.trim(),
+      });
+      track('payment_submitted', {
+        orderId: order.id,
+        experienceId: order.experienceId,
+        value: order.amountPiastres / 100,
       });
       onSubmitted();
     } catch {

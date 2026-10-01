@@ -5,6 +5,13 @@ import { motion } from 'framer-motion';
 import { applyTokens, slotValue, type SceneRenderPropsLike } from './invitation-types';
 import { cssFamily } from '@/lib/fonts';
 import { readableOn } from './color';
+import { track } from '@/lib/track';
+import type { EventName } from '@/lib/track-events';
+
+/** Guest actions count only on a shared card page, not in builder/admin previews. */
+function trackOnCard(name: EventName) {
+  if (/^\/(ar|en)\/p\//.test(window.location.pathname)) track(name);
+}
 
 /**
  * The invitation sections of a one-page card: families, events, venue, RSVP,
@@ -271,7 +278,10 @@ export function VenueScene(p: SceneRenderPropsLike) {
             href={href}
             target="_blank"
             rel="noopener noreferrer"
-            onClick={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation();
+              trackOnCard('directions_click');
+            }}
             className={pill}
             style={{ background: c.accent, color: c.onAccent, outlineColor: c.accent }}
           >
@@ -309,7 +319,10 @@ export function RsvpScene(p: SceneRenderPropsLike) {
             href={href}
             target="_blank"
             rel="noopener noreferrer"
-            onClick={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation();
+              trackOnCard('rsvp_click');
+            }}
             className={pill}
             style={{ background: c.accent, color: c.onAccent, outlineColor: c.accent }}
           >

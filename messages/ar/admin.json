@@ -15,7 +15,8 @@
     "pricing": "التسعير",
     "users": "المستخدمون",
     "audit": "سجل التدقيق",
-    "import": "استيراد الكروت"
+    "import": "استيراد الكروت",
+    "analytics": "الإحصائيات"
   },
   "common": {
     "loading": "جارٍ التحميل…",
@@ -236,5 +237,47 @@
     "existing": "{count} موجودين بالفعل (اتسابوا)",
     "links": "روابط المشاركة: اتحفظ {kept}، اتشال {dropped} (الرابط مستخدم)",
     "unknown": "اتساب — القالب مش موجود: {names}"
+  },
+  "analytics": {
+    "title": "الإحصائيات",
+    "subtitle": "الزوار بيعملوا إيه — الأرقام زوار مختلفين. حط utm_source و utm_campaign في روابط الإعلانات عشان تظهر هنا.",
+    "range": "{days, plural, =1 {النهارده} other {# يوم}}",
+    "funnel": "مسار التحويل",
+    "funnelHint": "النسبة = من الخطوة اللي قبلها. مجهول الهوية: مفيش أسماء ولا أرقام ولا صور بتتسجل.",
+    "sources": "مصادر الزيارات",
+    "direct": "مباشر / غير معروف",
+    "colSource": "المصدر",
+    "colCampaign": "الحملة",
+    "colVisitors": "الزوار",
+    "colSignups": "تسجيل",
+    "colCreated": "بدأ كارت",
+    "colPublished": "نشر",
+    "colPaid": "دفع",
+    "colRevenue": "إيراد مُعتمد",
+    "daily": "يومي",
+    "dailyHint": "زوار · بدأوا كارت · دفعوا",
+    "cards": "الكروت المُشاركة",
+    "devices": "الأجهزة",
+    "device": {
+      "mobile": "موبايل",
+      "desktop": "كمبيوتر",
+      "unknown": "غير معروف"
+    },
+    "pages": "أكتر الصفحات",
+    "colPage": "الصفحة",
+    "colViews": "مشاهدات",
+    "empty": "مفيش بيانات للفترة دي لسه.",
+    "events": {
+      "page_view": "زار الموقع",
+      "template_view": "فتح تصميم",
+      "signup": "سجّل",
+      "create_started": "بدأ كارت",
+      "publish": "نشر",
+      "payment_submitted": "بعت الدفع",
+      "card_opened": "الضيوف فتحوا الكارت",
+      "rsvp_click": "ضغطات تأكيد الحضور",
+      "directions_click": "ضغطات الخريطة",
+      "share": "مشاركات"
+    }
   }
 }

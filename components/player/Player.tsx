@@ -38,6 +38,7 @@ import { SceneBackground, backgroundCss } from './SceneBackground';
 import { Decorations } from './Decorations';
 import { SceneOrnament } from './SceneOrnament';
 import { Soundtrack } from './Soundtrack';
+import { track } from '@/lib/track';
 
 export interface PlayerProps {
   experience: BoundExperience;
@@ -589,7 +590,10 @@ export function Player({
           experience={experience}
           coverHeading={coverHeading}
           embedded={embedded}
-          onOpen={() => setStarted(true)}
+          onOpen={() => {
+            setStarted(true);
+            if (!embedded) track('card_opened');
+          }}
         />
       ) : null}
     </div>

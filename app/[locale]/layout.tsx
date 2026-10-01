@@ -6,6 +6,7 @@ import { setRequestLocale, getMessages } from 'next-intl/server';
 import { Inter, Cairo, Tajawal } from 'next/font/google';
 import { routing, dirFor } from '@/i18n/routing';
 import { SITE_URL } from '@/lib/site';
+import { Tracker } from '@/components/analytics/Tracker';
 
 const SEO = {
   en: {
@@ -105,6 +106,7 @@ export default async function LocaleLayout({
         <NextIntlClientProvider locale={locale} messages={messages}>
           {children}
         </NextIntlClientProvider>
+        <Tracker />
       </body>
     </html>
   );
