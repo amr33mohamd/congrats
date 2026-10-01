@@ -119,6 +119,27 @@ const nextConfig = {
   },
   // PGlite ships wasm + must stay external in server bundles.
   serverExternalPackages: ['@electric-sql/pglite', 'postgres'],
+  // server/storage.ts resolves upload paths from process.cwd(), so the file
+  // tracer conservatively pulls the WHOLE project into every function —
+  // including .next/cache (hundreds of MB). On Vercel that bloat split the app
+  // into 19 functions and broke the Hobby plan's 12-function limit. None of
+  // these are read at runtime. PGlite is only the no-DATABASE_URL fallback,
+  // which Vercel never uses (lib/env.ts requires Postgres there).
+  outputFileTracingExcludes: {
+    '*': [
+      '.next/cache/**',
+      '.data/**',
+      '.git/**',
+      'docs/**',
+      'e2e/**',
+      'tests/**',
+      'remotion/**',
+      'scripts/**',
+      '*.md',
+      'package-lock.json',
+      ...(process.env.VERCEL ? ['node_modules/@electric-sql/pglite/**'] : []),
+    ],
+  },
   // Expose one DSN to the browser bundle so operators only set SENTRY_DSN.
   env: { NEXT_PUBLIC_SENTRY_DSN: sentryDsn },
   async headers() {
