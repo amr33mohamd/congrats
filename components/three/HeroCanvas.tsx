@@ -114,7 +114,10 @@ export function HeroCanvas({ shift = 0 }: { shift?: number }) {
   const poster = <Poster shift={shift} />;
 
   return (
-    <div className="absolute inset-0">
+    // isolate: the poster's front card uses z-10 to sit over its neighbours;
+    // without its own stacking context that z-index escaped and painted the
+    // card over the hero copy and buttons on phones.
+    <div className="absolute inset-0 isolate">
       {!use3d || !ready ? poster : null}
       {use3d ? (
         <div

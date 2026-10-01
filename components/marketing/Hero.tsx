@@ -31,7 +31,7 @@ export async function Hero({ locale }: { locale: 'ar' | 'en' }) {
       <HeroCanvas shift={isAr ? -1.5 : 1.5} />
 
       {/* phones: copy is centred over the deck, so dim the whole stage */}
-      <div aria-hidden className="pointer-events-none absolute inset-0 bg-[rgb(21_12_17/0.62)] md:hidden" />
+      <div aria-hidden className="pointer-events-none absolute inset-0 bg-[rgb(21_12_17/0.72)] md:hidden" />
 
       {/* desktop: legibility scrim, anchored to whichever side the copy sits on */}
       <div
@@ -42,7 +42,7 @@ export async function Hero({ locale }: { locale: 'ar' | 'en' }) {
         }}
       />
 
-      <div className="relative mx-auto flex min-h-[92svh] max-w-6xl items-center px-token-4 py-16">
+      <div className="relative z-10 mx-auto flex min-h-[92svh] max-w-6xl items-center px-token-4 py-16">
         <div className="max-w-xl text-center md:text-start">
           <span className="inline-flex items-center gap-2 rounded-pill border border-white/20 bg-white/10 px-token-3 py-token-1 text-sm font-medium text-white/90 backdrop-blur-md">
             <span aria-hidden>✨</span>
