@@ -17,6 +17,8 @@ export const EVENT_NAMES = [
   'rsvp_click',
   'directions_click',
   'share',
+  'card_cta',
+  'whatsapp_click',
 ] as const;
 
 export type EventName = (typeof EVENT_NAMES)[number];
@@ -34,6 +36,7 @@ export const PIXEL_EVENTS: Partial<Record<EventName, string>> = {
   create_started: 'Lead',
   publish: 'InitiateCheckout',
   payment_submitted: 'Purchase',
+  whatsapp_click: 'Contact',
 };
 
 /** Card paths carry the couple's chosen slug — keep it out of the log. */

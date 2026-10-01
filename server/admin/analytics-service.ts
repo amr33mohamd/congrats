@@ -106,7 +106,7 @@ export async function getAnalytics(db: DbClient, days: number): Promise<Analytic
   return {
     days,
     funnel: FUNNEL.map((name) => ({ name, visitors: get(name)?.visitors ?? 0 })),
-    engagement: (['card_opened', 'rsvp_click', 'directions_click', 'share'] as const).map((name) => ({
+    engagement: (['card_opened', 'rsvp_click', 'directions_click', 'share', 'card_cta', 'whatsapp_click'] as const).map((name) => ({
       name,
       count: get(name)?.count ?? 0,
     })),

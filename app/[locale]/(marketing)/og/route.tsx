@@ -1,3 +1,5 @@
+import { readFile } from 'node:fs/promises';
+import { join } from 'node:path';
 import { renderOgCard } from '@/components/marketing/og-card';
 import { locales } from '@/i18n/routing';
 
@@ -22,6 +24,13 @@ export function generateStaticParams() {
   return locales.map((locale) => ({ locale }));
 }
 
-export function GET() {
+// Arabic is a pre-rendered PNG: next/og (Satori) can't shape Arabic script,
+// so scripts/render-og-ar.mjs draws it in Chromium.
+export async function GET(_req: Request, { params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  if (locale === 'ar') {
+    const png = await readFile(join(process.cwd(), 'public/brand/og-ar.png'));
+    return new Response(new Uint8Array(png), { headers: { 'Content-Type': 'image/png' } });
+  }
   return renderOgCard();
 }

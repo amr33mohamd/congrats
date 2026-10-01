@@ -277,7 +277,9 @@
       "card_opened": "Card opened by guests",
       "rsvp_click": "RSVP taps",
       "directions_click": "Directions taps",
-      "share": "Shares"
+      "share": "Shares",
+      "card_cta": "Guests who clicked \"make your own\"",
+      "whatsapp_click": "WhatsApp chats started"
     }
   }
 }

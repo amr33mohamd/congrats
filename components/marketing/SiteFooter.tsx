@@ -1,6 +1,8 @@
 import { getLocale, getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import { CATALOG_CATEGORIES } from '@/content/templates/categories';
+import { supportWhatsappHref } from '@/lib/site';
+import { WhatsAppButton } from './WhatsAppButton';
 
 /**
  * Home-page sections. Linked as `/#id` (not a bare `#id`) because the footer
@@ -90,6 +92,7 @@ export async function SiteFooter() {
           </Link>
         </div>
       </div>
+      <WhatsAppButton href={supportWhatsappHref()} locale={locale} />
     </footer>
   );
 }

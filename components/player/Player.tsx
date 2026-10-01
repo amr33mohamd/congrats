@@ -39,6 +39,7 @@ import { Decorations } from './Decorations';
 import { SceneOrnament } from './SceneOrnament';
 import { Soundtrack } from './Soundtrack';
 import { track } from '@/lib/track';
+import { MadeWithCongrats } from './MadeWithCongrats';
 
 export interface PlayerProps {
   experience: BoundExperience;
@@ -561,6 +562,7 @@ export function Player({
             onEnter={handleEnter}
           />
         ))}
+        {!embedded ? <MadeWithCongrats locale={experience.locale} /> : null}
       </div>
 
       {/*
