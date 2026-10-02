@@ -6,6 +6,7 @@
  * calls `signIn('password', …)` afterwards. Responds 409 if the email is taken.
  */
 import { z } from 'zod';
+import { after } from 'next/server';
 import { eq } from 'drizzle-orm';
 import { getDb } from '@/db';
 import { users } from '@/db/schema';
@@ -13,6 +14,7 @@ import { hashPassword, passwordPolicyError } from '@/lib/password';
 import { rateLimit, clientIp } from '@/lib/rate-limit';
 import { withErrors, readJson, created } from '@/server/dashboard/http';
 import { DashboardError } from '@/server/dashboard/errors';
+import { notifyAdmin, cairoTime } from '@/lib/admin-notify';
 
 export const runtime = 'nodejs';
 
@@ -52,6 +54,20 @@ export async function POST(req: Request) {
         locale: body.locale ?? 'ar',
       })
       .returning({ id: users.id, email: users.email });
+
+    after(() =>
+      notifyAdmin({
+        subject: 'New sign-up',
+        rows: [
+          ['Email', user.email],
+          ['Name', body.displayName ?? '—'],
+          ['Language', body.locale ?? 'ar'],
+          ['Time (Cairo)', cairoTime()],
+        ],
+        actionPath: '/ar/admin/users',
+        actionLabel: 'Open users',
+      }),
+    );
 
     return created({ user: { id: user.id, email: user.email } });
   });
