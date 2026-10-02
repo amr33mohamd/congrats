@@ -40,6 +40,7 @@ import { SceneOrnament } from './SceneOrnament';
 import { Soundtrack } from './Soundtrack';
 import { track } from '@/lib/track';
 import { MadeWithCongrats } from './MadeWithCongrats';
+import { ClosedCurtains, CurtainReveal } from './StageCurtains';
 
 export interface PlayerProps {
   experience: BoundExperience;
@@ -311,6 +312,7 @@ function OpenGate({
   const ink = readableOn(paper, palette);
   const onAccent = readableOn(accent, palette);
   const ornamentKind = theme.ornament?.kind && theme.ornament.kind !== 'none' ? theme.ornament.kind : 'corners';
+  const theatre = theme.ornament?.kind === 'theatre';
   const headingFont = cssFamily(theme.fontHeading);
   const recipient = experience.recipientName.trim();
 
@@ -329,8 +331,9 @@ function OpenGate({
   return (
     <div
       className={`${embedded ? 'absolute' : 'fixed'} inset-0 z-30 flex items-center justify-center px-token-4`}
-      style={{ background: withAlpha(ground, 0.9) }}
+      style={{ background: theatre ? '#1A0307' : withAlpha(ground, 0.9) }}
     >
+      {theatre ? <ClosedCurtains gold={accent} /> : null}
       <div
         className="relative w-full max-w-sm overflow-hidden rounded-3xl px-token-6 py-token-8 text-center"
         style={{
@@ -409,6 +412,7 @@ export function Player({
   const rootRef = React.useRef<HTMLDivElement>(null);
   const [started, setStarted] = React.useState(!startPaused);
   const [activeIndex, setActiveIndex] = React.useState(0);
+  const [curtainUp, setCurtainUp] = React.useState(false);
 
   // The sections that actually render, in order. Computed once here so the
   // progress bar and "reached the end" agree with what the reader can see.
@@ -586,6 +590,10 @@ export function Player({
           className="fixed bottom-token-4 end-token-4"
         />
       )}
+
+      {started && !curtainUp && !reducedMotion && experience.theme?.ornament?.kind === 'theatre' ? (
+        <CurtainReveal gold={accent} embedded={embedded} onDone={() => setCurtainUp(true)} />
+      ) : null}
 
       {!started ? (
         <OpenGate

@@ -248,6 +248,123 @@ function Florals({ c, o }: { c: string; o: number }) {
   );
 }
 
+
+/* ─────────────────────────────── theatre ─────────────────────────────── */
+
+/** Velvet tones for the theatre drapes; gold comes from the accent. */
+export const VELVET = { base: '#5C0E1B', deep: '#3A0610', sheen: '#7A1A2A' } as const;
+
+/** A tassel: cord, knot and fringe, hanging from (x, y). */
+function Tassel({ x, y, s = 1, c }: { x: number; y: number; s?: number; c: string }) {
+  return (
+    <g transform={`translate(${x} ${y}) scale(${s})`}>
+      <path d="M0 0 V8" stroke={c} strokeWidth="1.2" />
+      <circle cy="10" r="3.2" fill={c} />
+      <path d="M-3.5 12 L-5 26 H5 L3.5 12 Z" fill={c} opacity="0.9" />
+      <path d="M-3 16 V25 M0 16 V26 M3 16 V25" stroke={VELVET.deep} strokeWidth="0.5" opacity="0.5" />
+    </g>
+  );
+}
+
+/** One side drape: falls from the valance, gathered by a gold tie-back. */
+function Drape({ c }: { c: string }) {
+  return (
+    <g>
+      <path
+        d="M0 0 H74 C 66 90, 48 200, 30 288 C 44 330, 70 380, 86 452 L0 470 Z"
+        fill={VELVET.base}
+      />
+      {/* folds */}
+      <g stroke={VELVET.deep} strokeWidth="5" fill="none" opacity="0.55" strokeLinecap="round">
+        <path d="M18 0 C 16 100, 14 200, 12 290 C 18 360, 24 410, 28 460" />
+        <path d="M40 0 C 34 100, 26 200, 22 288 C 34 350, 48 410, 56 456" />
+        <path d="M60 0 C 50 96, 38 196, 30 288" opacity="0.7" />
+      </g>
+      <g stroke={VELVET.sheen} strokeWidth="2" fill="none" opacity="0.5">
+        <path d="M29 0 C 26 100, 20 200, 17 289 C 26 355, 36 410, 42 458" />
+      </g>
+      {/* gold trim on the inner edge */}
+      <path d="M74 0 C 66 90, 48 200, 30 288 C 44 330, 70 380, 86 452" stroke={c} strokeWidth="2.4" fill="none" />
+      {/* tie-back: rope + tassel */}
+      <path d="M-4 282 C 12 296, 26 296, 36 286" stroke={c} strokeWidth="5" fill="none" strokeLinecap="round" />
+      <path d="M-4 282 C 12 296, 26 296, 36 286" stroke={VELVET.deep} strokeWidth="1" fill="none" strokeDasharray="2 3" opacity="0.6" />
+      <Tassel x={34} y={290} s={1.3} c={c} />
+    </g>
+  );
+}
+
+/** Line-drawn oud: bowl, rosette, neck and bent-back peg box. */
+function Oud({ c }: { c: string }) {
+  return (
+    <g stroke={c} fill="none" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M0 0 C -30 -4, -44 26, -38 52 C -32 78, -4 92, 18 86 C 40 80, 52 54, 44 30 C 36 6, 22 2, 0 0 Z" fill={c} fillOpacity="0.14" />
+      <circle cx="4" cy="44" r="9" />
+      <circle cx="4" cy="44" r="5" strokeWidth="0.9" />
+      <path d="M-6 6 L-26 -66" strokeWidth="5" />
+      <path d="M-26 -66 L-40 -76 L-46 -64 L-30 -58" strokeWidth="1.8" />
+      <path d="M-1 4 L-21 -64 M3 3 L-17 -63" strokeWidth="0.6" opacity="0.8" />
+      <path d="M-14 72 H18" strokeWidth="2.4" />
+    </g>
+  );
+}
+
+/** Fluted gold pilaster with base and capital, standing on the bottom edge. */
+function Pilaster({ c, h }: { c: string; h: number }) {
+  return (
+    <g stroke={c} fill="none" strokeWidth="1.4">
+      <path d={`M0 0 H26 M2 6 H24 M3 ${h - 8} H23 M0 ${h} H26`} strokeWidth="2" />
+      <rect x="4" y="8" width="18" height={h - 18} />
+      <path d={`M9 12 V${h - 12} M13 12 V${h - 12} M17 12 V${h - 12}`} strokeWidth="0.8" opacity="0.7" />
+      <path d="M-2 -6 C 4 -12, 10 -4, 13 -10 C 16 -4, 22 -12, 28 -6" strokeWidth="1.2" />
+    </g>
+  );
+}
+
+/**
+ * A stage in an old Cairo theatre: velvet drapes tied back to both sides, a
+ * scalloped valance with tassels across the top, gold pilasters and an oud in
+ * each lower corner. Colour-driven like the rest (gold = accent), except the
+ * velvet, which is the motif's own material.
+ */
+function Theatre({ c, o }: { c: string; o: number }) {
+  const swags = 5;
+  const sw = W / swags;
+  const scallops = Array.from({ length: swags }, (_, i) => {
+    const x0 = i * sw;
+    return `L${x0} 52 C ${x0 + sw * 0.25} 92, ${x0 + sw * 0.75} 92, ${x0 + sw} 52`;
+  }).join(' ');
+  return (
+    <g opacity={o}>
+      {/* side drapes */}
+      <Drape c={c} />
+      <g transform={`translate(${W} 0) scale(-1 1)`}>
+        <Drape c={c} />
+      </g>
+      {/* valance */}
+      <path d={`M0 0 H${W} V52 ${scallops.replace(/^L0 52/, '')} Z`} fill={VELVET.base} />
+      <path d={`M0 52 ${scallops.replace(/^L0 52/, '')}`} stroke={c} strokeWidth="2.6" fill="none" />
+      <path d={`M0 6 H${W}`} stroke={c} strokeWidth="1.4" opacity="0.8" />
+      {Array.from({ length: swags + 1 }, (_, i) => (
+        <Tassel key={i} x={i * sw} y={50} s={1.2} c={c} />
+      ))}
+      {/* pilasters and ouds along the floor */}
+      <g transform={`translate(6 ${H - 190})`}>
+        <Pilaster c={c} h={190} />
+      </g>
+      <g transform={`translate(${W - 32} ${H - 190})`}>
+        <Pilaster c={c} h={190} />
+      </g>
+      <g transform={`translate(58 ${H - 70}) rotate(-24) scale(0.55)`}>
+        <Oud c={c} />
+      </g>
+      <g transform={`translate(${W - 58} ${H - 70}) scale(-1 1) rotate(-24) scale(0.55)`}>
+        <Oud c={c} />
+      </g>
+      <path d={`M40 ${H - 10} H${W - 40}`} stroke={c} strokeWidth="1" opacity="0.6" />
+    </g>
+  );
+}
+
 const MOTIFS: Record<string, React.FC<{ c: string; o: number }>> = {
   arch: Arch,
   wreath: Wreath,
@@ -257,6 +374,7 @@ const MOTIFS: Record<string, React.FC<{ c: string; o: number }>> = {
   monogram: Monogram,
   baroque: Baroque,
   florals: Florals,
+  theatre: Theatre,
 };
 
 export function SceneOrnament({

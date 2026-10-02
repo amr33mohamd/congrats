@@ -33,6 +33,7 @@ const FONT_WEIGHTS: Record<string, string> = {
   Parisienne: '400',
   // Latin — display / bold
   'Bebas Neue': '400',
+  Cinzel: '400;500;600;700',
   // Arabic
   Cairo: '400;500;600;700;800',
   Tajawal: '400;500;700',
@@ -48,7 +49,7 @@ const FONT_WEIGHTS: Record<string, string> = {
 };
 
 const SYSTEM_FALLBACK = 'system-ui, -apple-system, Segoe UI, Roboto, sans-serif';
-const SERIF_HINTS = ['Playfair', 'Cormorant', 'Marcellus', 'Abril', 'Lora', 'DM Serif', 'Amiri', 'Aref', 'Markazi'];
+const SERIF_HINTS = ['Cinzel', 'Playfair', 'Cormorant', 'Marcellus', 'Abril', 'Lora', 'DM Serif', 'Amiri', 'Aref', 'Markazi'];
 
 /** Build a CSS font-family value with a type-appropriate fallback. */
 export function cssFamily(name?: string): string {

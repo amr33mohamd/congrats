@@ -120,6 +120,7 @@ export const ORNAMENT_KINDS = [
   'monogram',    // centred crest + rules, sits behind a heading
   'baroque',     // dense scrollwork + peony clusters, opposing corners, bleeds off
   'florals',     // vertical floral columns down both edges
+  'theatre',     // velvet stage drapes, tasselled valance, gold pilasters, ouds
 ] as const;
 export const OrnamentKindSchema = z.enum(ORNAMENT_KINDS);
 export type OrnamentKind = (typeof ORNAMENT_KINDS)[number];

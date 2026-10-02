@@ -43,6 +43,8 @@ interface Style {
   titleEn: string;
   titleAr: string;
   hint: string;
+  /** Per-style wording on top of the shared copy (same keys as COPY). */
+  copy?: Partial<Record<'en' | 'ar', Partial<Copy>>>;
 }
 
 const STYLES: Style[] = [
@@ -112,6 +114,44 @@ const STYLES: Style[] = [
     titleEn: 'Wedding Invitation — Qasr Gold',
     titleAr: 'دعوة زفاف — القصر الذهبي',
     hint: 'Warm cream paper, a gold palace arch, Aref Ruqaa names, a quiet gold rule.',
+  },
+  {
+    key: 'tarab-velvet',
+    palette: ['#F4E8D2', '#E8D4B0', '#5C0E1B', '#A8782E'],
+    accent: '#7A1424',
+    text: '#4A0D17',
+    ornament: 'theatre',
+    fontEn: 'Cinzel',
+    fontAr: 'Aref Ruqaa',
+    scrim: ['rgba(74,13,23,0.15)', 'rgba(74,13,23,0.6)'],
+    titleEn: 'Wedding Invitation — Golden Era',
+    titleAr: 'دعوة زفاف — زمن الطرب',
+    hint: 'An old Cairo theatre: velvet curtains part on cream paper, burgundy and gold, a tasselled valance, ouds and gold pilasters.',
+    copy: {
+      en: {
+        sub: 'Together with their families',
+        dear: 'Dear {recipient},',
+        invite:
+          'As the music plays and two hearts become one, we invite you to celebrate the first chapter of our greatest story.',
+        countdown: 'Invite you to join their forever',
+        ceremonyVenue: 'Muhammad Ali Palace — Shubra, Cairo',
+        receptionVenue: 'Muhammad Ali Palace — Shubra, Cairo',
+        venueHeading: 'Muhammad Ali Palace',
+        address: 'Shubra, Cairo',
+        rsvpHeading: 'Kindly RSVP',
+      },
+      ar: {
+        sub: 'بحضور العائلتين',
+        dear: 'عزيزنا {recipient}،',
+        invite: 'على أنغام زمن الطرب الجميل، يسعدنا ويشرّفنا حضوركم ليلة العمر… أول حكايتنا تبدأ بيكم.',
+        countdown: 'يتشرّفان بدعوتكم لمشاركتهما العمر كله',
+        ceremonyVenue: 'قصر محمد علي — شبرا، القاهرة',
+        receptionVenue: 'قصر محمد علي — شبرا، القاهرة',
+        venueHeading: 'قصر محمد علي',
+        address: 'شبرا، القاهرة',
+        rsvpHeading: 'نرجو تأكيد الحضور',
+      },
+    },
   },
 ];
 
@@ -208,7 +248,7 @@ function slot(
 const rise = (ms = 900) => ({ preset: 'rise' as const, durationMs: ms, delayMs: 0 });
 
 function buildDefinition(s: Style, locale: 'ar' | 'en'): TemplateDefinitionInput {
-  const c = COPY[locale];
+  const c: Copy = { ...COPY[locale], ...(s.copy?.[locale] ?? {}) } as Copy;
   const dir = locale === 'ar' ? 'rtl' : 'ltr';
   const [ground, groundDeep, paper, accentSlot] = s.palette;
   const f = (key: keyof typeof c, label: [string, string], opts?: Parameters<typeof slot>[4]) =>
@@ -224,7 +264,7 @@ function buildDefinition(s: Style, locale: 'ar' | 'en'): TemplateDefinitionInput
       fontHeading: locale === 'ar' ? s.fontAr : s.fontEn,
       fontBody: locale === 'ar' ? 'Tajawal' : 'Montserrat',
       accent: s.accent,
-      ornament: { kind: s.ornament, opacity: 0.55, scale: 1 },
+      ornament: { kind: s.ornament, opacity: s.ornament === 'theatre' ? 1 : 0.55, scale: 1 },
       music: 'wedding-strings',
       textColor: s.text,
       background: {
@@ -233,7 +273,8 @@ function buildDefinition(s: Style, locale: 'ar' | 'en'): TemplateDefinitionInput
         angle: 170,
         ...(s.damask ? { pattern: 'damask' as const } : {}),
       },
-      decoration: { effect: 'sparkles', intensity: 'low', color: s.accent },
+      // The theatre style is a printed programme, not a party: no falling sparkles.
+      decoration: s.ornament === 'theatre' ? { effect: 'none' } : { effect: 'sparkles', intensity: 'low', color: s.accent },
       ...(s.art ? { art: s.art } : {}),
     },
     // Asked ONCE in the builder's first step and used everywhere: the cover
@@ -423,8 +464,8 @@ function buildDefinition(s: Style, locale: 'ar' | 'en'): TemplateDefinitionInput
         type: 'Finale',
         transitionIn: { preset: 'glow', durationMs: 1200, delayMs: 0 },
         holdMs: 6000,
-        ornament: { kind: s.ornament, opacity: 0.7, scale: 1 },
-        decoration: { effect: 'sparkles', intensity: 'medium', color: s.accent },
+        ornament: { kind: s.ornament, opacity: s.ornament === 'theatre' ? 1 : 0.7, scale: 1 },
+        decoration: s.ornament === 'theatre' ? { effect: 'none' } : { effect: 'sparkles', intensity: 'medium', color: s.accent },
         // The sign-off is longer than the names, so one size smaller keeps it in the arch.
         style: { headingSize: 'lg', headingColor: s.accent, bodyColor: s.text },
         slots: [
