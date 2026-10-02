@@ -6,6 +6,7 @@ import { applyTokens, slotValue, type SceneRenderPropsLike } from './invitation-
 import { cssFamily } from '@/lib/fonts';
 import { readableOn } from './color';
 import { track } from '@/lib/track';
+import { isTheatre, Chandelier, CalendarMark, ClockMark } from './TheatreArt';
 import type { EventName } from '@/lib/track-events';
 
 /** Guest actions count only on a shared card page, not in builder/admin previews. */
@@ -193,6 +194,11 @@ export function EventScene(p: SceneRenderPropsLike) {
 
   return (
     <Shell>
+      {isTheatre(p.theme) && p.scene.id === 'ceremony' ? (
+        <Reveal p={p}>
+          <Chandelier color={c.accent} />
+        </Reveal>
+      ) : null}
       <Reveal p={p}>
         <SectionHeading p={p} text={t(p, 'label')} />
       </Reveal>
@@ -204,12 +210,17 @@ export function EventScene(p: SceneRenderPropsLike) {
         ) : null}
         {t(p, 'when') ? (
           <p className={`mt-token-1 text-sm ${isAr(p) ? '' : 'tracking-wide'}`} style={{ color: c.text, opacity: 0.8 }}>
-            {t(p, 'when')}
+            {isTheatre(p.theme) ? <ClockMark color={c.accent} /> : null} {t(p, 'when')}
           </p>
         ) : null}
       </Reveal>
       {valid ? (
         <Reveal p={p} delay={0.24}>
+          {isTheatre(p.theme) ? (
+            <div className="mt-token-5 flex justify-center">
+              <CalendarMark color={c.accent} />
+            </div>
+          ) : null}
           <div className="mt-token-6 flex items-center justify-center gap-token-3" dir="ltr">
             <Bracket color={c.accent} />
             <span className="font-heading text-6xl leading-none tabular-nums" style={{ color: c.accent, fontFamily: c.heading }}>

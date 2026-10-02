@@ -18,6 +18,7 @@ import { getVariants, typewriterChild, resolveScenePreset } from '@/lib/animatio
 import { cssFamily } from '@/lib/fonts';
 import { FamiliesScene, EventScene, VenueScene, RsvpScene, GiftScene, Flourish } from './InvitationScenes';
 import { hexLuminance, readableOn } from './color';
+import { isTheatre, Monogram, PalaceFacade } from './TheatreArt';
 
 // Re-exported: the Player and the gallery stage pick gate/sheet ink with these.
 export { hexLuminance, readableOn };
@@ -377,6 +378,9 @@ function CoverScene(p: SceneRenderProps) {
           // eslint-disable-next-line @next/next/no-img-element
           <img src={images[0].url} alt="" className={`mb-token-6 h-44 w-44 ${frameClass(r.imageStyle === 'rounded' ? 'circle' : r.imageStyle)}`} />
         ) : null}
+        {isTheatre(p.theme) && blocks[0] ? (
+          <Monogram names={blocks[0].value} color={r.headingColor} font={r.headingFamily} />
+        ) : null}
         <TextStack blocks={blocks} r={r} direction={p.direction} reducedMotion={p.reducedMotion} active={p.active} />
       </motion.div>
     </Frame>
@@ -635,6 +639,11 @@ function FinaleScene(p: SceneRenderProps) {
         exit="exit"
       >
         <TextStack blocks={blocks} r={r} direction={p.direction} reducedMotion={p.reducedMotion} active={p.active} />
+        {isTheatre(p.theme) ? (
+          <div className="mt-token-8 w-full max-w-[420px]">
+            <PalaceFacade color={r.headingColor} />
+          </div>
+        ) : null}
       </motion.div>
     </Frame>
   );
