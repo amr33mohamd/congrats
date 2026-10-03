@@ -1,9 +1,10 @@
 import { cache } from 'react';
 import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
+import { redirect } from 'next/navigation';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
 import { getSession } from '@/lib/auth';
-import { getGalleryTemplate } from '@/server/public/templates-gallery';
+import { getGalleryTemplate, listGalleryTemplates } from '@/server/public/templates-gallery';
+import { closestSlug } from '@/lib/closest-slug';
 import { buildPreviewExperience } from '@/lib/template-preview';
 import { formatPrice } from '@/components/marketing/gallery-cards';
 import { TemplatePreview } from '@/components/templates/TemplatePreview';
@@ -41,7 +42,11 @@ export default async function TemplatePreviewPage({
   const { locale, slug } = await params;
   setRequestLocale(locale);
   const tpl = await load(slug);
-  if (!tpl) notFound();
+  if (!tpl) {
+    // A typo in a shared link opens the design it meant; otherwise the gallery.
+    const match = closestSlug(slug, (await listGalleryTemplates()).map((t) => t.slug));
+    redirect(match ? `/${locale}/t/${match}` : `/${locale}/templates`);
+  }
   const l = locale === 'ar' ? 'ar' : 'en';
   const tg = await getTranslations({ locale, namespace: 'marketing.templates' });
   // The guest's sample name follows the DESIGN's language, not the page's.

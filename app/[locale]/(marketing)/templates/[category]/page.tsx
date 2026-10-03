@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
+import { redirect } from 'next/navigation';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { getSession } from '@/lib/auth';
 import { Link } from '@/i18n/navigation';
@@ -11,6 +11,7 @@ import { TemplateCard } from '@/components/templates/TemplateCard';
 import { listGalleryTemplates } from '@/server/public/templates-gallery';
 import { CATALOG_CATEGORIES } from '@/content/templates/categories';
 import { marketingMetadata } from '@/lib/site';
+import { closestSlug } from '@/lib/closest-slug';
 
 // Always rendered per request: the header reflects the visitor's session and
 // the templates come from the live catalog, so a build-time prerender would
@@ -26,8 +27,10 @@ export const dynamic = 'force-dynamic';
  * a canonical + hreflang pair, and the occasion's real templates as live tiles —
  * so the landing page IS the shop window, not a doorway to it.
  *
- * Only catalog categories resolve; anything else is a 404 rather than an empty
- * page that search engines would index as thin content.
+ * Only catalog categories render. A near-miss (a typo in a shared link) redirects
+ * to the category it meant; anything else goes to the full gallery — never an
+ * empty page that search engines would index as thin content, and never a 404
+ * for someone who tapped a link in a chat.
  */
 
 const KNOWN = new Set<string>(CATALOG_CATEGORIES.map((c) => c.slug));
@@ -59,7 +62,10 @@ export default async function OccasionLandingPage({
   params: Promise<{ locale: string; category: string }>;
 }) {
   const { locale, category } = await params;
-  if (!isKnown(category)) notFound();
+  if (!isKnown(category)) {
+    const match = closestSlug(category, [...KNOWN]);
+    redirect(match ? `/${locale}/templates/${match}` : `/${locale}/templates`);
+  }
   setRequestLocale(locale);
   const typed = (locale === 'ar' ? 'ar' : 'en') as 'ar' | 'en';
 
