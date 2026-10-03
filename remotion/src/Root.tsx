@@ -6,6 +6,8 @@ import { loadFont as loadCairo } from "@remotion/google-fonts/Cairo";
 import { ReelAd } from "./ads/ReelAd";
 import { BumperAd } from "./ads/BumperAd";
 import { HeroSpot } from "./ads/HeroSpot";
+import { WhatsappStory, WHATSAPP_STORY_FRAMES } from "./ads/WhatsappStory";
+import { STORIES } from "./ads/stories";
 import { AR, EN } from "./copy";
 
 // Make the brand fonts available to the renderer (matches app/globals.css intent).
@@ -75,6 +77,20 @@ export const RemotionRoot: React.FC = () => {
         height={1080}
         defaultProps={{ copy: AR }}
       />
+
+      {/* ── Vertical chat stories, one per Arabic design — 37s ── */}
+      {Object.entries(STORIES).map(([slug, copy]) => (
+        <Composition
+          key={slug}
+          id={`Story-${slug}`}
+          component={WhatsappStory}
+          durationInFrames={WHATSAPP_STORY_FRAMES}
+          fps={30}
+          width={1080}
+          height={1920}
+          defaultProps={{ copy }}
+        />
+      ))}
     </>
   );
 };

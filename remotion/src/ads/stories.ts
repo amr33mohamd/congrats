@@ -1,0 +1,140 @@
+import { TARAB_COPY, type StoryCopy } from "./WhatsappStory";
+
+/**
+ * One chat story per Arabic design. Each recording lives at
+ * public/rec/<slug>.mp4 (with a <slug>.jpg link thumbnail) and was captured
+ * from the live preview page /ar/t/<slug>.
+ */
+const rec = (slug: string, openTapY: number) => ({
+  video: `rec/${slug}.mp4`,
+  cover: `rec/${slug}.jpg`,
+  openTapY,
+});
+
+const CARD_TAP = 0.6196; // "افتح الكارت" on greeting cards
+const INVITE_TAP = 0.6554; // "افتح الدعوة" on invitations
+
+const opened = "ليلى فتحت اللينك… كارت متحرك باسمها ✨";
+
+const invitation = (slug: string): StoryCopy => ({ ...TARAB_COPY, ...rec(slug, INVITE_TAP) });
+
+export const STORIES: Record<string, StoryCopy> = {
+  "invitation-tarab-velvet-ar": invitation("invitation-tarab-velvet-ar"),
+  "invitation-qasr-gold-ar": invitation("invitation-qasr-gold-ar"),
+  "invitation-baroque-noir-ar": invitation("invitation-baroque-noir-ar"),
+  "invitation-blue-porcelain-ar": invitation("invitation-blue-porcelain-ar"),
+  "invitation-ivory-arch-ar": invitation("invitation-ivory-arch-ar"),
+  "invitation-sage-garden-ar": invitation("invitation-sage-garden-ar"),
+  "birthday-kol-sana-ar": {
+    ...rec("birthday-kol-sana-ar", CARD_TAP),
+    sender: "سارة 🎈",
+    senderInitial: "س",
+    senderFemale: true,
+    msg1: "كل سنة وإنتي طيبة يا لولو 🎂🎉",
+    linkTitle: "كل سنة وإنتي طيبة يا ليلى 🎂",
+    linkSub: "افتحيه… معمول مخصوص ليكي",
+    linkPath: "/ar/c/leila-birthday",
+    msg3: "افتحيه 🎁👆",
+    reply: "يا سارة 🥹 أحلى هدية جاتلي النهارده!",
+    answer: "تستاهلي كل حاجة حلوة 🤍",
+    captions: ["سارة بعتت لليلى كارت عيد ميلاد 🎂", opened, "بالصور والأمنيات والعدّاد 🎉", "وردّت عليها على طول 💬"],
+  },
+  "anniversary-hobbna-ar": {
+    ...rec("anniversary-hobbna-ar", CARD_TAP),
+    sender: "أحمد ❤️",
+    senderInitial: "أ",
+    senderFemale: false,
+    msg1: "كل سنة وإحنا سوا يا ليلى ❤️ عملتلك حاجة صغيرة",
+    linkTitle: "لـ ليلى… كل سنة وإحنا سوا ❤️",
+    linkSub: "افتحيها… معمولة مخصوص ليكي",
+    linkPath: "/ar/c/leila-ahmed",
+    msg3: "افتحيها 🥹👆",
+    reply: "يا حبيبي 😭❤️ أحلى مفاجأة في الدنيا!",
+    answer: "وإنتي أحلى حاجة في عمري ❤️",
+    captions: ["أحمد بعت لليلى مفاجأة في عيد جوازهم ❤️", opened, "بالصور والذكريات والموسيقى 🎶", "وردّت عليه على طول 💬"],
+  },
+  "eid-blessings-ar": {
+    ...rec("eid-blessings-ar", CARD_TAP),
+    sender: "ماما 🤍",
+    senderInitial: "م",
+    senderFemale: true,
+    msg1: "كل سنة وإنتي طيبة يا ليلى 🌙 عيد سعيد يا حبيبتي",
+    linkTitle: "عيد سعيد يا ليلى 🌙",
+    linkSub: "افتحيها… معمولة مخصوص ليكي",
+    linkPath: "/ar/c/leila-eid",
+    msg3: "افتحيها يا قلبي 🤍",
+    reply: "وإنتي طيبة يا أحلى ماما 🥹🌙",
+    answer: "ربنا يخليكي ليا يا حبيبتي 🤍",
+    captions: ["ماما بعتت لليلى معايدة العيد 🌙", opened, "بالدعاء والفوانيس ولمّة العيد 🏮", "وردّت عليها على طول 💬"],
+  },
+  "graduation-mabrouk-ar": {
+    ...rec("graduation-mabrouk-ar", CARD_TAP),
+    sender: "بابا 🎓",
+    senderInitial: "ب",
+    senderFemale: false,
+    msg1: "ألف مبروك يا دكتورة 🎓 فخورين بيكي",
+    linkTitle: "ألف مبروك يا ليلى 🎓",
+    linkSub: "افتحيه… معمول مخصوص ليكي",
+    linkPath: "/ar/c/leila-grad",
+    msg3: "افتحيه 👆",
+    reply: "حبيبي يا بابا 🥹 من غيركم ماكنتش وصلت!",
+    answer: "ودي لسه البداية يا بطلة 💪",
+    captions: ["بابا بعت لليلى تهنئة التخرج 🎓", opened, "برحلتها وصورها ودعوة الحفلة 🎉", "وردّت عليه على طول 💬"],
+  },
+  "newborn-mabrouk-elmawloud-ar": {
+    ...rec("newborn-mabrouk-elmawloud-ar", CARD_TAP),
+    sender: "منى 🧸",
+    senderInitial: "م",
+    senderFemale: true,
+    msg1: "حمدالله على السلامة يا حبيبتي 🤍 عملت لليلى الصغيرة كارت",
+    linkTitle: "أهلاً بيكي في الدنيا يا ليلى 👶",
+    linkSub: "افتحيه… معمول مخصوص ليها",
+    linkPath: "/ar/c/baby-leila",
+    msg3: "افتحيه 🥹👆",
+    reply: "يا منى 😭🤍 تحفة! هحتفظ بيه ليها",
+    answer: "ربنا يخليهالك وتتربى في عزك 🤍",
+    captions: ["منى بعتت كارت ترحيب بالمولودة ليلى 👶", "مامتها فتحت اللينك… كارت متحرك باسمها ✨", "بالصور والتفاصيل ودعوة السبوع 🍼", "وردّت عليها على طول 💬"],
+  },
+  "proposal-etgawezini-ar": {
+    ...rec("proposal-etgawezini-ar", CARD_TAP),
+    sender: "يوسف 💍",
+    senderInitial: "ي",
+    senderFemale: false,
+    msg1: "ليلى.. في كلمة لازم أقولهالك 🤍",
+    linkTitle: "يا ليلى.. في كلمة لازم أقولهالك 💍",
+    linkSub: "افتحيها للآخر…",
+    linkPath: "/ar/c/leila-youssef",
+    msg3: "افتحيها للآخر 🙈",
+    reply: "أيوه 😭💍 موافقة!!",
+    answer: "أسعد واحد في الدنيا ❤️",
+    captions: ["يوسف قرر يطلب إيد ليلى بطريقة مختلفة 💍", opened, "بحكايتهم ووعوده والسؤال الكبير ❓", "وردّت عليه على طول 💬"],
+  },
+  "valentine-ya-albi-ar": {
+    ...rec("valentine-ya-albi-ar", CARD_TAP),
+    sender: "أحمد ❤️",
+    senderInitial: "أ",
+    senderFemale: false,
+    msg1: "حاجة صغيرة جايالك من القلب ❤️",
+    linkTitle: "ليكي إنتي يا ليلى ❤️",
+    linkSub: "افتحيها… معمولة مخصوص ليكي",
+    linkPath: "/ar/c/leila-love",
+    msg3: "افتحيها 🌹",
+    reply: "بحبك 🥹❤️ أحلى مفاجأة!",
+    answer: "وأنا بحبك أكتر ❤️",
+    captions: ["أحمد بعت لليلى مفاجأة في عيد الحب ❤️", opened, "بالصور والأسباب واللحظات الحلوة 🌹", "وردّت عليه على طول 💬"],
+  },
+  "wedding-mabrouk-elzawag-ar": {
+    ...rec("wedding-mabrouk-elzawag-ar", CARD_TAP),
+    sender: "مريم 🌸",
+    senderInitial: "م",
+    senderFemale: true,
+    msg1: "ألف مبروك يا عروسة 🤍 عملتلك حاجة",
+    linkTitle: "ألف مبروك يا ليلى 💍",
+    linkSub: "افتحيها… معمولة مخصوص ليكي",
+    linkPath: "/ar/c/leila-wedding",
+    msg3: "افتحيها 👆🌸",
+    reply: "يا مريم 😭 حبيبتي ربنا يخليكي!",
+    answer: "عقبال ما نشيل ولادك 🤍",
+    captions: ["مريم بعتت لليلى تهنئة الجواز 💍", opened, "بالدعاء والصور والهدية 🎁", "وردّت عليها على طول 💬"],
+  },
+};
