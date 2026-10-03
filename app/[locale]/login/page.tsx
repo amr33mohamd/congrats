@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { signIn } from 'next-auth/react';
 import { useTranslations, useLocale } from 'next-intl';
 import { useRouter, Link } from '@/i18n/navigation';
@@ -10,13 +11,17 @@ import { validateEmail } from '@/lib/validate-email';
 
 type Mode = 'login' | 'signup';
 
-export default function LoginPage() {
+function LoginForm() {
   const t = useTranslations('common.auth');
   const tc = useTranslations('common');
   const locale = useLocale();
   const router = useRouter();
 
-  const [mode, setMode] = useState<Mode>('login');
+  const params = useSearchParams();
+  // Where to go after signing in — local paths only, never another site.
+  const rawNext = params.get('next') ?? '';
+  const next = rawNext.startsWith('/') && !rawNext.startsWith('//') && !rawNext.includes('\\') ? rawNext : '/dashboard';
+  const [mode, setMode] = useState<Mode>(params.get('mode') === 'signup' ? 'signup' : 'login');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -71,7 +76,7 @@ export default function LoginPage() {
         setLoading(false);
         return;
       }
-      router.push('/dashboard');
+      router.push(next);
       router.refresh();
     } catch {
       setError(t('genericError'));
@@ -208,5 +213,14 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       <span className="text-sm font-medium text-ink">{label}</span>
       {children}
     </label>
+  );
+}
+
+/** useSearchParams (for ?next= / ?mode=) needs a Suspense boundary on a static page. */
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
   );
 }

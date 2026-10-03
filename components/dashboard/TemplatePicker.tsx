@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import { useRouter } from '@/i18n/navigation';
+import { useSearchParams } from 'next/navigation';
 import { Spinner, Input } from '@/components/ui';
 import { TemplateCard, type TemplateCardData } from '@/components/templates/TemplateCard';
 import { buildPreviewExperience } from '@/lib/template-preview';
@@ -31,6 +32,9 @@ export function TemplatePicker() {
   const [error, setError] = React.useState<string | null>(null);
   const [recipient, setRecipient] = React.useState('');
   const [creatingId, setCreatingId] = React.useState<string | null>(null);
+  // Arriving from a template's public preview: start that card right away.
+  const preselect = useSearchParams().get('template');
+  const autoStarted = React.useRef(false);
 
   React.useEffect(() => {
     (async () => {
@@ -62,6 +66,16 @@ export function TemplatePicker() {
       setCreatingId(null);
     }
   };
+
+  React.useEffect(() => {
+    if (!preselect || autoStarted.current || !templates) return;
+    const row = templates.find((tpl) => tpl.id === preselect);
+    if (!row) return;
+    autoStarted.current = true;
+    void create(row);
+    // create is stable enough for a one-shot start; re-running would duplicate cards.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [preselect, templates]);
 
   // Whatever is typed above shows up inside every preview; fall back to the
   // gallery's sample name so the cards are never addressed to nobody.

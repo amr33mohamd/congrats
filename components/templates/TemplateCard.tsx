@@ -35,13 +35,13 @@ export interface TemplateCardData {
 export function TemplateCard({
   data,
   popularLabel,
-  href = '/builder',
+  href,
   onSelect,
   busy = false,
 }: {
   data: TemplateCardData;
   popularLabel: string;
-  /** Where the card navigates. Ignored when `onSelect` is given. */
+  /** Where the card navigates (default: the template's public preview). Ignored when `onSelect` is given. */
   href?: string;
   /** Use the card as a button instead — the builder picker creates on click. */
   onSelect?: () => void;
@@ -67,12 +67,32 @@ export function TemplateCard({
   const shell =
     'group relative block aspect-[9/16] w-full overflow-hidden rounded-xl bg-black/40 ring-1 ring-white/10 transition-all duration-[var(--motion-base)] ease-emphasized hover:-translate-y-1 hover:ring-white/25 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:pointer-events-none';
 
+  // Hover-to-preview is for a MOUSE only. On iOS (and Messenger's in-app
+  // browser) a tap first fires mouseenter; when that changes the card, Safari
+  // treats the tap as a hover and never follows the link — guests tapped a
+  // design, saw it animate, and it "wouldn't open".
   const engageProps = {
-    onMouseEnter: () => setEngaged(true),
-    onMouseLeave: disengage,
-    onFocus: () => setEngaged(true),
-    onBlur: disengage,
+    onPointerEnter: (e: React.PointerEvent) => {
+      if (e.pointerType === 'mouse') setEngaged(true);
+    },
+    onPointerLeave: (e: React.PointerEvent) => {
+      if (e.pointerType === 'mouse') disengage();
+    },
   };
+
+  // Touch screens have no hover, so play the preview while the card is in view.
+  const cardRef = React.useRef<HTMLElement | null>(null);
+  React.useEffect(() => {
+    const el = cardRef.current;
+    if (!el || typeof IntersectionObserver === 'undefined') return;
+    if (!window.matchMedia?.('(hover: none)').matches) return;
+    const io = new IntersectionObserver(
+      ([entry]) => (entry?.isIntersecting ? setEngaged(true) : disengage()),
+      { threshold: 0.6 },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
 
   const body = (
     <>
@@ -125,6 +145,9 @@ export function TemplateCard({
         data-testid="template-card"
         aria-label={data.title}
         disabled={busy}
+        ref={(n) => {
+          cardRef.current = n;
+        }}
         onClick={() => {
           track('template_view', { template: data.slug });
           onSelect();
@@ -139,7 +162,10 @@ export function TemplateCard({
 
   return (
     <Link
-      href={href}
+      href={href ?? `/t/${data.slug}`}
+      ref={(n) => {
+        cardRef.current = n;
+      }}
       data-testid="template-card"
       aria-label={data.title}
       onClick={() => track('template_view', { template: data.slug })}

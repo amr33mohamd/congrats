@@ -7,6 +7,9 @@ import type { Config } from 'tailwindcss';
  * can extend with semantic classes without hard-coded hexes.
  */
 const config: Config = {
+  // hover: styles only where a real hover exists. On iPhones a tap that
+  // changes :hover styling is swallowed as a hover, so links needed two taps.
+  future: { hoverOnlyWhenSupported: true },
   content: [
     './app/**/*.{ts,tsx}',
     './components/**/*.{ts,tsx}',

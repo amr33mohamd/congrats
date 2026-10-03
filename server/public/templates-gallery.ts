@@ -72,3 +72,10 @@ export async function listGalleryTemplates(): Promise<GalleryTemplate[]> {
   }
   return out;
 }
+
+/** One published template by slug, for the public preview page. */
+export async function getGalleryTemplate(slug: string): Promise<GalleryTemplate | null> {
+  if (!/^[a-z0-9-]{1,120}$/.test(slug)) return null;
+  const all = await listGalleryTemplates();
+  return all.find((t) => t.slug === slug) ?? null;
+}
