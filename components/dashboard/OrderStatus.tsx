@@ -291,7 +291,7 @@ function StatusPanel({
 
       <div className="mt-token-6 flex flex-col items-stretch gap-token-2">
         {order.status === 'approved' ? (
-          <Link href={`/builder/${order.experienceId}`}>
+          <Link href={`/dashboard?share=${order.experienceId}`}>
             <Button className="w-full">{t('openLink')}</Button>
           </Link>
         ) : null}

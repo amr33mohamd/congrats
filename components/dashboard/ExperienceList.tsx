@@ -33,6 +33,18 @@ export function ExperienceList() {
     void load();
   }, [load]);
 
+  // Arriving from an approved order (?share=<experienceId>): open that card's
+  // share dialog straight away. Read once from the URL rather than
+  // useSearchParams so the page needs no Suspense boundary.
+  const autoShared = React.useRef(false);
+  React.useEffect(() => {
+    if (!items || autoShared.current) return;
+    autoShared.current = true;
+    const id = new URLSearchParams(window.location.search).get('share');
+    const match = id ? items.find((x) => x.id === id) : undefined;
+    if (match) setShareItem(match);
+  }, [items]);
+
   const confirmDelete = async () => {
     if (!deleteItem) return;
     setDeleting(true);
@@ -85,7 +97,7 @@ export function ExperienceList() {
           </Link>
         </div>
       ) : (
-        <div className="grid gap-token-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-token-4 sm:grid-cols-2">
           {items.map((item) => (
             <ExperienceCard
               key={item.id}
