@@ -49,7 +49,7 @@ const SCREEN_H = 1600;
 const SCREEN_X = (1080 - SCREEN_W) / 2;
 const SCREEN_Y = 236;
 
-const CHAT = {
+export const CHAT = {
   header: "#0B5C4F",
   wall: "#EFE7DD",
   inBubble: "#FFFFFF",
@@ -100,11 +100,11 @@ export const TARAB_COPY: StoryCopy = {
 
 const ease = Easing.bezier(0.22, 1, 0.36, 1);
 
-const popIn = (frame: number, at: number, fps: number) =>
+export const popIn = (frame: number, at: number, fps: number) =>
   spring({ frame: frame - at, fps, config: { damping: 16, stiffness: 180, mass: 0.7 } });
 
 // ── Small pieces ────────────────────────────────────────────────────────────
-const StatusBar: React.FC<{ dark?: boolean }> = ({ dark }) => {
+export const StatusBar: React.FC<{ dark?: boolean }> = ({ dark }) => {
   const c = dark ? "#fff" : "#111";
   return (
     <div
@@ -152,7 +152,7 @@ const Ticks: React.FC<{ read: boolean }> = ({ read }) => (
   </svg>
 );
 
-const Bubble: React.FC<{
+export const Bubble: React.FC<{
   side: "in" | "out";
   show: number; // 0..1 spring
   time: string;
@@ -209,7 +209,7 @@ const Bubble: React.FC<{
   );
 };
 
-const TypingDots: React.FC<{ frame: number }> = ({ frame }) => (
+export const TypingDots: React.FC<{ frame: number }> = ({ frame }) => (
   <div style={{ display: "flex", marginBottom: 14 }}>
     <div
       style={{
@@ -238,7 +238,7 @@ const TypingDots: React.FC<{ frame: number }> = ({ frame }) => (
   </div>
 );
 
-const LinkPreview: React.FC<{ copy: StoryCopy }> = ({ copy }) => (
+export const LinkPreview: React.FC<{ copy: Pick<StoryCopy, "cover" | "linkTitle" | "linkSub" | "linkPath"> }> = ({ copy }) => (
   <div style={{ width: 500 }}>
     <div style={{ borderRadius: 14, overflow: "hidden", background: "#F5F6F6", marginBottom: 10 }}>
       <img src={staticFile(copy.cover)} style={{ width: "100%", height: 250, objectFit: "cover", display: "block" }} />
@@ -256,7 +256,7 @@ const LinkPreview: React.FC<{ copy: StoryCopy }> = ({ copy }) => (
   </div>
 );
 
-const Tap: React.FC<{ frame: number; at: number; x: number; y: number }> = ({ frame, at, x, y }) => {
+export const Tap: React.FC<{ frame: number; at: number; x: number; y: number }> = ({ frame, at, x, y }) => {
   const f = frame - at;
   if (f < -12 || f > 22) return null;
   const finger = interpolate(f, [-12, 0, 8, 22], [0, 1, 1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });

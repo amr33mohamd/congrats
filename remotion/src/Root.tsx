@@ -8,6 +8,7 @@ import { BumperAd } from "./ads/BumperAd";
 import { HeroSpot } from "./ads/HeroSpot";
 import { WhatsappStory, WHATSAPP_STORY_FRAMES } from "./ads/WhatsappStory";
 import { STORIES } from "./ads/stories";
+import { PurchaseFlow, PURCHASE_FLOW_FRAMES } from "./ads/PurchaseFlow";
 import { AR, EN } from "./copy";
 
 // Make the brand fonts available to the renderer (matches app/globals.css intent).
@@ -91,6 +92,16 @@ export const RemotionRoot: React.FC = () => {
           defaultProps={{ copy }}
         />
       ))}
+
+      {/* ── Real purchase walkthrough on a phone, then the friend opens it ── */}
+      <Composition
+        id="PurchaseFlow-AR"
+        component={PurchaseFlow}
+        durationInFrames={PURCHASE_FLOW_FRAMES}
+        fps={30}
+        width={1080}
+        height={1920}
+      />
     </>
   );
 };
