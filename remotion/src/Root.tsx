@@ -9,6 +9,7 @@ import { HeroSpot } from "./ads/HeroSpot";
 import { WhatsappStory, WHATSAPP_STORY_FRAMES } from "./ads/WhatsappStory";
 import { STORIES } from "./ads/stories";
 import { PurchaseFlow, PURCHASE_FLOW_FRAMES } from "./ads/PurchaseFlow";
+import { HandStory, HAND_STORY_FRAMES } from "./ads/HandStory";
 import { AR, EN } from "./copy";
 
 // Make the brand fonts available to the renderer (matches app/globals.css intent).
@@ -98,6 +99,16 @@ export const RemotionRoot: React.FC = () => {
         id="PurchaseFlow-AR"
         component={PurchaseFlow}
         durationInFrames={PURCHASE_FLOW_FRAMES}
+        fps={30}
+        width={1080}
+        height={1920}
+      />
+
+      {/* ── Sent on WhatsApp → a hand opens it on the friend's phone → reply ── */}
+      <Composition
+        id="HandStory-AR"
+        component={HandStory}
+        durationInFrames={HAND_STORY_FRAMES}
         fps={30}
         width={1080}
         height={1920}
