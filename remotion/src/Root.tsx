@@ -10,6 +10,7 @@ import { WhatsappStory, WHATSAPP_STORY_FRAMES } from "./ads/WhatsappStory";
 import { STORIES } from "./ads/stories";
 import { PurchaseFlow, PURCHASE_FLOW_FRAMES } from "./ads/PurchaseFlow";
 import { HandStory, HAND_STORY_FRAMES } from "./ads/HandStory";
+import { PerfectAd, PERFECT_AD_FRAMES } from "./ads/PerfectAd";
 import { AR, EN } from "./copy";
 
 // Make the brand fonts available to the renderer (matches app/globals.css intent).
@@ -109,6 +110,16 @@ export const RemotionRoot: React.FC = () => {
         id="HandStory-AR"
         component={HandStory}
         durationInFrames={HAND_STORY_FRAMES}
+        fps={30}
+        width={1080}
+        height={1920}
+      />
+
+      {/* ── Research-brief ad: 25s click-to-Messenger, "الدعوة اللي بتتفتح" ── */}
+      <Composition
+        id="PerfectAd-AR"
+        component={PerfectAd}
+        durationInFrames={PERFECT_AD_FRAMES}
         fps={30}
         width={1080}
         height={1920}
