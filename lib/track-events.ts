@@ -21,6 +21,7 @@ export const EVENT_NAMES = [
   'whatsapp_click',
   // The /start questionnaire. Props carry option keys and template slugs only —
   // never the names, date or venue typed into it.
+  // quiz_start: { source: 'home' | 'start' | 'occasion' | 'product', resumed }.
   'quiz_start',
   'quiz_answer',
   'quiz_result',

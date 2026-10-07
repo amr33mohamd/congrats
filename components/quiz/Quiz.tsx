@@ -25,11 +25,13 @@ import {
   joinedNames,
   parseAnswers,
   type ColorKey,
+  type Occasion,
   type PartialAnswers,
   type QuizAnswers,
 } from '@/lib/quiz/answers';
 import { matchTemplates } from '@/lib/quiz/match';
 import { buildQuizPreview } from '@/lib/quiz/personalize';
+import type { QuizSource } from '@/lib/quiz/links';
 
 /**
  * The /start questionnaire: one question per screen, big tap targets, then a
@@ -38,6 +40,13 @@ import { buildQuizPreview } from '@/lib/quiz/personalize';
  * Progress lives in localStorage so a refresh (or a WhatsApp detour) resumes
  * where they left off. Analytics get option keys and template slugs only —
  * never the names, date or venue.
+ *
+ * `embedded` renders it as a section of the home page: no full-screen chrome,
+ * no <h1> (the page has its own), and it scrolls only when the step's top has
+ * left the screen. There it resumes only a quiz that was started on the home
+ * page in the last half hour, and it touches localStorage and records
+ * `quiz_start` only once the visitor taps an answer — merely scrolling past
+ * the section must neither count as a start nor clobber a /start session.
  */
 
 export interface QuizTemplate {
@@ -55,11 +64,17 @@ type Question = (typeof QUESTIONS)[number];
 const RESULT = QUESTIONS.length;
 
 const STORAGE_KEY = 'cg_quiz_v1';
+/** How long a home-page quiz stays resumable on the home page. */
+const HOME_RESUME_MS = 30 * 60 * 1000;
 
 interface Saved {
   step: number;
   answers: PartialAnswers;
   chosen?: string;
+  /** Where it was started — the home page only resumes its own. */
+  origin?: 'home' | 'start';
+  /** Last saved, ms since epoch. */
+  at?: number;
 }
 
 function load(): Saved | null {
@@ -68,7 +83,13 @@ function load(): Saved | null {
     if (!raw) return null;
     const v = JSON.parse(raw) as Saved;
     if (typeof v?.step !== 'number' || typeof v.answers !== 'object' || !v.answers) return null;
-    return { step: Math.max(0, Math.min(RESULT, Math.floor(v.step))), answers: v.answers, chosen: v.chosen };
+    return {
+      step: Math.max(0, Math.min(RESULT, Math.floor(v.step))),
+      answers: v.answers,
+      chosen: v.chosen,
+      origin: v.origin === 'home' ? 'home' : 'start',
+      at: typeof v.at === 'number' ? v.at : undefined,
+    };
   } catch {
     return null;
   }
@@ -190,44 +211,92 @@ export function Quiz({
   locale,
   signedIn,
   whatsappHref,
+  embedded = false,
+  source = embedded ? 'home' : 'start',
+  initialOccasion,
 }: {
   templates: QuizTemplate[];
   locale: 'ar' | 'en';
   signedIn: boolean;
   whatsappHref: string | null;
+  /** Render as a home-page section instead of a full page. */
+  embedded?: boolean;
+  /** Where the visitor entered the quiz, for `quiz_start`. */
+  source?: QuizSource;
+  /** Deep link (`?occasion=`): start fresh with this occasion picked, on question 2. */
+  initialOccasion?: Occasion;
 }) {
   const t = useTranslations('quiz');
-  const [step, setStep] = React.useState(0);
-  const [answers, setAnswers] = React.useState<PartialAnswers>({});
+  const [step, setStep] = React.useState(initialOccasion ? 1 : 0);
+  const [answers, setAnswers] = React.useState<PartialAnswers>(initialOccasion ? { occasion: initialOccasion } : {});
   const [chosen, setChosen] = React.useState<string | undefined>();
   const [ready, setReady] = React.useState(false);
+  // Embedded: nothing is saved (or counted) until the visitor actually answers.
+  const [touched, setTouched] = React.useState(!embedded || Boolean(initialOccasion));
   const [nameError, setNameError] = React.useState(false);
   const topRef = React.useRef<HTMLDivElement>(null);
+  const started = React.useRef(false);
+
+  const start = (resumed: boolean) => {
+    if (started.current) return;
+    started.current = true;
+    track('quiz_start', { source, resumed });
+  };
 
   // Resume a saved quiz once on mount (localStorage only exists client-side).
   React.useEffect(() => {
+    if (initialOccasion) {
+      // A deep link names the occasion: a fresh quiz, whatever was saved.
+      start(false);
+      if (embedded) topRef.current?.scrollIntoView({ block: 'start' });
+      setReady(true);
+      return;
+    }
     const saved = load();
-    if (saved) {
+    const resumable = Boolean(
+      saved &&
+        (!embedded || (saved.origin === 'home' && saved.step > 0 && Date.now() - (saved.at ?? 0) < HOME_RESUME_MS)),
+    );
+    if (saved && resumable) {
       const ok = saved.step === 0 || Boolean(saved.answers.occasion);
       setAnswers(saved.answers);
       setStep(ok ? saved.step : 0);
       setChosen(saved.chosen);
+      setTouched(true);
     }
-    track('quiz_start', { resumed: Boolean(saved && saved.step > 0) });
+    // /start counts every visit; the home page only a resumed quiz (a fresh one
+    // starts when the first occasion is tapped).
+    if (!embedded || resumable) start(Boolean(resumable && saved && saved.step > 0));
     setReady(true);
+    // Mount only: the deep link and the mode are fixed for the page's lifetime.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   React.useEffect(() => {
-    if (ready) save({ step, answers, chosen });
-  }, [ready, step, answers, chosen]);
+    if (ready && touched) save({ step, answers, chosen, origin: embedded ? 'home' : 'start', at: Date.now() });
+  }, [ready, touched, step, answers, chosen, embedded]);
 
   const go = (next: number) => {
     setStep(next);
     setNameError(false);
-    topRef.current?.scrollIntoView({ block: 'start' });
+    const el = topRef.current;
+    if (!el) return;
+    if (!embedded) {
+      el.scrollIntoView({ block: 'start' });
+      return;
+    }
+    // In a page section, only scroll when the new step would start off-screen
+    // (or far down it) — tapping an occasion near the top keeps you in place.
+    const top = el.getBoundingClientRect().top;
+    if (top < 0 || top > window.innerHeight * 0.5) {
+      const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+      el.scrollIntoView({ block: 'start', behavior: reduce ? 'auto' : 'smooth' });
+    }
   };
 
   const answer = (question: Question, patch: PartialAnswers, value: string, advance = true) => {
+    start(false);
+    setTouched(true);
     setAnswers((a) => ({ ...a, ...patch }));
     if (question !== 'names' && question !== 'when') setChosen(undefined);
     track('quiz_answer', { question, value });
@@ -238,8 +307,17 @@ export function Quiz({
     save(null);
     setAnswers({});
     setChosen(undefined);
+    if (embedded) {
+      // Back to an untouched section: the next tap is a new start.
+      setTouched(false);
+      started.current = false;
+    }
     go(0);
   };
+
+  // The page owns the <h1> when the quiz is a section of it.
+  const H = embedded ? 'h3' : 'h1';
+  const Main = embedded ? 'div' : 'main';
 
   const final: QuizAnswers | null = React.useMemo(
     () => (answers.occasion ? parseAnswers({ ...answers, lang: answers.lang ?? locale }) : null),
@@ -252,8 +330,17 @@ export function Quiz({
   const back = locale === 'ar' ? '→' : '←';
 
   return (
-    <div ref={topRef} className="min-h-[100svh] overflow-x-hidden bg-surface-2 text-ink">
-      <div className="mx-auto flex min-h-[100svh] w-full max-w-md flex-col px-token-4 pb-token-8 pt-token-4">
+    <div
+      ref={topRef}
+      data-testid={embedded ? 'quiz-embedded' : undefined}
+      className={cn('overflow-x-hidden text-ink', embedded ? 'scroll-mt-24' : 'min-h-[100svh] bg-surface-2')}
+    >
+      <div
+        className={cn(
+          'mx-auto flex w-full flex-col',
+          embedded ? 'max-w-xl' : 'min-h-[100svh] max-w-md px-token-4 pb-token-8 pt-token-4',
+        )}
+      >
         {/* top bar */}
         <header className="flex items-center gap-token-3">
           {step > 0 ? (
@@ -265,7 +352,7 @@ export function Quiz({
             >
               <span aria-hidden>{back}</span> {t('back')}
             </button>
-          ) : (
+          ) : embedded ? null : (
             <Link href="/" className="flex h-11 shrink-0 items-center px-token-2 font-heading text-lg font-extrabold text-ink">
               {t('brand')}
             </Link>
@@ -292,13 +379,13 @@ export function Quiz({
           )}
         </header>
 
-        <main className="mt-token-6 flex flex-1 flex-col">
+        <Main className={cn('flex flex-1 flex-col', embedded ? 'mt-token-4' : 'mt-token-6')}>
           {question === 'occasion' ? (
             <>
-              <p className="mb-token-2 text-sm text-gold">{t('intro')}</p>
-              <h1 className="font-heading text-3xl font-extrabold">{t('occasion.title')}</h1>
+              {embedded ? null : <p className="mb-token-2 text-sm text-gold">{t('intro')}</p>}
+              <H className="font-heading text-3xl font-extrabold">{t('occasion.title')}</H>
               <p className="mt-token-1 text-muted">{t('occasion.subtitle')}</p>
-              <div className="mt-token-6 grid grid-cols-2 gap-token-3">
+              <div className={cn('mt-token-6 grid grid-cols-2 gap-token-3', embedded && 'sm:grid-cols-3')}>
                 {OCCASIONS.map((o) => (
                   <OptionCard
                     key={o}
@@ -319,7 +406,7 @@ export function Quiz({
 
           {question === 'style' ? (
             <>
-              <h1 className="font-heading text-3xl font-extrabold">{t('style.title')}</h1>
+              <H className="font-heading text-3xl font-extrabold">{t('style.title')}</H>
               <p className="mt-token-1 text-muted">{t('style.subtitle')}</p>
               <div className="mt-token-6 grid gap-token-3">
                 {STYLES.map((s) => (
@@ -342,7 +429,7 @@ export function Quiz({
 
           {question === 'colors' ? (
             <>
-              <h1 className="font-heading text-3xl font-extrabold">{t('colors.title')}</h1>
+              <H className="font-heading text-3xl font-extrabold">{t('colors.title')}</H>
               <p className="mt-token-1 text-muted">{t('colors.subtitle')}</p>
               <div className="mt-token-6 grid grid-cols-2 gap-token-3">
                 {COLORS.map((c) => {
@@ -401,9 +488,9 @@ export function Quiz({
                 answer('names', { name1: one || undefined, name2: two || undefined }, couple && one && two ? 'both' : 'one');
               }}
             >
-              <h1 className="font-heading text-3xl font-extrabold">
+              <H className="font-heading text-3xl font-extrabold">
                 {couple ? t('names.titleCouple') : t('names.titleSingle')}
-              </h1>
+              </H>
               <p className="mt-token-1 text-muted">{t('names.subtitle')}</p>
               <div className="mt-token-6 grid gap-token-4">
                 <Field id="quiz-name1" label={couple ? t('names.name1Couple') : t('names.name1Single')}>
@@ -460,7 +547,7 @@ export function Quiz({
                 answer('when', { date, venue: venue || undefined }, [date ? 'date' : '', venue ? 'venue' : ''].filter(Boolean).join(',') || 'none');
               }}
             >
-              <h1 className="font-heading text-3xl font-extrabold">{t('when.title')}</h1>
+              <H className="font-heading text-3xl font-extrabold">{t('when.title')}</H>
               <p className="mt-token-1 text-muted">{t('when.subtitle')}</p>
               <div className="mt-token-6 grid gap-token-4">
                 <Field id="quiz-date" label={t('when.date')}>
@@ -500,7 +587,7 @@ export function Quiz({
 
           {question === 'lang' ? (
             <>
-              <h1 className="font-heading text-3xl font-extrabold">{t('lang.title')}</h1>
+              <H className="font-heading text-3xl font-extrabold">{t('lang.title')}</H>
               <p className="mt-token-1 text-muted">{t('lang.subtitle')}</p>
               <div className="mt-token-6 grid grid-cols-2 gap-token-3">
                 {(['ar', 'en'] as const).map((l) => (
@@ -533,6 +620,7 @@ export function Quiz({
                 whatsappHref={whatsappHref}
                 onEdit={() => go(0)}
                 onRestart={restart}
+                heading={H}
               />
             ) : (
               <div className="text-center">
@@ -540,7 +628,7 @@ export function Quiz({
               </div>
             )
           ) : null}
-        </main>
+        </Main>
       </div>
     </div>
   );
@@ -558,6 +646,7 @@ function Result({
   whatsappHref,
   onEdit,
   onRestart,
+  heading: Heading,
 }: {
   answers: QuizAnswers;
   templates: QuizTemplate[];
@@ -568,12 +657,14 @@ function Result({
   whatsappHref: string | null;
   onEdit: () => void;
   onRestart: () => void;
+  heading: 'h1' | 'h3';
 }) {
   const t = useTranslations('quiz');
   const match = React.useMemo(() => matchTemplates(templates, answers), [templates, answers]);
   const options = match ? [match.best, ...match.alternatives] : [];
   const current = options.find((o) => o.id === chosen) ?? options[0];
   const sampleGuest = t('result.sampleGuest');
+  const Sub = Heading === 'h1' ? 'h2' : 'h4';
 
   const previews = React.useMemo(
     () =>
@@ -619,9 +710,9 @@ function Result({
 
   return (
     <div className="flex flex-col">
-      <h1 className="font-heading text-2xl font-extrabold leading-snug" data-testid="quiz-result-title">
+      <Heading className="font-heading text-2xl font-extrabold leading-snug" data-testid="quiz-result-title">
         {title}
-      </h1>
+      </Heading>
       <p className="mt-token-1 text-sm text-muted">{t('result.subtitle')}</p>
 
       <div className="mt-token-6" data-testid="quiz-preview">
@@ -666,7 +757,7 @@ function Result({
 
       {options.length > 1 ? (
         <section className="mt-token-8">
-          <h2 className="text-base font-bold">{t('result.alternatives')}</h2>
+          <Sub className="text-base font-bold">{t('result.alternatives')}</Sub>
           <div className="mt-token-3 grid grid-cols-3 gap-token-3">
             {options.map((o) => {
               const active = o.id === current.id;

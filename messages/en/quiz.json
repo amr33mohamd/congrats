@@ -101,5 +101,15 @@
     "venue": "Venue: {value}",
     "lang": "Language: {value}",
     "design": "Design: {value}"
+  },
+  "home": {
+    "title": "Find your invitation in 30 seconds",
+    "subtitle": "Pick the occasion, answer a few quick questions — and see the design playing with your names right away. No sign-up."
+  },
+  "entry": {
+    "occasionTitle": "Not sure which one? Answer 5 quick questions",
+    "occasionBody": "We'll pick the right design and show it with your names in 30 seconds.",
+    "occasionCta": "Start",
+    "productCta": "Not sure about the design? Find yours in 30 seconds ✨"
   }
 }

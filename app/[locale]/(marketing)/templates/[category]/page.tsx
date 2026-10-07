@@ -12,6 +12,7 @@ import { listGalleryTemplates } from '@/server/public/templates-gallery';
 import { CATALOG_CATEGORIES } from '@/content/templates/categories';
 import { marketingMetadata } from '@/lib/site';
 import { closestSlug } from '@/lib/closest-slug';
+import { CATEGORY_OCCASION, quizHref } from '@/lib/quiz/links';
 
 // Always rendered per request: the header reflects the visitor's session and
 // the templates come from the live catalog, so a build-time prerender would
@@ -69,12 +70,15 @@ export default async function OccasionLandingPage({
   setRequestLocale(locale);
   const typed = (locale === 'ar' ? 'ar' : 'en') as 'ar' | 'en';
 
-  const [t, tl, session, rows] = await Promise.all([
+  const [t, tl, tq, session, rows] = await Promise.all([
     getTranslations('marketing.templates'),
     getTranslations(`marketing.landing.${category}`),
+    getTranslations('quiz.entry'),
     getSession(),
     listGalleryTemplates(),
   ]);
+  // Undecided visitors: the questionnaire with this occasion already picked.
+  const quizOccasion = CATEGORY_OCCASION[category];
 
   const mine = localeFirst(
     rows.filter((r) => r.categorySlug === category),
@@ -104,6 +108,25 @@ export default async function OccasionLandingPage({
             <p className="mt-token-3 text-white/65">{tl('intro')}</p>
             <p className="mt-token-2 text-sm text-white/40">{t('hint')}</p>
           </div>
+
+          {quizOccasion ? (
+            <Link
+              href={quizHref(quizOccasion, 'occasion')}
+              data-testid="occasion-quiz-card"
+              className="mx-auto mt-token-6 flex max-w-2xl items-center gap-token-4 rounded-2xl border border-brand/40 bg-brand/10 p-token-4 text-start transition-colors hover:border-brand hover:bg-brand/15 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+            >
+              <span aria-hidden className="text-3xl">
+                ✨
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block font-heading text-base font-bold text-white">{tq('occasionTitle')}</span>
+                <span className="mt-1 block text-sm text-white/65">{tq('occasionBody')}</span>
+              </span>
+              <span className="shrink-0 rounded-pill bg-brand px-token-4 py-token-2 text-sm font-semibold text-white">
+                {tq('occasionCta')}
+              </span>
+            </Link>
+          ) : null}
 
           {cards.length === 0 ? (
             <p className="mt-token-8 text-center text-white/55">{t('empty')}</p>

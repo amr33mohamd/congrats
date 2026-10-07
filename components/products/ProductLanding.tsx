@@ -15,6 +15,7 @@ import {
 } from '@/content/products';
 import { ProductCtaAnchor, ProductCtaLink, ProductView } from './tracking';
 import { RsvpMock } from './RsvpMock';
+import { PRODUCT_OCCASION, quizHref } from '@/lib/quiz/links';
 
 type Loc = 'ar' | 'en';
 
@@ -69,6 +70,9 @@ export async function ProductLanding({
 }) {
   const t = await getTranslations('products.page');
   const tf = await getTranslations('products.faq');
+  const tq = await getTranslations('quiz.entry');
+  // Products that map onto a quiz occasion get a "help me choose" way in.
+  const quizOccasion = PRODUCT_OCCASION[p.slug];
   const L = (v: { ar: string; en: string }) => v[locale];
 
   const price = (n: number | null) =>
@@ -157,6 +161,16 @@ export async function ProductLanding({
                 </ProductCtaAnchor>
               ) : null}
             </div>
+            {quizOccasion ? (
+              <ProductCtaLink
+                href={quizHref(quizOccasion, 'product')}
+                product={p.slug}
+                cta="quiz"
+                className="mt-token-4 inline-block rounded-pill px-token-2 py-token-2 text-sm font-semibold text-white underline decoration-white/40 underline-offset-4 hover:decoration-white"
+              >
+                {tq('productCta')}
+              </ProductCtaLink>
+            ) : null}
           </div>
 
           <div className="md:w-[280px]">

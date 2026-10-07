@@ -9,10 +9,13 @@ import { HowItWorks } from '@/components/marketing/HowItWorks';
 import { Pricing } from '@/components/marketing/Pricing';
 import { Faq } from '@/components/marketing/Faq';
 import { SiteFooter } from '@/components/marketing/SiteFooter';
-import { listGalleryTemplates } from '@/server/public/templates-gallery';
+import { HomeQuiz } from '@/components/marketing/HomeQuiz';
+import { listGalleryTemplates, type GalleryTemplate } from '@/server/public/templates-gallery';
+import { loadQuizTemplates } from '@/server/public/quiz-templates';
 import { buildPreviewExperience } from '@/lib/template-preview';
 import type { BoundExperience } from '@/lib/template-contract';
-import { marketingMetadata } from '@/lib/site';
+import { marketingMetadata, supportWhatsappHref } from '@/lib/site';
+import { parseOccasion } from '@/lib/quiz/links';
 
 // Always rendered per request: the header reflects the visitor's session and
 // the templates come from the live catalog, so a build-time prerender would
@@ -51,9 +54,8 @@ export async function generateMetadata({
  * for the invitations spotlight. Decorative: any failure (DB down, nothing
  * published yet) just drops the preview — it must never take the home page down.
  */
-async function invitationPreview(locale: 'ar' | 'en', guest: string): Promise<BoundExperience | null> {
+function invitationPreview(rows: GalleryTemplate[], locale: 'ar' | 'en', guest: string): BoundExperience | null {
   try {
-    const rows = await listGalleryTemplates();
     const inv = rows.filter((r) => r.categorySlug === 'invitation');
     const pick = inv.find((r) => r.locale === locale) ?? inv[0];
     if (!pick) return null;
@@ -68,25 +70,43 @@ async function invitationPreview(locale: 'ar' | 'en', guest: string): Promise<Bo
   }
 }
 
+/** The live catalog, or nothing — a DB hiccup must never take the home page down. */
+async function galleryRows(): Promise<GalleryTemplate[]> {
+  try {
+    return await listGalleryTemplates();
+  } catch (err) {
+    console.warn('[home] catalog unavailable', err);
+    return [];
+  }
+}
+
 export default async function MarketingHome({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const { locale } = await params;
+  const [{ locale }, query] = await Promise.all([params, searchParams]);
   setRequestLocale(locale);
   const typed = (locale === 'ar' ? 'ar' : 'en') as 'ar' | 'en';
   const t = await getTranslations('marketing.invitations');
-  const [session, preview] = await Promise.all([
-    getSession(),
-    invitationPreview(typed, t('sampleGuest')),
-  ]);
+  const [session, rows] = await Promise.all([getSession(), galleryRows()]);
+  const preview = invitationPreview(rows, typed, t('sampleGuest'));
+  const quizTemplates = await loadQuizTemplates(typed, rows);
 
   return (
     <div className="min-h-[100dvh] bg-surface-2">
       <SiteHeader isAuthed={Boolean(session)} overDark />
       <main>
         <Hero locale={typed} />
+        <HomeQuiz
+          templates={quizTemplates}
+          locale={typed}
+          signedIn={Boolean(session)}
+          whatsappHref={supportWhatsappHref()}
+          initialOccasion={parseOccasion(query.occasion)}
+        />
         <Invitations preview={preview} />
         <Occasions />
         <HowItWorks />

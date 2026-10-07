@@ -2,6 +2,7 @@ import { getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import { HeroCanvas } from '@/components/three/HeroCanvas';
 import { WhatsAppCtaLink } from '@/components/marketing/WhatsAppButton';
+import { ScrollToLink } from '@/components/marketing/ScrollToLink';
 import { supportWhatsappHref } from '@/lib/site';
 
 /**
@@ -59,27 +60,30 @@ export async function Hero({ locale }: { locale: 'ar' | 'en' }) {
             {t('subtitle')}
           </p>
 
+          {/* Primary: the questionnaire right below (no sign-up, their names in
+              a design within seconds). Secondary: straight to building for
+              visitors who already know what they want. */}
           <div className="mt-token-8 flex flex-col items-center gap-token-3 sm:flex-row md:justify-start">
+            <ScrollToLink
+              target="quiz"
+              className="flex w-full items-center justify-center gap-2 rounded-pill bg-brand px-token-8 py-token-4 text-center text-base font-bold text-white shadow-[0_10px_40px_-8px_rgb(240_67_110_/_0.7)] transition-transform duration-[var(--motion-base)] ease-emphasized hover:scale-[1.03] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:w-auto"
+            >
+              <span aria-hidden>✨</span>
+              {t('ctaQuizMain')}
+            </ScrollToLink>
             <Link
               href="/dashboard"
-              className="w-full rounded-pill bg-brand px-token-8 py-token-4 text-center text-base font-semibold text-white shadow-[0_10px_40px_-8px_rgb(240_67_110_/_0.7)] transition-transform duration-[var(--motion-base)] ease-emphasized hover:scale-[1.03] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:w-auto"
+              className="w-full rounded-pill border border-white/25 bg-white/10 px-token-8 py-token-4 text-center text-base font-semibold text-white backdrop-blur-md transition-colors duration-[var(--motion-base)] hover:bg-white/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:w-auto"
             >
               {t('ctaPrimary')}
             </Link>
-            <Link
-              href="/templates"
-              className="w-full rounded-pill border border-white/25 bg-white/10 px-token-8 py-token-4 text-center text-base font-semibold text-white backdrop-blur-md transition-colors duration-[var(--motion-base)] hover:bg-white/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:w-auto"
-            >
-              {t('ctaSecondary')}
-            </Link>
           </div>
 
-          {/* Undecided visitors: the questionnaire picks a design for them. */}
           <Link
-            href="/start"
+            href="/templates"
             className="mt-token-4 inline-block rounded-pill px-token-2 py-token-2 text-sm font-semibold text-white underline decoration-white/40 underline-offset-4 hover:decoration-white"
           >
-            {t('ctaQuiz')}
+            {t('ctaSecondary')}
           </Link>
 
           {/* Done-for-you fallback: plenty of visitors would rather send the
