@@ -82,6 +82,24 @@ export function SiteHeader({
           >
             {t('templates')}
           </Link>
+          <Link
+            href="/products"
+            className={cn(
+              'text-sm font-medium transition-colors',
+              onDark ? 'text-white/75 hover:text-white' : 'text-muted hover:text-ink',
+            )}
+          >
+            {t('products')}
+          </Link>
+          <Link
+            href="/start"
+            className={cn(
+              'text-sm font-medium transition-colors',
+              onDark ? 'text-white/75 hover:text-white' : 'text-muted hover:text-ink',
+            )}
+          >
+            {t('quiz')}
+          </Link>
           {sections.map((s) => (
             <Link
               key={s.id}
@@ -154,6 +172,20 @@ export function SiteHeader({
               className="rounded-md px-token-3 py-token-2 text-base font-medium text-ink hover:bg-surface-2"
             >
               {t('templates')}
+            </Link>
+            <Link
+              href="/products"
+              onClick={() => setOpen(false)}
+              className="rounded-md px-token-3 py-token-2 text-base font-medium text-ink hover:bg-surface-2"
+            >
+              {t('products')}
+            </Link>
+            <Link
+              href="/start"
+              onClick={() => setOpen(false)}
+              className="rounded-md px-token-3 py-token-2 text-base font-medium text-ink hover:bg-surface-2"
+            >
+              {t('quiz')}
             </Link>
             {sections.map((s) => (
               <Link

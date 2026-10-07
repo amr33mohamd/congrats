@@ -74,6 +74,14 @@ export async function Hero({ locale }: { locale: 'ar' | 'en' }) {
             </Link>
           </div>
 
+          {/* Undecided visitors: the questionnaire picks a design for them. */}
+          <Link
+            href="/start"
+            className="mt-token-4 inline-block rounded-pill px-token-2 py-token-2 text-sm font-semibold text-white underline decoration-white/40 underline-offset-4 hover:decoration-white"
+          >
+            {t('ctaQuiz')}
+          </Link>
+
           {/* Done-for-you fallback: plenty of visitors would rather send the
               details on WhatsApp than build the card themselves. */}
           <WhatsAppCtaLink

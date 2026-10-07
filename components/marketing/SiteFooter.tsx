@@ -42,6 +42,16 @@ export async function SiteFooter() {
                 {t('footer.templates')}
               </Link>
             </li>
+            <li>
+              <Link href="/products" className={linkCls}>
+                {t('footer.products')}
+              </Link>
+            </li>
+            <li>
+              <Link href="/start" className={linkCls}>
+                {t('nav.quiz')}
+              </Link>
+            </li>
             {sections.map((s) => (
               <li key={s.id}>
                 <Link href={{ pathname: '/', hash: s.id }} className={linkCls}>
