@@ -365,7 +365,7 @@ const EndCard: React.FC = () => {
         أو اعملها بنفسك: <span style={{ fontFamily: "Poppins, sans-serif", direction: "ltr", unicodeBidi: "isolate" }}>congrats-eta.vercel.app</span>
       </div>
       <div style={{ position: "absolute", inset: 0, opacity: s(50) }}>
-        <HandGraphic x={540} y={handY + 160} angle={180} size={0.5} />
+        <HandGraphic x={540} y={handY + 160} variant="down" size={0.95} />
       </div>
     </AbsoluteFill>
   );
