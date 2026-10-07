@@ -15,7 +15,7 @@ const SEO = {
       'Make one animated card that unfolds as they scroll — their name, your photos, your words — or a one-page wedding invitation, shared with a single link. Arabic & English.',
   },
   ar: {
-    title: 'مبروك — تهاني متحركة بلمسة شخصية',
+    title: 'Congrats تهاني ودعوات — فرحتك في لينك واحد',
     description:
       'اعمل كارت تهنئة متحرك يتكشّف مع كل سحبة — باسمهم وصورك وكلماتك — أو دعوة فرح في صفحة واحدة، وشاركها برابط واحد. بالعربي والإنجليزي.',
   },
