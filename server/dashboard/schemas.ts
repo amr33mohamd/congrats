@@ -7,6 +7,7 @@
  */
 import { z } from 'zod';
 import { LocaleSchema } from '@/lib/template-contract';
+import { QuizAnswersSchema } from '@/lib/quiz/answers';
 
 const uuid = z.string().uuid();
 
@@ -17,6 +18,9 @@ export const createExperienceSchema = z.object({
   locale: LocaleSchema.optional(),
   recipientName: z.string().trim().min(1).max(120).optional(),
   title: z.string().trim().min(1).max(160).optional(),
+  // Answers from the /start questionnaire. Applied once, at creation, through
+  // lib/quiz/personalize (whitelisted slots, each capped at its maxLen).
+  prefill: QuizAnswersSchema.optional(),
 });
 export type CreateExperienceInput = z.infer<typeof createExperienceSchema>;
 

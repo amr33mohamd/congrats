@@ -1,0 +1,105 @@
+{
+  "meta": {
+    "title": "Find your invitation in 30 seconds",
+    "description": "Answer 6 quick questions and see your wedding invitation or greeting card ready with your names, date and venue — animated, shared with one link on WhatsApp."
+  },
+  "brand": "Congrats",
+  "back": "Back",
+  "next": "Next",
+  "skip": "Skip",
+  "progress": "Question {current} of {total}",
+  "intro": "30 seconds to see your invitation with your names ✨",
+  "occasion": {
+    "title": "What's the occasion?",
+    "subtitle": "Pick one and we'll line up the right designs",
+    "options": {
+      "wedding": "Wedding / Katb Ketab",
+      "engagement": "Engagement",
+      "henna": "Henna night",
+      "birthday": "Birthday",
+      "graduation": "Graduation",
+      "newborn": "New baby / Sebou",
+      "eid": "Eid",
+      "anniversary": "Anniversary",
+      "proposal": "Proposal",
+      "valentine": "Valentine's",
+      "congrats": "Congratulate a couple"
+    }
+  },
+  "style": {
+    "title": "Which style feels like you?",
+    "subtitle": "No wrong answers — go with your gut",
+    "options": {
+      "classic-gold": { "label": "Classic gold", "hint": "Ivory and gold, timeless" },
+      "luxe-noir": { "label": "Dark luxe", "hint": "Burgundy and gold, baroque" },
+      "tarab": { "label": "Golden era", "hint": "Velvet curtains, old Cairo glamour" },
+      "soft-nature": { "label": "Soft & natural", "hint": "Sage, florals, calm" },
+      "porcelain": { "label": "Blue porcelain", "hint": "Blue florals on ivory" },
+      "joyful": { "label": "Bright & playful", "hint": "Colour, balloons, fun" }
+    }
+  },
+  "colors": {
+    "title": "Favourite colours?",
+    "subtitle": "Pick up to two — or skip if you don't mind",
+    "any": "Don't mind",
+    "options": {
+      "gold": "Gold",
+      "burgundy": "Burgundy",
+      "navy": "Navy / blue",
+      "green": "Green",
+      "pink": "Pink",
+      "ivory": "Ivory"
+    }
+  },
+  "names": {
+    "titleCouple": "What are the names?",
+    "titleSingle": "Who is it for?",
+    "subtitle": "They go straight into the design — you can change them later",
+    "name1Couple": "Groom's name",
+    "name2Couple": "Bride's name",
+    "name1Single": "Their name",
+    "placeholder1Couple": "e.g. Ahmed",
+    "placeholder2Couple": "e.g. Mona",
+    "placeholderSingle": "e.g. Nour",
+    "required": "Type at least one name"
+  },
+  "when": {
+    "title": "When and where?",
+    "subtitle": "Optional — skip if it isn't set yet",
+    "date": "Date",
+    "venue": "Venue",
+    "venuePlaceholder": "e.g. The Grand Nile Ballroom"
+  },
+  "lang": {
+    "title": "Which language?",
+    "subtitle": "You can switch it any time",
+    "ar": "Arabic",
+    "en": "English"
+  },
+  "result": {
+    "titleCouple": "Here's your invitation, {names} 🎉",
+    "titleSingle": "{names}'s card is ready 🎉",
+    "titleNoName": "Your design is ready 🎉",
+    "subtitle": "Tap the card to open it the way your guests will",
+    "alternatives": "Or try one of these",
+    "chosen": "Showing",
+    "ctaCreate": "Make it now",
+    "ctaWhatsapp": "Send it to us — we'll make it on WhatsApp",
+    "restart": "Start over",
+    "edit": "Change answers",
+    "free": "Free",
+    "noMatch": "No designs available right now — try again shortly or message us.",
+    "sampleGuest": "Sarah"
+  },
+  "whatsapp": {
+    "intro": "Hi Congrats 👋 I'd like you to make me an invitation:",
+    "occasion": "Occasion: {value}",
+    "style": "Style: {value}",
+    "colors": "Colours: {value}",
+    "names": "Names: {value}",
+    "date": "Date: {value}",
+    "venue": "Venue: {value}",
+    "lang": "Language: {value}",
+    "design": "Design: {value}"
+  }
+}

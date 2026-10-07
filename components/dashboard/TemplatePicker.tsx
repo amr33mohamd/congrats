@@ -11,6 +11,7 @@ import { dashboardApi, ApiError } from './api-client';
 import type { TemplateCard as TemplateRow, AppLocale } from './types';
 import { formatEgp } from './money';
 import { track } from '@/lib/track';
+import { decodePrefill, type QuizAnswers } from '@/lib/quiz/answers';
 
 /**
  * Template chooser for the builder.
@@ -33,7 +34,10 @@ export function TemplatePicker() {
   const [recipient, setRecipient] = React.useState('');
   const [creatingId, setCreatingId] = React.useState<string | null>(null);
   // Arriving from a template's public preview: start that card right away.
-  const preselect = useSearchParams().get('template');
+  const search = useSearchParams();
+  const preselect = search.get('template');
+  // Answers from the /start questionnaire travel with it; malformed → ignored.
+  const prefill = React.useMemo(() => decodePrefill(search.get('prefill')), [search]);
   const autoStarted = React.useRef(false);
 
   React.useEffect(() => {
@@ -47,15 +51,16 @@ export function TemplatePicker() {
     })();
   }, [t]);
 
-  const create = async (tpl: TemplateRow) => {
+  const create = async (tpl: TemplateRow, answers?: QuizAnswers | null) => {
     setCreatingId(tpl.id);
     setError(null);
     try {
       const trimmed = recipient.trim();
       const res = await dashboardApi.createExperience({
         templateId: tpl.id,
-        locale: tpl.locale ?? locale,
+        locale: answers?.lang ?? tpl.locale ?? locale,
         ...(trimmed ? { recipientName: trimmed } : {}),
+        ...(answers ? { prefill: answers } : {}),
       });
       const id = res.experience?.id ?? res.id;
       if (!id) throw new Error('no id');
@@ -72,10 +77,10 @@ export function TemplatePicker() {
     const row = templates.find((tpl) => tpl.id === preselect);
     if (!row) return;
     autoStarted.current = true;
-    void create(row);
+    void create(row, prefill);
     // create is stable enough for a one-shot start; re-running would duplicate cards.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [preselect, templates]);
+  }, [preselect, templates, prefill]);
 
   // Whatever is typed above shows up inside every preview; fall back to the
   // gallery's sample name so the cards are never addressed to nobody.

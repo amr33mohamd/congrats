@@ -19,6 +19,12 @@ export const EVENT_NAMES = [
   'share',
   'card_cta',
   'whatsapp_click',
+  // The /start questionnaire. Props carry option keys and template slugs only —
+  // never the names, date or venue typed into it.
+  'quiz_start',
+  'quiz_answer',
+  'quiz_result',
+  'quiz_cta',
 ] as const;
 
 export type EventName = (typeof EVENT_NAMES)[number];

@@ -6,6 +6,7 @@
  * in the Foundation handoff; if a route isn't live yet the calls reject and the
  * UI surfaces a friendly error.
  */
+import type { QuizAnswers } from '@/lib/quiz/answers';
 import type {
   ExperienceListItem,
   EditorExperience,
@@ -88,6 +89,8 @@ export const dashboardApi = {
     // callers omit these when blank rather than sending ''.
     recipientName?: string;
     title?: string;
+    /** /start questionnaire answers, validated again on the server. */
+    prefill?: QuizAnswers;
   }) =>
     request<{ experience?: EditorExperience; id?: string } & Partial<EditorExperience>>(
       '/api/dashboard/experiences',

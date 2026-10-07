@@ -19,6 +19,7 @@ import { parseTemplateDefinition } from '@/lib/template-contract';
 import { and, eq } from 'drizzle-orm';
 
 import * as experiencesService from './experiences-service';
+import { createExperienceSchema } from './schemas';
 import { publishExperience, getPublicExperienceBySlug, ensureShareLink } from './share-service';
 import { createOrder, submitPayment } from './orders-service';
 import { uploadMedia } from './media-service';
@@ -220,6 +221,24 @@ describe('experiences', () => {
     // Tokens inside free text resolve to field values.
     expect(text('finale').heading).toBe('With love, Ali & Mona');
     expect(text('letter').heading).toBe('Dear Salma,');
+  });
+
+  it('applies /start quiz answers to a new card — only declared fields, capped', async () => {
+    const prefill = createExperienceSchema.parse({
+      templateId: inviteTemplateId,
+      prefill: { occasion: 'wedding', name1: 'Ahmed {x}', name2: 'Mona', date: '2027-05-20', venue: 'The Nile Ballroom', lang: 'en' },
+    }).prefill!;
+    const exp = await experiencesService.createExperience(ctxA, { templateId: inviteTemplateId, prefill });
+    expect(exp.fields).toEqual({ couple: 'Ahmed x & Mona', weddingDate: '2027-05-20T19:00' });
+    expect(exp.recipientName).toBeNull(); // an invitation's recipient is the guest
+    const steps = await experiencesService.getEditorPayload(ctxA, exp.id);
+    const party = steps.steps.find((s) => s.templateStepId === 'party')!;
+    expect(party.text.label).toBe('The Reception');
+    expect(party.text.date).toBe('2027-05-20T19:00');
+    // Garbage in the prefill is refused at the API boundary.
+    expect(
+      createExperienceSchema.safeParse({ templateId: inviteTemplateId, prefill: { occasion: 'wedding', date: 'tomorrow' } }).success,
+    ).toBe(false);
   });
 });
 

@@ -19,6 +19,8 @@ import {
   type Direction,
 } from '@/lib/template-contract';
 import type { Experience, Step, Media } from '@/db/schema';
+import { personalize } from '@/lib/quiz/personalize';
+import type { QuizAnswers } from '@/lib/quiz/answers';
 import { DashboardError } from './errors';
 import { defaultTextForScene, reconcileSteps, reconcileText } from './step-reconcile';
 import * as repo from './repositories';
@@ -54,7 +56,14 @@ export interface EditorPayload {
 
 export async function createExperience(
   ctx: UserContext,
-  input: { templateId: string; locale?: Locale; recipientName?: string; title?: string },
+  input: {
+    templateId: string;
+    locale?: Locale;
+    recipientName?: string;
+    title?: string;
+    /** Validated /start answers (see createExperienceSchema). */
+    prefill?: QuizAnswers;
+  },
 ): Promise<Experience> {
   const tpl = await repo.getTemplateById(ctx.db, input.templateId);
   if (!tpl) throw DashboardError.notFound('template not found');
@@ -69,15 +78,20 @@ export async function createExperience(
   const locale: Locale = input.locale ?? (tpl.locale as Locale);
   const direction: Direction = locale === tpl.locale ? (tpl.direction as Direction) : locale === 'ar' ? 'rtl' : 'ltr';
 
+  // Quiz answers only ever fill slots the template declares (personalize()).
+  const quiz = input.prefill ? personalize(def, input.prefill, locale) : null;
+  const recipientName = input.recipientName ?? quiz?.recipientName ?? null;
+
   const experience = await repo.insertExperience(ctx.db, {
     userId: ctx.user.id,
     templateId: tpl.id,
     title: input.title ?? tpl.titleEn ?? tpl.titleAr ?? null,
-    recipientName: input.recipientName ?? null,
+    recipientName,
     locale,
     direction,
     status: 'draft',
     isUnlocked: false,
+    ...(quiz && Object.keys(quiz.fields).length ? { fields: quiz.fields } : {}),
   });
 
   // Clone scene defs → steps seeded with localized defaults.
@@ -85,9 +99,9 @@ export async function createExperience(
     experienceId: experience.id,
     templateStepId: scene.id,
     orderIndex: index,
-    recipientName: input.recipientName ?? null,
-    textContent: defaultTextForScene(scene, locale),
-    animationConfig: {},
+    recipientName,
+    textContent: { ...defaultTextForScene(scene, locale), ...(quiz?.text[scene.id] ?? {}) },
+    animationConfig: quiz?.hidden.includes(scene.id) ? { hidden: true } : {},
   }));
   await repo.replaceSteps(ctx.db, experience.id, stepRows);
 
