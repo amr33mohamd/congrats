@@ -14,7 +14,7 @@ import { getRequestConfig } from 'next-intl/server';
 import type { AbstractIntlMessages } from 'next-intl';
 import { routing } from './routing';
 
-const NAMESPACES = ['common', 'marketing', 'dashboard', 'admin'] as const;
+const NAMESPACES = ['common', 'marketing', 'dashboard', 'admin', 'auth', 'quiz', 'products'] as const;
 
 async function loadNamespace(locale: string, ns: string): Promise<AbstractIntlMessages> {
   try {
