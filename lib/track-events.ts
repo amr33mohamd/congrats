@@ -19,6 +19,9 @@ export const EVENT_NAMES = [
   'share',
   'card_cta',
   'whatsapp_click',
+  // Product landing pages (/products/<slug>): props { product, cta? }.
+  'product_view',
+  'product_cta',
 ] as const;
 
 export type EventName = (typeof EVENT_NAMES)[number];
