@@ -25,6 +25,9 @@ export const EVENT_NAMES = [
   'quiz_answer',
   'quiz_result',
   'quiz_cta',
+  // Product landing pages (/products/<slug>): props { product, cta? }.
+  'product_view',
+  'product_cta',
 ] as const;
 
 export type EventName = (typeof EVENT_NAMES)[number];

@@ -1,0 +1,67 @@
+{
+  "index": {
+    "title": "Congrats products — digital gifts and invitations for every Egyptian occasion",
+    "description": "Love-story pages, digital Eidiya, katb ketab invitations, the full wedding package, sebou3, graduation, birthday surprises and corporate greetings — make it yourself or let us make it on WhatsApp.",
+    "eyebrow": "Something for every occasion",
+    "h1": "Pick your gift or invitation",
+    "intro": "Each product is built for one Egyptian occasion. Make it yourself in minutes, or message us on WhatsApp and we make it for you.",
+    "more": "Learn more",
+    "breadcrumb": "All products"
+  },
+  "page": {
+    "from": "From {price}",
+    "free": "Free",
+    "quote": "Custom quote",
+    "egp": "EGP {n}",
+    "whatsappSecondary": "Message us — we’ll make it",
+    "whatsappPrimary": "Order on WhatsApp",
+    "contactFallback": "Contact us",
+    "demoLabel": "Live preview of a real design",
+    "demoHint": "A live preview of the design — exactly what they receive.",
+    "mockHint": "An illustration of what we prepare for you.",
+    "benefitsTitle": "Why you’ll love it",
+    "howTitle": "How it works",
+    "audienceTitle": "Who it’s for",
+    "pricingTitle": "Pricing",
+    "pricingSubtitle": "Pay once by InstaPay. Anything marked “Coming soon” is still being built and isn’t part of the price.",
+    "soon": "Coming soon",
+    "self": "Do it yourself",
+    "service": "Hand-made by our team",
+    "featured": "Most requested",
+    "tierCtaSelf": "Start now",
+    "tierCtaService": "Order on WhatsApp",
+    "faqTitle": "Frequently asked",
+    "otherProducts": "You might also like",
+    "allProducts": "All products"
+  },
+  "faq": {
+    "pay": {
+      "q": "How do I pay?",
+      "a": "By InstaPay. Transfer the amount, upload the screenshot and reference number, and the link goes live once our team confirms — usually within {review}."
+    },
+    "app": {
+      "q": "Do I need an app?",
+      "a": "Neither you nor the recipient. Everything runs in the phone’s browser; they just tap the link."
+    },
+    "time": {
+      "q": "How long does it take?",
+      "a": "You make it yourself in minutes on your phone, with a live preview as you type. Want us to make it? Message us on WhatsApp and we confirm timing before you pay."
+    },
+    "timeService": {
+      "q": "How long does it take?",
+      "a": "Send us the details on WhatsApp and we confirm timing and the final price before you pay anything."
+    },
+    "edit": {
+      "q": "Can I edit after publishing?",
+      "a": "Yes. Your card is saved in your account and any change you save shows on the same link — no new link to send."
+    },
+    "editService": {
+      "q": "What if I want a change after it’s done?",
+      "a": "Send us the change on WhatsApp and we update it on the same link."
+    },
+    "soon": {
+      "q": "What does “Coming soon” mean?",
+      "a": "Features we are still building — not available yet, and not part of what you pay for. If you need one now, message us and we’ll see how we can do it for you."
+    }
+  }
+}
