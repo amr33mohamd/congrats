@@ -17,7 +17,7 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
   }, [error]);
 
   return (
-    <html lang="en">
+    <html lang="ar" dir="rtl">
       <body
         style={{
           margin: 0,
@@ -27,7 +27,7 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
           alignItems: 'center',
           justifyContent: 'center',
           gap: 16,
-          fontFamily: 'system-ui, -apple-system, Segoe UI, Roboto, sans-serif',
+          fontFamily: 'system-ui, -apple-system, Segoe UI, Tahoma, Roboto, sans-serif',
           background: '#FAF8F7',
           color: '#141010',
           textAlign: 'center',
@@ -37,9 +37,11 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
         <div style={{ fontSize: 48 }} aria-hidden>
           🎈
         </div>
-        <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>Something went wrong</h1>
-        <p style={{ color: '#8C817B', maxWidth: 360, margin: 0 }}>
-          An unexpected error occurred. Please try again.
+        {/* Arabic first (the site's main language), English underneath. */}
+        <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>حصلت مشكلة</h1>
+        <p style={{ color: '#8C817B', maxWidth: 360, margin: 0 }}>حصل خطأ مش متوقع. جرّب تاني كمان شوية.</p>
+        <p lang="en" dir="ltr" style={{ color: '#8C817B', maxWidth: 360, margin: 0, fontSize: 14 }}>
+          Something went wrong. Please try again.
         </p>
         <button
           onClick={reset}
@@ -54,7 +56,7 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
             cursor: 'pointer',
           }}
         >
-          Try again
+          جرّب تاني · Try again
         </button>
       </body>
     </html>

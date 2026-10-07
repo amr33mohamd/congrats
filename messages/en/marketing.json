@@ -17,7 +17,9 @@
     "subtitle": "An animated card that unfolds as they scroll — their name, your photos, your words — shared with a single link.",
     "ctaPrimary": "Create yours free",
     "ctaSecondary": "Browse templates",
-    "trust": "No app to install · Opens right in the browser · Arabic & English"
+    "trust": "No app to install · Opens right in the browser · Arabic & English",
+    "ctaWhatsapp": "No time? Message us on WhatsApp and we'll make it for you",
+    "whatsappMessage": "Hi, I'd like you to make a card/invitation for me. Can you tell me more?"
   },
   "occasions": {
     "title": "An experience for every occasion",
@@ -80,6 +82,12 @@
         "Unlocks once we confirm your payment"
       ],
       "cta": "Browse premium designs"
+    },
+    "custom": {
+      "title": "No time to make it yourself?",
+      "body": "Send us the names, date and photos on WhatsApp and we'll make it for you. Want a custom design made just for you? Only EGP 100.",
+      "cta": "Message us on WhatsApp",
+      "message": "Hi, I'd like a custom design (EGP 100). Can you tell me more?"
     }
   },
   "faq": {
@@ -108,6 +116,10 @@
       "q6": {
         "q": "Can I see a template before paying?",
         "a": "Yes. Every template in the gallery is a live preview of the real design, and you can build and preview your whole card before you pay for a premium one."
+      },
+      "q7": {
+        "q": "I don't have time — can you make it for me?",
+        "a": "Of course. Send us the names, date and photos on WhatsApp and we'll set it up and send you the ready link. A custom design made just for you is EGP 100."
       }
     }
   },
@@ -139,7 +151,10 @@
     "metaTitle": "Animated greeting card & invitation templates",
     "metaDescription": "Browse animated greeting templates and one-page wedding invitations — birthdays, weddings, graduation, Eid and more — in Arabic and English. Personalize and send as a link.",
     "moreHeading": "Other occasions",
-    "breadcrumbLabel": "Breadcrumb"
+    "breadcrumbLabel": "Breadcrumb",
+    "whatsappCta": "Or we make it",
+    "whatsappLabel": "Message us on WhatsApp and we'll make it for you",
+    "whatsappMessage": "Hi, I'd like you to make this design for me: {title}\n{url}"
   },
   "invitations": {
     "eyebrow": "New",

@@ -5,6 +5,7 @@ import { Link } from '@/i18n/navigation';
 import { Player } from '@/components/player/Player';
 import type { BoundExperience } from '@/lib/template-contract';
 import { track } from '@/lib/track';
+import { WhatsAppCtaLink } from '@/components/marketing/WhatsAppButton';
 
 /** The full player plus a fixed call to action, for the public template preview. */
 export function TemplatePreview({
@@ -13,12 +14,15 @@ export function TemplatePreview({
   ctaHref,
   priceLabel,
   locale,
+  whatsapp,
 }: {
   experience: BoundExperience;
   slug: string;
   ctaHref: string;
   priceLabel: string;
   locale: 'ar' | 'en';
+  /** Done-for-you fallback on WhatsApp; null when no support number is set. */
+  whatsapp?: { href: string; message: string; cta: string; label: string } | null;
 }) {
   const ar = locale === 'ar';
   React.useEffect(() => {
@@ -42,6 +46,16 @@ export function TemplatePreview({
         >
           {ar ? `اعمل الكارت ده · ${priceLabel}` : `Make this card · ${priceLabel}`}
         </a>
+        {whatsapp ? (
+          <WhatsAppCtaLink
+            href={whatsapp.href}
+            message={whatsapp.message}
+            label={whatsapp.cta}
+            ariaLabel={whatsapp.label}
+            source="template_preview"
+            className="h-9 shrink-0 rounded-pill border border-white/20 bg-white/10 px-token-3 text-sm text-white hover:bg-white/20 [&>span]:sr-only sm:[&>span]:not-sr-only"
+          />
+        ) : null}
       </div>
     </>
   );

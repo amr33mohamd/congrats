@@ -1,6 +1,6 @@
 import { getTranslations } from 'next-intl/server';
 
-const keys = ['q1', 'q2', 'q3', 'q4', 'q5', 'q6'] as const;
+const keys = ['q1', 'q2', 'q3', 'q4', 'q5', 'q6', 'q7'] as const;
 
 export async function Faq() {
   const t = await getTranslations('marketing.faq');

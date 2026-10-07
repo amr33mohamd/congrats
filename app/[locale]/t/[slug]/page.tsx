@@ -8,6 +8,7 @@ import { closestSlug } from '@/lib/closest-slug';
 import { buildPreviewExperience } from '@/lib/template-preview';
 import { formatPrice } from '@/components/marketing/gallery-cards';
 import { TemplatePreview } from '@/components/templates/TemplatePreview';
+import { SITE_URL, supportWhatsappHref } from '@/lib/site';
 
 /**
  * Public, no-account preview of a template — the full animated card exactly
@@ -57,6 +58,18 @@ export default async function TemplatePreviewPage({
   // Anonymous visitors sign up first and land straight in the builder.
   const ctaHref = session ? builderPath : `/login?mode=signup&next=${encodeURIComponent(builderPath)}`;
 
+  // "Or we make it for you": the chat opens with this design already named.
+  const waHref = supportWhatsappHref();
+  const title = (l === 'ar' ? tpl.titleAr : tpl.titleEn) ?? tpl.titleEn ?? tpl.slug;
+  const whatsapp = waHref
+    ? {
+        href: waHref,
+        message: tg('whatsappMessage', { title, url: `${SITE_URL}/${l}/t/${tpl.slug}` }),
+        cta: tg('whatsappCta'),
+        label: tg('whatsappLabel'),
+      }
+    : null;
+
   return (
     <TemplatePreview
       experience={buildPreviewExperience(tpl.definition, {
@@ -68,6 +81,7 @@ export default async function TemplatePreviewPage({
       ctaHref={ctaHref}
       priceLabel={tpl.isPaid ? formatPrice(tpl.pricePiastres, l) : tg('free')}
       locale={l}
+      whatsapp={whatsapp}
     />
   );
 }

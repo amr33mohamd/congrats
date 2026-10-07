@@ -1,6 +1,8 @@
 import { getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import { HeroCanvas } from '@/components/three/HeroCanvas';
+import { WhatsAppCtaLink } from '@/components/marketing/WhatsAppButton';
+import { supportWhatsappHref } from '@/lib/site';
 
 /**
  * The hero is a "stage": a WebGL deck of cards floating behind the copy (a
@@ -72,7 +74,17 @@ export async function Hero({ locale }: { locale: 'ar' | 'en' }) {
             </Link>
           </div>
 
-          <p className="mt-token-6 text-sm text-white/55">{t('trust')}</p>
+          {/* Done-for-you fallback: plenty of visitors would rather send the
+              details on WhatsApp than build the card themselves. */}
+          <WhatsAppCtaLink
+            href={supportWhatsappHref()}
+            message={t('whatsappMessage')}
+            label={t('ctaWhatsapp')}
+            source="hero"
+            className="mt-token-4 rounded-pill px-token-2 py-token-2 text-sm text-white/90 underline decoration-white/30 underline-offset-4 hover:text-white hover:decoration-white"
+          />
+
+          <p className="mt-token-4 text-sm text-white/55">{t('trust')}</p>
         </div>
       </div>
 

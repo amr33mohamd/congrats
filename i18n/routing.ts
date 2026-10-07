@@ -13,4 +13,9 @@ export const routing = defineRouting({
   defaultLocale,
   // 'ar' (default) is also prefixed → predictable [locale] paths for both.
   localePrefix: 'always',
+  // Arabic is the main language: every visitor without a locale in the URL
+  // ("/", "/templates", …) lands on /ar, whatever their browser's
+  // Accept-Language or a leftover NEXT_LOCALE cookie says. English stays one
+  // tap away (/en, the EN toggle in the header).
+  localeDetection: false,
 });

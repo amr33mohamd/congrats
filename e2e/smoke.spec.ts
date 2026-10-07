@@ -1,13 +1,16 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Smoke / i18n / RTL', () => {
-  test('/ redirects to a locale-prefixed page', async ({ page }) => {
-    // next-intl (localePrefix: always) redirects "/" to a locale. The exact
-    // target is Accept-Language-negotiated; here we just assert a locale prefix.
+  test('/ redirects to /ar even for an English browser', async ({ browser }) => {
+    // Arabic is the main language: locale detection is off (i18n/routing), so
+    // Accept-Language never sends a visitor to /en — only an explicit choice does.
+    const ctx = await browser.newContext({ locale: 'en-US' });
+    const page = await ctx.newPage();
     const res = await page.goto('/');
-    await page.waitForURL(/\/(ar|en)(\/|$)/);
-    expect(page.url()).toMatch(/\/(ar|en)(\/|$)/);
+    await page.waitForURL(/\/ar(\/|$)/);
+    expect(page.url()).toMatch(/\/ar(\/|$)/);
     expect(res?.status()).toBeLessThan(400);
+    await ctx.close();
   });
 
   test('/ redirects to /ar when Arabic is the preferred language', async ({ browser }) => {

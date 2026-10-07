@@ -2,6 +2,8 @@ import { getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import { Badge } from '@/components/ui';
 import { cn } from '@/components/ui/cn';
+import { WhatsAppCtaLink } from '@/components/marketing/WhatsAppButton';
+import { supportWhatsappHref } from '@/lib/site';
 
 function Plan({
   name,
@@ -64,6 +66,7 @@ function Plan({
 
 export async function Pricing() {
   const t = await getTranslations('marketing.pricing');
+  const wa = supportWhatsappHref();
 
   return (
     <section id="pricing" className="scroll-mt-20 bg-surface-2 py-16">
@@ -93,6 +96,23 @@ export async function Pricing() {
             href="/templates"
           />
         </div>
+
+        {/* "Or we make it for you" — only when the support number is set. */}
+        {wa ? (
+          <div className="mx-auto mt-token-6 flex max-w-3xl flex-col items-center gap-token-3 rounded-xl border border-border bg-surface p-token-6 text-center shadow-[var(--shadow-card)] sm:flex-row sm:text-start">
+            <div className="flex-1">
+              <h3 className="font-heading text-lg font-semibold text-ink">{t('custom.title')}</h3>
+              <p className="mt-token-1 text-sm text-muted">{t('custom.body')}</p>
+            </div>
+            <WhatsAppCtaLink
+              href={wa}
+              message={t('custom.message')}
+              label={t('custom.cta')}
+              source="pricing"
+              className="h-11 w-full shrink-0 rounded-pill border border-[#25D366]/40 bg-[#25D366]/10 px-5 text-base text-ink hover:bg-[#25D366]/20 sm:w-auto"
+            />
+          </div>
+        ) : null}
       </div>
     </section>
   );

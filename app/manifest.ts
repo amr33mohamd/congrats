@@ -2,11 +2,13 @@ import type { MetadataRoute } from 'next';
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'Congrats — Animated greetings & wedding invitations',
+    // Arabic is the main language (i18n/routing defaultLocale).
+    name: 'Congrats — تهاني متحركة ودعوات أفراح',
     short_name: 'Congrats',
-    description:
-      'Personalized animated greeting cards and one-page wedding invitations, shared with a single link. Arabic & English.',
-    start_url: '/',
+    description: 'كروت تهنئة متحركة ودعوات أفراح باسمهم وصورك، تبعتها لينك واحد على واتساب.',
+    lang: 'ar',
+    dir: 'rtl',
+    start_url: '/ar',
     display: 'standalone',
     // The product ships dark (see globals.css): splash + browser chrome match
     // the page surface so launching from the home screen doesn't flash cream.

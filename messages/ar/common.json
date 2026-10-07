@@ -5,44 +5,44 @@
   },
   "nav": {
     "home": "الرئيسية",
-    "dashboard": "لوحة التحكم",
+    "dashboard": "كروتي",
     "admin": "الإدارة",
-    "login": "تسجيل الدخول",
-    "logout": "تسجيل الخروج"
+    "login": "دخول",
+    "logout": "خروج"
   },
   "actions": {
-    "create": "إنشاء",
-    "save": "حفظ",
+    "create": "اعمل",
+    "save": "احفظ",
     "cancel": "إلغاء",
-    "next": "التالي",
-    "back": "رجوع",
-    "continue": "متابعة",
-    "share": "مشاركة",
-    "close": "إغلاق",
-    "submit": "إرسال"
+    "next": "كمّل",
+    "back": "ارجع",
+    "continue": "كمّل",
+    "share": "ابعت",
+    "close": "اقفل",
+    "submit": "ابعت"
   },
   "player": {
-    "tapToStart": "اضغط للبدء",
-    "tapToContinue": "اضغط للمتابعة",
-    "replay": "إعادة",
-    "unavailableTitle": "هذا الرابط غير متاح",
-    "unavailableBody": "قد يكون تم حذفه أو لم يصبح جاهزًا بعد.",
-    "metaFor": "إلى {name}",
-    "metaGeneric": "رسالة لك"
+    "tapToStart": "دوس عشان تفتح",
+    "tapToContinue": "دوس وكمّل",
+    "replay": "شوفه تاني",
+    "unavailableTitle": "اللينك ده مش متاح",
+    "unavailableBody": "يمكن اتمسح أو لسه ما اتنشرش.",
+    "metaFor": "لـ {name}",
+    "metaGeneric": "رسالة ليك"
   },
   "order": {
     "status": {
-      "pending": "بانتظار الدفع",
-      "submitted": "قيد المراجعة",
-      "approved": "تمت الموافقة",
+      "pending": "مستني الدفع",
+      "submitted": "بنراجعه",
+      "approved": "اتأكد",
       "rejected": "مرفوض",
-      "refunded": "تم الاسترداد"
+      "refunded": "الفلوس رجعت"
     }
   },
   "common": {
-    "loading": "جارٍ التحميل…",
-    "error": "حدث خطأ ما",
-    "free": "مجاني",
+    "loading": "ثانية واحدة…",
+    "error": "حصلت مشكلة",
+    "free": "ببلاش",
     "egp": "ج.م"
   },
   "auth": {
