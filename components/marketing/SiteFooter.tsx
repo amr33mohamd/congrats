@@ -28,7 +28,8 @@ export async function SiteFooter() {
       <div className="mx-auto grid max-w-6xl grid-cols-2 gap-token-8 px-token-4 py-token-8 md:grid-cols-5">
         <div className="col-span-2 md:col-span-1">
           <div className="flex items-center gap-2 font-heading text-xl font-bold text-ink">
-            <span aria-hidden className="text-2xl">🎉</span>
+            {/* eslint-disable-next-line @next/next/no-img-element -- static SVG brand mark */}
+          <img src="/brand/logomark.svg" alt="" aria-hidden width={28} height={28} className="h-7 w-7" />
             Congrats
           </div>
           <p className="mt-token-3 max-w-xs text-sm text-muted">{t('footer.tagline')}</p>

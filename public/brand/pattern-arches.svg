@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 80 80" role="img" aria-label="Congrats arch pattern tile">
+  <g fill="none" stroke="#D6A435" stroke-opacity="0.35" stroke-width="1.5">
+    <path d="M22 80V38C22 24.84 31 17 40 10C49 17 58 24.84 58 38V80Z"/>
+    <path d="M29 80V42C29 32.6 34.5 27 40 22C45.5 27 51 32.6 51 42V80Z" stroke-opacity="0.21"/>
+  </g>
+  <path d="M80 34C81.2 38.8 81.2 38.8 86 40C81.2 41.2 81.2 41.2 80 46C78.8 41.2 78.8 41.2 74 40C78.8 38.8 78.8 38.8 80 34Z" fill="#D6A435" fill-opacity="0.42"/>
+  <path d="M0 34C1.2 38.8 1.2 38.8 6 40C1.2 41.2 1.2 41.2 0 46C-1.2 41.2 -1.2 41.2 -6 40C-1.2 38.8 -1.2 38.8 0 34Z" fill="#D6A435" fill-opacity="0.42"/>
+</svg>

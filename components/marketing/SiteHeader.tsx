@@ -68,7 +68,8 @@ export function SiteHeader({
             onDark ? 'text-white' : 'text-ink',
           )}
         >
-          <span aria-hidden className="text-2xl">🎉</span>
+          {/* eslint-disable-next-line @next/next/no-img-element -- static SVG brand mark */}
+          <img src="/brand/logomark.svg" alt="" aria-hidden width={28} height={28} className="h-7 w-7" />
           Congrats
         </Link>
 
