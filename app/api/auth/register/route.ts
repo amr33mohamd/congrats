@@ -15,6 +15,7 @@ import { rateLimit, clientIp } from '@/lib/rate-limit';
 import { withErrors, readJson, created } from '@/server/dashboard/http';
 import { DashboardError } from '@/server/dashboard/errors';
 import { notifyAdmin, cairoTime } from '@/lib/admin-notify';
+import { isSyntheticEmail } from '@/lib/oauth-user';
 
 export const runtime = 'nodejs';
 
@@ -34,6 +35,9 @@ export async function POST(req: Request) {
     }
 
     const body = await readJson(req, RegisterSchema);
+    // Reserved for Facebook accounts without an email (lib/oauth-user.ts);
+    // registering one would hijack that person's sign-in.
+    if (isSyntheticEmail(body.email)) throw DashboardError.validation('Invalid email.');
 
     const policyError = passwordPolicyError(body.password);
     if (policyError) throw DashboardError.validation(policyError);

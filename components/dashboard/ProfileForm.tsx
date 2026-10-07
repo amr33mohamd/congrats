@@ -4,6 +4,7 @@ import * as React from 'react';
 import { signOut } from 'next-auth/react';
 import { useTranslations, useLocale } from 'next-intl';
 import { Button, Input, Card, CardTitle, Spinner } from '@/components/ui';
+import { isSyntheticEmail } from '@/lib/synthetic-email';
 
 interface Profile {
   id: string;
@@ -116,7 +117,8 @@ export function ProfileForm() {
       <Card className="mb-token-6">
         <form onSubmit={saveProfile} className="flex flex-col gap-token-4">
           <Field label={t('emailLabel')} hint={t('emailHint')}>
-            <Input type="email" value={profile.email} disabled />
+            {/* Facebook accounts without an email have a placeholder address. */}
+            <Input type="email" value={isSyntheticEmail(profile.email) ? 'Facebook' : profile.email} disabled />
           </Field>
           <Field label={t('nameLabel')}>
             <Input value={name} onChange={(e) => setName(e.target.value)} maxLength={80} />
