@@ -4,6 +4,8 @@
  * testable in dev without an email provider). Swap in any provider here without
  * touching callers.
  */
+import { isSyntheticEmail } from './synthetic-email';
+
 export interface EmailMessage {
   to: string;
   subject: string;
@@ -14,6 +16,9 @@ export interface EmailMessage {
 const FROM = process.env.EMAIL_FROM ?? 'Congrats <no-reply@congrats.dev>';
 
 export async function sendEmail(msg: EmailMessage): Promise<{ delivered: boolean }> {
+  // Facebook accounts without an email have a placeholder address; there is
+  // no inbox behind it.
+  if (isSyntheticEmail(msg.to)) return { delivered: false };
   const apiKey = process.env.RESEND_API_KEY;
 
   if (!apiKey) {

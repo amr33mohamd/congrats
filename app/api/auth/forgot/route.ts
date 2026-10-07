@@ -12,6 +12,7 @@ import { users, passwordResetTokens } from '@/db/schema';
 import { generateResetToken, RESET_TOKEN_TTL_MS } from '@/lib/reset-token';
 import { sendEmail, appBaseUrl } from '@/lib/email';
 import { rateLimit, clientIp } from '@/lib/rate-limit';
+import { isSyntheticEmail } from '@/lib/oauth-user';
 import { withErrors, readJson, json } from '@/server/dashboard/http';
 import { DashboardError } from '@/server/dashboard/errors';
 
@@ -36,7 +37,8 @@ export async function POST(req: Request) {
     const found = await db.select({ id: users.id, email: users.email }).from(users).where(eq(users.email, email)).limit(1);
     const user = found[0];
 
-    if (user) {
+    // Placeholder addresses of Facebook-only accounts never receive mail.
+    if (user && !isSyntheticEmail(user.email)) {
       const { raw, hash } = generateResetToken();
       await db.insert(passwordResetTokens).values({
         userId: user.id,

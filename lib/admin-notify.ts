@@ -5,6 +5,7 @@
  * slow or failing email never delays or breaks the user's request.
  */
 import { sendEmail, appBaseUrl } from './email';
+import { isSyntheticEmail } from './synthetic-email';
 
 export function adminNotifyEmail(env: Record<string, string | undefined> = process.env): string | null {
   const to = (env.ADMIN_NOTIFY_EMAIL || env.SEED_ADMIN_EMAIL || '').trim();
@@ -24,14 +25,16 @@ export interface AdminNotice {
 }
 
 export function renderAdminNotice(n: AdminNotice, base = appBaseUrl()): { html: string; text: string } {
-  const rows = n.rows
+  // A Facebook-only account's placeholder address means nothing to the owner.
+  const shown = n.rows.map(([k, v]) => [k, isSyntheticEmail(v) ? 'Facebook account (no email)' : v] as const);
+  const rows = shown
     .map(([k, v]) => `<tr><td style="padding:4px 12px 4px 0;color:#666">${escapeHtml(k)}</td><td style="padding:4px 0"><b>${escapeHtml(v)}</b></td></tr>`)
     .join('');
   const button = n.actionPath
     ? `<p style="margin-top:20px"><a href="${base}${n.actionPath}" style="background:#F0436E;color:#fff;padding:10px 18px;border-radius:999px;text-decoration:none">${escapeHtml(n.actionLabel ?? 'Open')}</a></p>`
     : '';
   const html = `<div style="font-family:system-ui,sans-serif;font-size:15px"><h2 style="margin:0 0 12px">${escapeHtml(n.subject)}</h2><table>${rows}</table>${button}</div>`;
-  const text = [n.subject, ...n.rows.map(([k, v]) => `${k}: ${v}`), n.actionPath ? `${base}${n.actionPath}` : '']
+  const text = [n.subject, ...shown.map(([k, v]) => `${k}: ${v}`), n.actionPath ? `${base}${n.actionPath}` : '']
     .filter(Boolean)
     .join('\n');
   return { html, text };
