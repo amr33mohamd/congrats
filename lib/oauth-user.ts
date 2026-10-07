@@ -5,7 +5,8 @@
  *
  *  - A verified provider email links to the account with that email (so a
  *    person who signed up with email+password and later taps "Google" lands in
- *    the same account).
+ *    the same account). Linking clears that account's password, which was
+ *    never verified — see upsertOAuthUser.
  *  - Facebook may return no email (phone-only accounts, or the person declined
  *    the permission). Those users get a stable synthetic address,
  *    `fb-<id>@users.congrats.local`, derived from the provider account id, so
@@ -95,14 +96,22 @@ export async function upsertOAuthUser(db: DbClient, p: OAuthProfileInput): Promi
       row = (await db.select().from(users).where(eq(users.email, primary)).limit(1))[0];
       if (!row) throw new Error('oauth upsert failed');
     }
-  } else if ((!row.displayName && displayName) || (!row.avatarUrl && avatarUrl)) {
-    // Fill blanks only; never overwrite what the person set themselves.
+  } else {
+    // Sign-up never verifies email ownership, so a password on an account
+    // matched by a provider-verified email may have been set by someone who
+    // registered that address first. The provider just proved who owns it:
+    // drop the unverified password so the squatter is locked out. The owner
+    // can set a new one through "forgot password", which only reaches them.
+    const dropPassword = row.email === primary && primary !== synthetic && Boolean(row.passwordHash);
     const patch = {
       ...(!row.displayName && displayName ? { displayName } : {}),
       ...(!row.avatarUrl && avatarUrl ? { avatarUrl } : {}),
+      ...(dropPassword ? { passwordHash: null } : {}),
     };
-    const updated = await db.update(users).set(patch).where(eq(users.id, row.id)).returning();
-    row = updated[0] ?? row;
+    if (Object.keys(patch).length) {
+      const updated = await db.update(users).set(patch).where(eq(users.id, row.id)).returning();
+      row = updated[0] ?? row;
+    }
   }
 
   if (row.isBlocked) return { status: 'blocked' };

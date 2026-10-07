@@ -74,7 +74,7 @@ describe('upsertOAuthUser', () => {
     expect(row.avatarUrl).toBe('https://lh3.googleusercontent.com/a/photo');
   });
 
-  it('links to an existing email+password account and keeps its data', async () => {
+  it('links to an existing email+password account, keeps its data and drops the unverified password', async () => {
     const email = `existing-${uniq()}@example.com`;
     const [existing] = await db
       .insert(users)
@@ -92,7 +92,9 @@ describe('upsertOAuthUser', () => {
     expect(r.status === 'ok' && r.created).toBe(false);
     const row = (await db.select().from(users).where(eq(users.id, existing.id)))[0];
     expect(row.displayName).toBe('Mona'); // not overwritten
-    expect(row.passwordHash).toBe('hash');
+    // The password was never verified, so whoever set it (possibly a squatter
+    // who registered this address first) loses access; the owner resets it.
+    expect(row.passwordHash).toBeNull();
     expect(row.locale).toBe('en');
     expect(row.avatarUrl).toBe('https://example.com/a.png'); // blank filled
   });
