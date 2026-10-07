@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { NextIntlClientProvider } from 'next-intl';
 import { setRequestLocale, getMessages } from 'next-intl/server';
-import { Inter, Cairo, Tajawal } from 'next/font/google';
+import { Inter, Cairo, IBM_Plex_Sans_Arabic, Fredoka, Aref_Ruqaa } from 'next/font/google';
 import { routing, dirFor } from '@/i18n/routing';
 import { SITE_URL } from '@/lib/site';
 import { Tracker } from '@/components/analytics/Tracker';
@@ -54,20 +54,37 @@ export async function generateMetadata({
       description: seo.description,
       images: [`/${l}/og`],
     },
-    icons: { icon: '/favicon.svg', apple: '/favicon.svg' },
+    icons: {
+      icon: [
+        { url: '/favicon.svg', type: 'image/svg+xml' },
+        { url: '/brand/png/favicon-32.png', sizes: '32x32', type: 'image/png' },
+      ],
+      apple: '/apple-touch-icon.png',
+    },
     robots: { index: true, follow: true },
   };
 }
 
-// Per-locale fonts via next/font. AR → Cairo (headings) + Tajawal (body),
-// EN → Inter for both. Exposed as the CSS variables tailwind.config references.
+// Per-locale fonts via next/font (brand identity: docs/brand/brand-guide.md).
+// AR → Cairo (headings) + IBM Plex Sans Arabic (body) + Aref Ruqaa (display,
+// short festive phrases only). EN → Fredoka (headings/display) + Inter (body).
+// Exposed as the CSS variables tailwind.config references.
 const inter = Inter({ subsets: ['latin'], variable: '--font-en', display: 'swap' });
-const cairo = Cairo({ subsets: ['arabic'], variable: '--font-ar-heading', display: 'swap' });
-const tajawal = Tajawal({
-  subsets: ['arabic'],
-  weight: ['400', '500', '700'],
+const fredoka = Fredoka({ subsets: ['latin'], variable: '--font-en-heading', display: 'swap' });
+const cairo = Cairo({ subsets: ['arabic', 'latin'], variable: '--font-ar-heading', display: 'swap' });
+const plexArabic = IBM_Plex_Sans_Arabic({
+  subsets: ['arabic', 'latin'],
+  weight: ['400', '500', '600', '700'],
   variable: '--font-ar-body',
   display: 'swap',
+});
+// Display face is opt-in (`font-display`); don't preload it on every page.
+const arefRuqaa = Aref_Ruqaa({
+  subsets: ['arabic'],
+  weight: ['400', '700'],
+  variable: '--font-ar-display',
+  display: 'swap',
+  preload: false,
 });
 
 export function generateStaticParams() {
@@ -94,11 +111,19 @@ export default async function LocaleLayout({
 
   // Bind --font-heading / --font-body to the locale-appropriate families.
   const fontVars = isAr
-    ? `${cairo.variable} ${tajawal.variable}`
-    : `${inter.variable}`;
+    ? `${cairo.variable} ${plexArabic.variable} ${arefRuqaa.variable}`
+    : `${inter.variable} ${fredoka.variable}`;
   const fontStyle = isAr
-    ? ({ ['--font-heading' as string]: 'var(--font-ar-heading)', ['--font-body' as string]: 'var(--font-ar-body)' } as React.CSSProperties)
-    : ({ ['--font-heading' as string]: 'var(--font-en)', ['--font-body' as string]: 'var(--font-en)' } as React.CSSProperties);
+    ? ({
+        ['--font-heading' as string]: 'var(--font-ar-heading)',
+        ['--font-body' as string]: 'var(--font-ar-body)',
+        ['--font-display' as string]: 'var(--font-ar-display)',
+      } as React.CSSProperties)
+    : ({
+        ['--font-heading' as string]: 'var(--font-en-heading)',
+        ['--font-body' as string]: 'var(--font-en)',
+        ['--font-display' as string]: 'var(--font-en-heading)',
+      } as React.CSSProperties);
 
   return (
     <html lang={locale} dir={dir} className={fontVars} style={fontStyle}>

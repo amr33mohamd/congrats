@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1080" viewBox="0 0 1080 1080" role="img" aria-label="Congrats">
+  <defs>
+    <radialGradient id="av-bg" cx="35%" cy="25%" r="90%"><stop stop-color="#FA6189"/><stop offset=".55" stop-color="#D92B5A"/><stop offset="1" stop-color="#AE1F44"/></radialGradient>
+    <linearGradient id="av-gold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#F6DC8C"/><stop offset=".55" stop-color="#D6A435"/><stop offset="1" stop-color="#B5862A"/></linearGradient>
+  </defs>
+  <rect width="1080" height="1080" fill="url(#av-bg)"/>
+  <g transform="scale(1) translate(540 540) scale(5.6) translate(-60 -60)">
+    <path d="M32 170V62C32 43.2 46 32 60 22C74 32 88 43.2 88 62V170Z" fill="#FFF7F3"/>
+    <path d="M60 68C63.8 84.2 63.8 84.2 80 88C63.8 91.8 63.8 91.8 60 108C56.2 91.8 56.2 91.8 40 88C56.2 84.2 56.2 84.2 60 68Z" fill="url(#av-gold)"/>
+    <circle cx="60" cy="10" r="4" fill="#FFE0A8"/>
+  </g>
+</svg>

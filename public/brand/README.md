@@ -1,80 +1,42 @@
-# Congrats — Brand Assets 🎉
+# Congrats · تهاني ودعوات — Brand Assets
 
-Logo and identity files for **Congrats / مبروك**.
+Full identity: [`docs/brand/brand-guide.md`](../../docs/brand/brand-guide.md) ·
+visual brand book: [`docs/brand/brand-book.html`](../../docs/brand/brand-book.html).
 
-## The logo
+## The mark — "باب الفرح"
 
-The mark is a **celebration card** with a rising **sparkle + confetti** — it says
-"a moment, being sent." It carries the product's core promise: *Send a moment they'll
-never forget* / *ابعت لحظة مش هينسوها*.
+A **Fatimid keel arch** (Cairo's Al-Aqmar / Al-Azhar) opening into a rose squircle, with a
+**gold sparkle** inside — the door you're invited through, and the moment of joy. A small gold
+finial sits above it. All wordmarks are **outlined paths** (Cairo 800, Fredoka 600, Aref Ruqaa),
+so no font is needed to render any file here.
 
-| File             | What it is                                  | Use                                   |
-| ---------------- | ------------------------------------------- | ------------------------------------- |
-| `logomark.svg`   | Icon only (squircle, full color)            | App icon, avatars, favicons, social   |
-| `logo-en.svg`    | Icon + "Congrats" wordmark + tagline        | Headers, marketing, English contexts  |
-| `logo-ar.svg`    | Icon + "مبروك" wordmark + tagline (RTL)      | Headers, marketing, Arabic contexts   |
-| `logo-mono.svg`  | Single-color mark (`currentColor`)          | One-color print, watermarks, stamps   |
-| `../favicon.svg` | Simplified mark for tiny sizes              | Browser tab favicon                   |
+| File | What it is | Use |
+| --- | --- | --- |
+| `logomark.svg` | Mark, full colour | Default mark ≥ 24 px |
+| `favicon.svg` (+ `/favicon.svg`) | Small-size master (bigger arch, no finial) | ≤ 48 px, browser tabs |
+| `logo-mono.svg` | One colour, `currentColor`, arch knocked out | Print, stamps, single-ink |
+| `logomark-glyph.svg` | Arch + sparkle only, `currentColor` | Watermarks, foil, pattern |
+| `logo-ar.svg` / `logo-ar-reverse.svg` | **Primary** Arabic-first lockup: كونجراتس + تهاني ودعوات | Arabic contexts (light / dark bg) |
+| `logo-en.svg` / `logo-en-reverse.svg` | Congrats + GREETINGS & INVITATIONS | English contexts |
+| `logo-bilingual.svg` / `-reverse` | Congrats + تهاني ودعوات | Social, covers, OG |
+| `wordmark-ar.svg`, `wordmark-en.svg` | Wordmark only, `currentColor` | Tight horizontal spaces |
+| `app-icon.svg` | Full-bleed 1024 icon (OS masks it) | PWA / stores |
+| `social-avatar.svg` | 1080², circle-crop safe | Profile pictures |
+| `facebook-cover.svg`, `whatsapp-cover.svg` | 1640×624, 1920×1080 | Covers |
+| `pattern-arches.svg` | 80 px tile | Backgrounds at 8–15 % opacity |
+| `og-ar.png` | Legacy OG image (unchanged) | |
 
-The mono mark inherits `currentColor`, so you can recolor it in CSS:
+### PNG exports — `png/`
+`favicon-32/48`, `apple-touch-icon-180`, `icon-192/512/1024`, `logomark-512`,
+`social-avatar-1080`, `instagram-profile-1080`, `facebook-profile-720`, `whatsapp-profile-640`,
+`facebook-cover-1640x624`, `whatsapp-cover-1920x1080`, and every lockup at 1200 px wide.
+`/apple-touch-icon.png` (root) is the 180 px icon iOS probes for.
 
-```html
-<span style="color:#AE1F44"><!-- inline logo-mono.svg --></span>
-```
+## Rules
+- Clear space = ¼ of the mark's width on all sides. Minimums: 16 px (`favicon.svg`), 24 px (`logomark.svg`), 120 px wide (lockups).
+- Use `-reverse` lockups on the night stage or on photos with a dark scrim.
+- Don't stretch, rotate, recolour the arch, add shadows/outlines, or re-type the wordmark.
 
-## Palette (mirrors `app/globals.css`)
-
-| Token         | Hex       | RGB             | Use                            |
-| ------------- | --------- | --------------- | ------------------------------ |
-| Brand Rose    | `#F0436E` | 240 · 67 · 110  | Primary, buttons, highlights   |
-| Deep Rose     | `#AE1F44` | 174 · 31 · 68   | Gradients, hover, depth        |
-| Gold          | `#D6A435` | 214 · 164 · 53  | Accents, confetti, premium     |
-| Ink           | `#14100E` | 20 · 16 · 14    | Headings & body text           |
-| Cream         | `#FAF8F7` | 250 · 248 · 247 | Backgrounds, surfaces          |
-
-Primary gradient: `linear-gradient(135deg, #F0436E → #AE1F44)`.
-
-### The product ships dark
-
-The site and app UI sit on near-black, so on screen the mark is usually placed
-on these surfaces rather than on cream (the light values above remain for print
-and anything that has to stay on paper — see `.light` in `app/globals.css`):
-
-| Token       | Hex       | Use                                  |
-| ----------- | --------- | ------------------------------------ |
-| Surface 2   | `#0C0A0B` | Page background, OG card, PWA splash |
-| Surface     | `#1A1518` | Cards, footer, panels                |
-| Border      | `#30292D` | Hairlines on dark                    |
-| Ink (dark)  | `#F7F4F5` | Text on dark                         |
-| Muted       | `#9E9498` | Secondary text on dark               |
-
-The social-share card is generated in code (`components/marketing/og-card.tsx`)
-from these tokens — there is no PNG to keep in sync.
-
-## Typography
-
-- **Headings / wordmark:** Fredoka (fallback Poppins) — friendly, rounded.
-- **Body:** Poppins / system sans.
-- **Arabic:** Cairo / Tajawal — for correct shaping and a warm, modern feel.
-
-## Clear space & minimum size
-
-- Keep clear space around the mark equal to **¼ of its width** on all sides.
-- Minimum size: **24px** for the favicon mark, **120px** wide for the full lockups.
-
-## Don'ts
-
-- Don't recolor the full-color mark outside the rose/gold palette.
-- Don't stretch, rotate, or add drop shadows to the wordmark.
-- Don't place the color logo on busy photos — use `logo-mono.svg` (white) instead.
-
-## Regenerating PNGs
-
-SVGs are the source of truth. To export raster versions (e.g. for stores or email):
-
-```bash
-# via headless Chrome
-"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
-  --headless --screenshot=logomark.png --window-size=512,512 \
-  --default-background-color=00000000 "file://$PWD/logomark.svg"
-```
+## Palette (mirrors `app/globals.css`, `remotion/src/brand.ts`)
+Signature Rose `#F0436E` (graphics) · Rose 600 `#D92B5A` (fills with white text) · Rose 700 `#AE1F44` ·
+Gold `#D6A435` / `#E9C667` · Night `#150C11` / `#0C0A0B` · Cream `#FAF8F7` · Ink `#14100E` · Faience `#4FC3C9`.

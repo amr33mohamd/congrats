@@ -17,6 +17,10 @@ export default function manifest(): MetadataRoute.Manifest {
     icons: [
       { src: '/favicon.svg', sizes: 'any', type: 'image/svg+xml' },
       { src: '/brand/logomark.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' },
+      // Full-bleed PNGs (public/brand/app-icon.svg) for installers that skip SVG.
+      { src: '/brand/png/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+      { src: '/brand/png/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+      { src: '/brand/png/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
     ],
   };
 }

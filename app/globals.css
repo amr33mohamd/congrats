@@ -6,25 +6,61 @@
  * Design tokens (two-layer): raw ramps → semantic aliases. Components/UI kit
  * reference the SEMANTIC aliases only. Colors are space-separated RGB channels
  * so Tailwind's `rgb(var(--token) / <alpha>)` works.
+ *
+ * Brand identity: docs/brand/brand-guide.md · brand book: docs/brand/brand-book.html
+ * Mirrored for the video ads in remotion/src/brand.ts — change both together.
+ * Contrast notes (WCAG 2.1) are inline; every text/background pair the chrome
+ * uses is ≥ 4.5:1 unless marked "large/UI only" (≥ 3:1).
  */
 :root {
   /* ── raw ramps ── */
-  --c-brand-50: 255 241 244;
-  --c-brand-300: 255 143 168;
-  --c-brand-500: 240 67 110;
-  --c-brand-700: 174 31 68;
-  --c-gold-300: 233 198 103;
-  --c-gold-500: 214 164 53;
+  /* Rose — فرحة. 500 is the SIGNATURE rose (logo, gradients, glows). Text-bearing
+   * fills use 600+, because white on 500 is only 3.66:1. */
+  --c-brand-50: 255 241 244;   /* #FFF1F4 */
+  --c-brand-100: 255 224 232;  /* #FFE0E8 */
+  --c-brand-200: 255 194 209;  /* #FFC2D1 */
+  --c-brand-300: 255 143 168;  /* #FF8FA8 */
+  --c-brand-400: 250 97 137;   /* #FA6189 */
+  --c-brand-500: 240 67 110;   /* #F0436E  signature */
+  --c-brand-600: 217 43 90;    /* #D92B5A  white text 4.73:1 */
+  --c-brand-650: 194 33 79;    /* #C2214F  white text 5.79:1 */
+  --c-brand-700: 174 31 68;    /* #AE1F44  white text 6.82:1 */
+  --c-brand-800: 133 23 58;    /* #85173A */
+  --c-brand-900: 92 15 39;     /* #5C0F27 */
+  /* Gold — شياكة. Accent only: never a text colour on light paper below 700. */
+  --c-gold-50: 255 248 230;    /* #FFF8E6 */
+  --c-gold-100: 255 239 199;   /* #FFEFC7 */
+  --c-gold-200: 255 224 168;   /* #FFE0A8 */
+  --c-gold-300: 233 198 103;   /* #E9C667 */
+  --c-gold-500: 214 164 53;    /* #D6A435 */
+  --c-gold-600: 181 134 42;    /* #B5862A */
+  --c-gold-700: 140 102 32;    /* #8C6620  on white 5.20:1 */
+  /* Night — the stage the product lives on (plum-tinted near-blacks). */
+  --c-night-950: 12 10 11;     /* #0C0A0B  page */
+  --c-night-900: 21 12 17;     /* #150C11  hero stage */
+  --c-night-850: 26 21 24;     /* #1A1518  surface */
+  --c-night-800: 36 29 33;     /* #241D21  raised */
+  --c-night-700: 48 41 45;     /* #30292D  border */
+  --c-night-500: 158 148 152;  /* #9E9498  muted text, 6.13:1 on surface */
+  --c-night-50: 247 244 245;   /* #F7F4F5  text */
+  /* Paper — warm neutrals for anything that has to stay light. */
   --c-neutral-0: 255 255 255;
-  --c-neutral-50: 250 248 247;
+  --c-neutral-50: 250 248 247; /* #FAF8F7 cream */
   --c-neutral-100: 242 238 236;
+  --c-neutral-200: 230 223 219;
   --c-neutral-300: 217 210 206;
-  --c-neutral-500: 140 129 123;
+  --c-neutral-500: 140 129 123; /* decorative only (3.58:1 on cream) */
+  --c-neutral-600: 111 100 95;  /* #6F645F muted text, 5.41:1 on cream */
   --c-neutral-700: 74 66 62;
   --c-neutral-900: 26 22 20;
-  --c-ink: 20 16 14;
+  --c-ink: 20 16 14;            /* #14100E */
+  /* Faience — Egyptian turquoise, the "info" hue and an illustration accent. */
+  --c-faience-300: 79 195 201;  /* #4FC3C9 */
+  --c-faience-700: 14 124 128;  /* #0E7C80 */
   --c-success-500: 34 160 109;
+  --c-success-700: 24 122 82;   /* #187A52 */
   --c-danger-500: 220 53 69;
+  --c-danger-600: 198 47 62;    /* #C62F3E */
   --c-warning-500: 214 164 53;
 
   /* ── semantic aliases ──
@@ -34,27 +70,54 @@
    * `.light` below restores the original light set for anything that has to
    * stay on paper (print, a QR code, a payment screenshot). */
   color-scheme: dark;
-  --color-brand: var(--c-brand-500);
+  /* Solid brand FILL (buttons, active chips). Carries white text → 600. */
+  --color-brand: var(--c-brand-600);
+  /* `text-brand` resolves here (see tailwind textColor): rose that reads on
+   * near-black — 6.13:1 on surface, 5.61:1 on raised. */
+  --color-brand-text: var(--c-brand-400);
   /* Text accent on tinted brand fills — must stay legible on near-black, so
    * it is the LIGHT end of the ramp here, not the dark end. */
   --color-brand-strong: var(--c-brand-300);
-  /* Hover fill for solid brand buttons. Separate from the text accent: on dark
-   * a hover should brighten, but white-on-light-pink would fail contrast. */
-  --color-brand-hover: 250 90 130;
+  /* Hover fill for solid brand buttons: deepens, so white text keeps 5.79:1.
+   * (The old lighter hover dropped white text to 3.07:1.) */
+  --color-brand-hover: var(--c-brand-650);
+  /* Signature rose for glows, gradients, illustration — never under text. */
+  --color-brand-signature: var(--c-brand-500);
+  --color-on-brand: var(--c-neutral-0);
   --color-gold: var(--c-gold-300);
-  --color-ink: 247 244 245;
-  --color-surface: 26 21 24;
-  --color-surface-2: 12 10 11;
-  --color-muted: 158 148 152;
-  --color-border: 48 41 45;
+  --color-ink: var(--c-night-50);
+  --color-surface: var(--c-night-850);
+  --color-surface-2: var(--c-night-950);
+  --color-surface-3: var(--c-night-800);
+  --color-stage: var(--c-night-900);
+  --color-muted: var(--c-night-500);
+  --color-border: var(--c-night-700);
   --color-success: 52 199 133;
   --color-danger: 240 92 104;
   --color-warning: var(--c-gold-300);
+  --color-info: var(--c-faience-300);
   /* Always-dark backdrop, independent of theme: the lightbox behind a payment
    * screenshot and the code well in the template editor both need to stay dark
    * so their contents read the same way in either theme. Previously these used
    * `ink`, which broke the moment `ink` became the light-on-dark text colour. */
   --color-backdrop: 14 11 13;
+
+  /* ── type ──
+   * Families are bound per locale in app/[locale]/layout.tsx via next/font:
+   *   AR  heading Cairo · body IBM Plex Sans Arabic · display Aref Ruqaa
+   *   EN  heading Fredoka · body Inter · display Fredoka
+   * Scale: 1.25 (major third) on a 16px body; display sizes are fluid. */
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5625rem;
+  --text-3xl: 1.953rem;
+  --text-4xl: 2.441rem;
+  --text-display: clamp(2.25rem, 7vw, 4.75rem);
+  --leading-tight: 1.15;
+  --leading-body: 1.7; /* Arabic needs more line height than Latin */
 
   /* ── spacing scale ── */
   --space-1: 0.25rem;
@@ -64,12 +127,14 @@
   --space-6: 1.5rem;
   --space-8: 2rem;
 
-  /* ── radii ── */
+  /* ── radii ── soft, never sharp; the arch is the signature shape. */
   --radius-sm: 0.375rem;
   --radius-md: 0.625rem;
   --radius-lg: 1rem;
   --radius-xl: 1.5rem;
   --radius-pill: 9999px;
+  /* Keel-arch top for feature frames/photos: big round top, small bottom. */
+  --radius-arch: 999px 999px var(--radius-lg) var(--radius-lg) / 60% 60% var(--radius-lg) var(--radius-lg);
 
   /* ── motion ── */
   --ease-standard: cubic-bezier(0.2, 0, 0, 1);
@@ -83,23 +148,29 @@
    * carries a hairline light ring to separate the surface from the page. */
   --shadow-card: 0 1px 0 rgb(255 255 255 / 0.04) inset, 0 8px 24px -12px rgb(0 0 0 / 0.7);
   --shadow-pop: 0 1px 0 rgb(255 255 255 / 0.06) inset, 0 18px 56px -18px rgb(0 0 0 / 0.85);
+  /* Rose glow under the primary CTA — the "celebration light". */
+  --shadow-glow: 0 10px 40px -8px rgb(var(--c-brand-500) / 0.6);
 }
 
 /* Escape hatch: opt a subtree back onto paper (print views, a QR code, a
  * payment screenshot the admin has to read as the buyer sent it). */
 .light {
   color-scheme: light;
+  --color-brand: var(--c-brand-600);
+  --color-brand-text: var(--c-brand-700);    /* 6.44:1 on cream */
   --color-brand-strong: var(--c-brand-700);
   --color-brand-hover: var(--c-brand-700);
-  --color-gold: var(--c-gold-500);
+  --color-gold: var(--c-gold-700);           /* gold as TEXT on paper must be 700 */
   --color-ink: var(--c-ink);
   --color-surface: var(--c-neutral-0);
   --color-surface-2: var(--c-neutral-50);
-  --color-muted: var(--c-neutral-500);
+  --color-surface-3: var(--c-neutral-100);
+  --color-muted: var(--c-neutral-600);       /* was 500 → 3.58:1, now 5.41:1 */
   --color-border: var(--c-neutral-300);
-  --color-success: var(--c-success-500);
-  --color-danger: var(--c-danger-500);
-  --color-warning: var(--c-warning-500);
+  --color-success: var(--c-success-700);     /* was 3.32:1 on white, now 5.32:1 */
+  --color-danger: var(--c-danger-600);
+  --color-warning: var(--c-gold-700);
+  --color-info: var(--c-faience-700);
   --shadow-card: 0 1px 2px rgb(20 16 14 / 0.04), 0 8px 24px -12px rgb(20 16 14 / 0.18);
   --shadow-pop: 0 12px 48px -16px rgb(20 16 14 / 0.32);
 }
