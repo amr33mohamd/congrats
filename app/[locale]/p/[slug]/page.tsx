@@ -41,15 +41,20 @@ export async function generateMetadata({
   const description = preview.description;
   const image = `/${locale}/p/${slug}/og?v=${previewVersion(preview)}`;
   const alt = [preview.kicker, preview.headline].filter(Boolean).join(' — ');
+  // The layout's canonical is the home page; left in place, Facebook treats
+  // every card link as the home page and previews that instead of the card.
+  const url = `/${locale}/p/${slug}`;
   return {
     title: { absolute: title },
     description,
     robots,
+    alternates: { canonical: url },
     // A page-level openGraph replaces the layout's, so the image is re-stated.
     openGraph: {
       title,
       description,
       type: 'website',
+      url,
       locale: preview.locale === 'ar' ? 'ar_EG' : 'en_GB',
       images: [{ url: image, width: 1200, height: 630, alt, type: 'image/jpeg' }],
     },
