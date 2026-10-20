@@ -349,6 +349,8 @@ export const BoundExperienceSchema = z.object({
   theme: TemplateThemeSchema.default({}),
   /** The sender's own song; when set it replaces the template's `theme.music`. */
   musicUrl: z.string().optional(),
+  /** The template's category slug ('invitation', 'birthday'…), for the link preview. */
+  occasion: z.string().optional(),
   // The TemplateDefinition scenes the steps bind to (so the Player is self-contained).
   scenes: z.array(SceneDefSchema).min(1),
   steps: z.array(BoundStepSchema).min(1),

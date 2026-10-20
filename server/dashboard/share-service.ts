@@ -19,7 +19,7 @@ import { eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import type { UserContext } from '@/server/db-context';
 import { getDb } from '@/db';
-import { shareLinks, experiences, templates, steps, media } from '@/db/schema';
+import { shareLinks, experiences, templates, steps, media, categories } from '@/db/schema';
 import type { Media } from '@/db/schema';
 import {
   parseTemplateDefinition,
@@ -189,7 +189,10 @@ export async function publishExperience(
  * NB: uses a fresh `getDb()` (no user context) because the viewer is anonymous;
  * the gate itself is the authorization.
  */
-export async function getPublicExperienceBySlug(slug: string): Promise<BoundExperience | null> {
+export async function getPublicExperienceBySlug(
+  slug: string,
+  opts: { countView?: boolean } = {},
+): Promise<BoundExperience | null> {
   const db = await getDb();
 
   const link = (await db.select().from(shareLinks).where(eq(shareLinks.slug, slug)).limit(1))[0];
@@ -279,9 +282,13 @@ export async function getPublicExperienceBySlug(slug: string): Promise<BoundExpe
 
   const music = latestMusic(mediaRows);
   const musicUrl = music ? await signedUrlForMedia(music) : undefined;
+  const occasion = tpl.categoryId
+    ? (await db.select({ slug: categories.slug }).from(categories).where(eq(categories.id, tpl.categoryId)).limit(1))[0]?.slug
+    : undefined;
 
-  // Best-effort view bump.
-  await db
+  // Best-effort view bump — not for the link-preview image, which WhatsApp
+  // and friends fetch on their own every time the link is pasted.
+  if (opts.countView !== false) await db
     .update(shareLinks)
     .set({ viewCount: link.viewCount + 1, lastViewedAt: new Date() })
     .where(eq(shareLinks.id, link.id));
@@ -295,6 +302,7 @@ export async function getPublicExperienceBySlug(slug: string): Promise<BoundExpe
     fields: cardFields,
     theme: def.theme,
     ...(musicUrl ? { musicUrl } : {}),
+    ...(occasion ? { occasion } : {}),
     scenes: def.scenes,
     steps: boundSteps,
   };

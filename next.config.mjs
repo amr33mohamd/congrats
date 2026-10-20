@@ -147,6 +147,10 @@ const nextConfig = {
       ...(process.env.VERCEL ? ['node_modules/@electric-sql/pglite/**'] : []),
     ],
   },
+  // The card link-preview image draws with this font (read from disk at runtime).
+  outputFileTracingIncludes: {
+    '/[locale]/p/[slug]/og': ['./assets/fonts/Amiri-Bold-noGSUB.ttf'],
+  },
   // Expose one DSN to the browser bundle so operators only set SENTRY_DSN.
   env: { NEXT_PUBLIC_SENTRY_DSN: sentryDsn },
   async headers() {

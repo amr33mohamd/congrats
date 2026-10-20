@@ -7,10 +7,19 @@ import { Player } from '@/components/player';
 // render. The gate (link active + not disabled + not expired + isUnlocked) means
 // paid+unapproved experiences still return null and render the neutral page.
 import { getPublicExperienceBySlug } from '@/server/dashboard/share-service';
+import { headers } from 'next/headers';
+import { cardPreview, previewVersion } from '@/lib/card-preview';
 
 // generateMetadata and the page both need the experience. Without request-level
 // dedupe every open ran the full load twice — and bumped the view counter twice.
-const loadPublicExperience = cache(getPublicExperienceBySlug);
+// Link-preview crawlers (WhatsApp, Facebook, Telegram…) fetch the page to
+// read its tags; that is not someone opening the card, so it is not a view.
+const PREVIEW_BOT = /WhatsApp|facebookexternalhit|Facebot|TelegramBot|Twitterbot|Slackbot|Discordbot|LinkedInBot|Googlebot|bingbot|SkypeUriPreview|Applebot|redditbot|Pinterest/i;
+
+const loadPublicExperience = cache(async (slug: string) => {
+  const ua = (await headers()).get('user-agent') ?? '';
+  return getPublicExperienceBySlug(slug, { countView: !PREVIEW_BOT.test(ua) });
+});
 
 // Public player route. F0 owns this: it enforces the unlock gate SERVER-SIDE
 // and renders the shared Player. Recipients are unauthenticated.
@@ -25,16 +34,26 @@ export async function generateMetadata({
   const robots = { index: false, follow: false };
   const exp = await loadPublicExperience(slug);
   if (!exp) return { title: 'Congrats', robots };
-  const t = await getTranslations({ locale, namespace: 'common' });
-  const title = exp.recipientName
-    ? t('player.metaFor', { name: exp.recipientName })
-    : t('player.metaGeneric');
+  // Title, description and picture come from the card itself (names, line,
+  // date, photo), so a pasted link shows whose card it is.
+  const preview = cardPreview(exp);
+  const title = preview.title;
+  const description = preview.description;
+  const image = `/${locale}/p/${slug}/og?v=${previewVersion(preview)}`;
+  const alt = [preview.kicker, preview.headline].filter(Boolean).join(' — ');
   return {
-    title,
+    title: { absolute: title },
+    description,
     robots,
     // A page-level openGraph replaces the layout's, so the image is re-stated.
-    openGraph: { title, type: 'website', images: [{ url: `/${locale}/og`, width: 1200, height: 630 }] },
-    twitter: { card: 'summary_large_image', title, images: [`/${locale}/og`] },
+    openGraph: {
+      title,
+      description,
+      type: 'website',
+      locale: preview.locale === 'ar' ? 'ar_EG' : 'en_GB',
+      images: [{ url: image, width: 1200, height: 630, alt, type: 'image/jpeg' }],
+    },
+    twitter: { card: 'summary_large_image', title, description, images: [image] },
   };
 }
 
