@@ -1,14 +1,14 @@
 import { userContext } from '@/server/db-context';
 import { withErrors, created } from '@/server/dashboard/http';
 import { DashboardError } from '@/server/dashboard/errors';
-import { MediaKindSchema, MAX_MEDIA_BYTES } from '@/server/dashboard/schemas';
-import { uploadMedia, assertImageBytes } from '@/server/dashboard/media-service';
+import { MediaKindSchema, MAX_ANY_MEDIA_BYTES } from '@/server/dashboard/schemas';
+import { uploadMedia, assertMediaBytes } from '@/server/dashboard/media-service';
 
 export const runtime = 'nodejs';
 
 /**
  * POST /api/dashboard/media (multipart/form-data) — direct upload path.
- * Fields: file (Blob), kind, experienceId?, stepId?, width?, height?
+ * Fields: file (Blob), kind, experienceId?, stepId?, templateStepId?, slotKey?, width?, height?
  *
  * This is the dev/local convenience that accepts the bytes, stores them via the
  * StorageAdapter, and persists the media row in one step. The contract's
@@ -23,8 +23,8 @@ export async function POST(req: Request) {
     // still let a client make us allocate an arbitrarily large payload. The
     // slack covers multipart boundaries and the small text fields.
     const declared = Number(req.headers.get('content-length') ?? '');
-    if (Number.isFinite(declared) && declared > MAX_MEDIA_BYTES + 64 * 1024) {
-      throw DashboardError.validation(`file too large (max ${MAX_MEDIA_BYTES} bytes)`);
+    if (Number.isFinite(declared) && declared > MAX_ANY_MEDIA_BYTES + 64 * 1024) {
+      throw DashboardError.validation(`file too large (max ${MAX_ANY_MEDIA_BYTES} bytes)`);
     }
 
     const form = await req.formData().catch(() => {
@@ -35,8 +35,9 @@ export async function POST(req: Request) {
     if (!(file instanceof Blob)) {
       throw DashboardError.validation('missing file');
     }
-    if (file.size > MAX_MEDIA_BYTES) {
-      throw DashboardError.validation(`file too large (max ${MAX_MEDIA_BYTES} bytes)`);
+    // The exact cap depends on the type (photo, video, song): checked below.
+    if (file.size > MAX_ANY_MEDIA_BYTES) {
+      throw DashboardError.validation(`file too large (max ${MAX_ANY_MEDIA_BYTES} bytes)`);
     }
 
     const kindParsed = MediaKindSchema.safeParse(form.get('kind') ?? 'step_image');
@@ -52,9 +53,10 @@ export async function POST(req: Request) {
 
     const data = Buffer.from(await file.arrayBuffer());
     // Trust the bytes, not the browser-supplied `file.type`: anything that is
-    // not really a JPEG/PNG/WebP/GIF is rejected here, and the stored (and
-    // later served) Content-Type is the sniffed one.
-    const mime = assertImageBytes(data);
+    // not really an accepted image (or, for photo slots and music, video and
+    // audio) is rejected here, and the stored (and later served) Content-Type
+    // is the sniffed one.
+    const mime = assertMediaBytes(data, kindParsed.data);
 
     const media = await uploadMedia(ctx, {
       kind: kindParsed.data,

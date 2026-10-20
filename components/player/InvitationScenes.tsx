@@ -4,7 +4,7 @@ import * as React from 'react';
 import { motion } from 'framer-motion';
 import { applyTokens, slotValue, type SceneRenderPropsLike } from './invitation-types';
 import { cssFamily } from '@/lib/fonts';
-import { readableOn } from './color';
+import { readableOn, inkFor } from './color';
 import { track } from '@/lib/track';
 import { isTheatre, Chandelier, CalendarMark, ClockMark } from './TheatreArt';
 import type { EventName } from '@/lib/track-events';
@@ -47,6 +47,9 @@ function colors(p: SceneRenderPropsLike) {
 }
 
 const isAr = (p: SceneRenderPropsLike) => p.direction === 'rtl';
+
+/** A field's colour, darker when the sender switched that field to darker. */
+const ink = (p: SceneRenderPropsLike, key: string, color: string) => inkFor(p.step, key, color);
 
 /** Multi-line values ("Mr. X\nMrs. Y") keep their line breaks. */
 function Lines({ value, className, style }: { value: string; className?: string; style?: React.CSSProperties }) {
@@ -100,14 +103,14 @@ function Bracket({ color, flip }: { color: string; flip?: boolean }) {
   );
 }
 
-function SectionHeading({ p, text }: { p: SceneRenderPropsLike; text: string }) {
+function SectionHeading({ p, text, slot }: { p: SceneRenderPropsLike; text: string; slot: string }) {
   const c = colors(p);
   if (!text) return null;
   return (
     <div className="mb-token-6 text-center">
       <h2
         className={`font-semibold ${isAr(p) ? 'text-2xl' : 'text-xl uppercase tracking-[0.18em]'}`}
-        style={{ color: c.accent, fontFamily: c.heading }}
+        style={{ color: ink(p, slot, c.accent), fontFamily: c.heading }}
       >
         {text}
       </h2>
@@ -139,8 +142,8 @@ function Shell({ children }: { children: React.ReactNode }) {
 /** Families — each side's names in a column, a hairline rule between. */
 export function FamiliesScene(p: SceneRenderPropsLike) {
   const c = colors(p);
-  const left = { label: t(p, 'groomLabel'), names: t(p, 'groomFamily') };
-  const right = { label: t(p, 'brideLabel'), names: t(p, 'brideFamily') };
+  const left = { label: t(p, 'groomLabel'), names: t(p, 'groomFamily'), labelKey: 'groomLabel', namesKey: 'groomFamily' };
+  const right = { label: t(p, 'brideLabel'), names: t(p, 'brideFamily'), labelKey: 'brideLabel', namesKey: 'brideFamily' };
   return (
     <Shell>
       <Reveal p={p}>
@@ -149,7 +152,11 @@ export function FamiliesScene(p: SceneRenderPropsLike) {
           (every saved card has it there); `heading` is the generic key. Read
           both, or the title silently never renders.
         */}
-        <SectionHeading p={p} text={t(p, 'familiesHeading') || t(p, 'heading')} />
+        <SectionHeading
+          p={p}
+          text={t(p, 'familiesHeading') || t(p, 'heading')}
+          slot={t(p, 'familiesHeading') ? 'familiesHeading' : 'heading'}
+        />
       </Reveal>
       <Reveal p={p} delay={0.15}>
         <div className="grid grid-cols-[1fr_1px_1fr] items-start gap-token-4">
@@ -159,11 +166,11 @@ export function FamiliesScene(p: SceneRenderPropsLike) {
             ) : (
               <div key={i}>
                 {side.label ? (
-                  <p className="mb-token-2 text-sm" style={{ color: c.text, opacity: 0.75 }}>
+                  <p className="mb-token-2 text-sm" style={{ color: ink(p, side.labelKey, c.text), opacity: 0.75 }}>
                     {side.label}
                   </p>
                 ) : null}
-                <Lines value={side.names} className="text-lg font-semibold leading-relaxed" style={{ color: c.accent, fontFamily: c.heading }} />
+                <Lines value={side.names} className="text-lg font-semibold leading-relaxed" style={{ color: ink(p, side.namesKey, c.accent), fontFamily: c.heading }} />
               </div>
             ),
           )}
@@ -200,16 +207,16 @@ export function EventScene(p: SceneRenderPropsLike) {
         </Reveal>
       ) : null}
       <Reveal p={p}>
-        <SectionHeading p={p} text={t(p, 'label')} />
+        <SectionHeading p={p} text={t(p, 'label')} slot="label" />
       </Reveal>
       <Reveal p={p} delay={0.12}>
         {t(p, 'venue') ? (
-          <p className="text-lg font-semibold" style={{ color: c.text, fontFamily: c.heading }}>
+          <p className="text-lg font-semibold" style={{ color: ink(p, 'venue', c.text), fontFamily: c.heading }}>
             {t(p, 'venue')}
           </p>
         ) : null}
         {t(p, 'when') ? (
-          <p className={`mt-token-1 text-sm ${isAr(p) ? '' : 'tracking-wide'}`} style={{ color: c.text, opacity: 0.8 }}>
+          <p className={`mt-token-1 text-sm ${isAr(p) ? '' : 'tracking-wide'}`} style={{ color: ink(p, 'when', c.text), opacity: 0.8 }}>
             {isTheatre(p.theme) ? <ClockMark color={c.accent} /> : null} {t(p, 'when')}
           </p>
         ) : null}
@@ -280,10 +287,10 @@ export function VenueScene(p: SceneRenderPropsLike) {
   return (
     <Shell>
       <Reveal p={p}>
-        <SectionHeading p={p} text={t(p, 'heading')} />
+        <SectionHeading p={p} text={t(p, 'heading')} slot="heading" />
       </Reveal>
       <Reveal p={p} delay={0.12}>
-        <Lines value={address} className="text-base leading-relaxed" style={{ color: c.text }} />
+        <Lines value={address} className="text-base leading-relaxed" style={{ color: ink(p, 'address', c.text) }} />
         {href ? (
           <a
             href={href}
@@ -321,10 +328,10 @@ export function RsvpScene(p: SceneRenderPropsLike) {
   return (
     <Shell>
       <Reveal p={p}>
-        <SectionHeading p={p} text={t(p, 'heading')} />
+        <SectionHeading p={p} text={t(p, 'heading')} slot="heading" />
       </Reveal>
       <Reveal p={p} delay={0.12}>
-        <Lines value={t(p, 'body')} className="text-base leading-relaxed" style={{ color: c.text }} />
+        <Lines value={t(p, 'body')} className="text-base leading-relaxed" style={{ color: ink(p, 'body', c.text) }} />
         {href ? (
           <a
             href={href}
@@ -363,16 +370,16 @@ export function GiftScene(p: SceneRenderPropsLike) {
   return (
     <Shell>
       <Reveal p={p}>
-        <SectionHeading p={p} text={t(p, 'heading')} />
+        <SectionHeading p={p} text={t(p, 'heading')} slot="heading" />
       </Reveal>
       <Reveal p={p} delay={0.12}>
-        <Lines value={t(p, 'body')} className="text-base leading-relaxed" style={{ color: c.text }} />
+        <Lines value={t(p, 'body')} className="text-base leading-relaxed" style={{ color: ink(p, 'body', c.text) }} />
         {account ? (
           <div
             className="mx-auto mt-token-6 flex max-w-xs items-center justify-between gap-token-3 rounded-xl px-token-4 py-token-3"
             style={{ boxShadow: `inset 0 0 0 1px ${c.accent}66` }}
           >
-            <span className="font-mono text-sm tabular-nums" style={{ color: c.text }} dir="ltr">
+            <span className="font-mono text-sm tabular-nums" style={{ color: ink(p, 'account', c.text) }} dir="ltr">
               {account}
             </span>
             <button

@@ -200,29 +200,111 @@ export const dashboardApi = {
     ).then((r) => (Array.isArray(r) ? r : (r.templates ?? []))),
 };
 
+type MediaRowWire = {
+  id: string;
+  bucket: string;
+  storagePath: string;
+  mimeType?: string | null;
+  width?: number | null;
+  height?: number | null;
+};
+
+/** What a picked file is, by its type or (phones often send none) its extension. */
+export function mediaTypeOf(file: File): 'image' | 'video' | 'audio' | null {
+  const t = file.type.toLowerCase();
+  if (t.startsWith('image/')) return 'image';
+  if (t.startsWith('video/')) return 'video';
+  if (t.startsWith('audio/')) return 'audio';
+  const ext = file.name.toLowerCase().split('.').pop() ?? '';
+  if (['jpg', 'jpeg', 'png', 'webp', 'gif'].includes(ext)) return 'image';
+  if (['mp4', 'mov', 'webm', 'm4v'].includes(ext)) return 'video';
+  if (['mp3', 'm4a', 'aac', 'ogg', 'oga', 'wav'].includes(ext)) return 'audio';
+  return null;
+}
+
+/** The declared type the server checks first (the bytes have the final say). */
+function declaredMime(file: File): string {
+  if (file.type) return file.type;
+  const ext = file.name.toLowerCase().split('.').pop() ?? '';
+  const byExt: Record<string, string> = {
+    mp4: 'video/mp4', m4v: 'video/mp4', mov: 'video/quicktime', webm: 'video/webm',
+    mp3: 'audio/mpeg', m4a: 'audio/mp4', aac: 'audio/aac', ogg: 'audio/ogg', oga: 'audio/ogg', wav: 'audio/wav',
+    jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', webp: 'image/webp', gif: 'image/gif',
+  };
+  return byExt[ext] ?? 'application/octet-stream';
+}
+
 /**
- * Upload one image and return the stored media row.
+ * Largest file sent through POST /api/dashboard/media. A Vercel function
+ * refuses request bodies over 4.5 MB, and the multipart wrapper adds a little.
+ */
+const MULTIPART_MAX_BYTES = 4 * 1024 * 1024;
+
+type UploadKind = 'step_image' | 'payment_screenshot' | 'music';
+type UploadCtx = {
+  kind: UploadKind;
+  experienceId?: string;
+  stepId?: string;
+  // Stable scene id + image-slot key for experience photos (multi-slot / gallery).
+  templateStepId?: string;
+  slotKey?: string;
+};
+
+/**
+ * Upload one photo, video or song and return the stored media row.
  *
- * Sends the file to POST /api/dashboard/media, which checks the bytes, stores
- * them (local disk or Vercel Blob) and records the media row in one request.
- * The older sign → PUT → confirm path never worked from the browser: the sign
- * response names its URL `uploadUrl` (the client read `url`, so every upload
- * went to "undefined"), nothing accepted the PUT, and the kinds the client
- * sent ('experience-media', 'payment-proof') were not valid media kinds.
+ * Photos (shrunk in the browser first) and small files go to POST
+ * /api/dashboard/media, which checks the bytes, stores them (local disk or
+ * Vercel Blob) and records the media row in one request. A video or song too
+ * big for that request goes straight to Vercel Blob instead: /media/sign mints
+ * the key, @vercel/blob/client uploads it with a token from
+ * /media/client-upload, and /media/confirm checks the bytes and records the
+ * row. Locally (no Blob store) sign answers `direct: false` and the multipart
+ * route takes any size.
+ *
+ * `onProgress` reports 0–1 for the direct path (the multipart path has no
+ * progress events in fetch).
  */
 export async function uploadAndConfirm(
   file: File,
-  ctx: {
-    kind: 'step_image' | 'payment_screenshot';
-    experienceId?: string;
-    stepId?: string;
-    // Stable scene id + image-slot key for experience photos (multi-slot / gallery).
-    templateStepId?: string;
-    slotKey?: string;
-  },
+  ctx: UploadCtx,
+  onProgress?: (fraction: number) => void,
 ): Promise<ConfirmedMedia> {
-  file = await shrinkForUpload(file);
-  const dims = await readImageDimensions(file).catch(() => ({ width: 0, height: 0 }));
+  const type = mediaTypeOf(file);
+  let dims = { width: 0, height: 0 };
+  if (type === 'image') {
+    file = await shrinkForUpload(file);
+    dims = await readImageDimensions(file).catch(() => dims);
+  } else if (type === 'video') {
+    dims = await readVideoDimensions(file).catch(() => dims);
+  }
+
+  let row: MediaRowWire;
+  if (type !== 'image' && file.size > MULTIPART_MAX_BYTES) {
+    const target = await postJson<{ bucket: string; key: string; direct: boolean }>('/api/dashboard/media/sign', {
+      kind: ctx.kind,
+      mime: declaredMime(file),
+      bytes: file.size,
+      experienceId: ctx.experienceId,
+    });
+    row = target.direct
+      ? await uploadDirect(file, target, ctx, dims, onProgress)
+      : await uploadMultipart(file, ctx, dims);
+  } else {
+    row = await uploadMultipart(file, ctx, dims);
+  }
+
+  return {
+    id: row.id,
+    // Served through the auth-checked storage route (owner preview / shared card).
+    url: `/api/storage/${row.bucket}/${row.storagePath.split('/').map(encodeURIComponent).join('/')}`,
+    width: row.width ?? dims.width,
+    height: row.height ?? dims.height,
+    mime: row.mimeType ?? undefined,
+  };
+}
+
+async function uploadMultipart(file: File, ctx: UploadCtx, dims: { width: number; height: number }): Promise<MediaRowWire> {
   const form = new FormData();
   form.append('kind', ctx.kind);
   for (const [k, v] of Object.entries({
@@ -244,8 +326,57 @@ export async function uploadAndConfirm(
   } catch {
     throw new ApiError('Network error. Please try again.', 0);
   }
+  return readMediaResponse(res);
+}
+
+async function uploadDirect(
+  file: File,
+  target: { bucket: string; key: string },
+  ctx: UploadCtx,
+  dims: { width: number; height: number },
+  onProgress?: (fraction: number) => void,
+): Promise<MediaRowWire> {
+  // Loaded on demand: only senders adding a big video or song need it.
+  const { upload } = await import('@vercel/blob/client');
+  try {
+    await upload(`${target.bucket}/${target.key}`, file, {
+      access: 'private',
+      handleUploadUrl: '/api/dashboard/media/client-upload',
+      contentType: declaredMime(file),
+      multipart: file.size > 8 * 1024 * 1024,
+      onUploadProgress: onProgress ? (p) => onProgress(p.percentage / 100) : undefined,
+    });
+  } catch (err) {
+    throw new ApiError(err instanceof Error && err.message ? err.message : 'Upload failed. Please try again.', 0);
+  }
+  let res: Response;
+  try {
+    res = await fetch('/api/dashboard/media/confirm', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      cache: 'no-store',
+      body: JSON.stringify({
+        bucket: target.bucket,
+        key: target.key,
+        mime: declaredMime(file),
+        bytes: file.size,
+        kind: ctx.kind,
+        experienceId: ctx.experienceId,
+        templateStepId: ctx.templateStepId,
+        slotKey: ctx.slotKey,
+        ...(dims.width ? { width: dims.width } : {}),
+        ...(dims.height ? { height: dims.height } : {}),
+      }),
+    });
+  } catch {
+    throw new ApiError('Network error. Please try again.', 0);
+  }
+  return readMediaResponse(res);
+}
+
+async function readMediaResponse(res: Response): Promise<MediaRowWire> {
   const body = (await res.json().catch(() => ({}))) as {
-    media?: { id: string; bucket: string; storagePath: string; width?: number | null; height?: number | null };
+    media?: MediaRowWire;
     error?: { message?: string } | string;
     message?: string;
   };
@@ -253,14 +384,45 @@ export async function uploadAndConfirm(
     const msg = typeof body.error === 'object' ? body.error?.message : body.message;
     throw new ApiError(msg || 'Upload failed. Please try again.', res.status);
   }
-  const m = body.media;
-  return {
-    id: m.id,
-    // Served through the auth-checked storage route (owner preview / shared card).
-    url: `/api/storage/${m.bucket}/${m.storagePath.split('/').map(encodeURIComponent).join('/')}`,
-    width: m.width ?? dims.width,
-    height: m.height ?? dims.height,
-  };
+  return body.media;
+}
+
+async function postJson<T>(url: string, payload: unknown): Promise<T> {
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      cache: 'no-store',
+      body: JSON.stringify(payload),
+    });
+  } catch {
+    throw new ApiError('Network error. Please try again.', 0);
+  }
+  const body = (await res.json().catch(() => ({}))) as T & { error?: { message?: string } | string; message?: string };
+  if (!res.ok) {
+    const msg = typeof body.error === 'object' ? body.error?.message : body.message;
+    throw new ApiError(msg || 'Upload failed. Please try again.', res.status);
+  }
+  return body;
+}
+
+function readVideoDimensions(file: File): Promise<{ width: number; height: number }> {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const v = document.createElement('video');
+    v.preload = 'metadata';
+    v.muted = true;
+    v.onloadedmetadata = () => {
+      resolve({ width: v.videoWidth, height: v.videoHeight });
+      URL.revokeObjectURL(url);
+    };
+    v.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error('could not read video'));
+    };
+    v.src = url;
+  });
 }
 
 /** Longest side kept for an uploaded photo — sharper than any phone screen needs. */

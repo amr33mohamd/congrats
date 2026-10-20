@@ -17,7 +17,7 @@ import {
 import { getVariants, typewriterChild, resolveScenePreset } from '@/lib/animation-presets';
 import { cssFamily } from '@/lib/fonts';
 import { FamiliesScene, EventScene, VenueScene, RsvpScene, GiftScene, Flourish } from './InvitationScenes';
-import { hexLuminance, readableOn } from './color';
+import { hexLuminance, readableOn, darken, isDarkSlot } from './color';
 import { isTheatre, Monogram, PalaceFacade } from './TheatreArt';
 
 // Re-exported: the Player and the gallery stage pick gate/sheet ink with these.
@@ -41,7 +41,12 @@ interface TextBlock {
   key: string;
   value: string;
   animation?: string;
+  /** The sender switched this field to a darker shade (isDarkSlot). */
+  dark?: boolean;
 }
+
+/** The block's colour, or its darker shade when the sender asked for it. */
+const ink = (b: TextBlock | undefined, color: string) => (b?.dark ? darken(color) : color);
 
 function textBlocks(
   scene: SceneDef,
@@ -57,6 +62,7 @@ function textBlocks(
       // resolves {recipient} and {field} tokens inside free text.
       value: applyTokens(slotValue(scene, step, s.key, fields), recipient, fields),
       animation: s.animation,
+      dark: isDarkSlot(step, s.key),
     }))
     .filter((b) => b.value.trim().length > 0);
 }
@@ -97,6 +103,47 @@ function sceneImages(scene: SceneDef, step: BoundStep): BoundMedia[] {
     (m) => imageKeys.has(m.slot) || m.slot === 'image' || m.slot === 'gallery',
   );
   return matched.length > 0 ? matched : step.media;
+}
+
+/**
+ * Starts a slot video silently. Autoplay is only allowed muted, and React
+ * sets `muted` as a property after mount (the server-rendered tag has no
+ * attribute), so set it here and kick play() — a refusal just leaves the
+ * first frame showing, like a photo.
+ */
+function startMutedVideo(el: HTMLVideoElement | null) {
+  if (!el) return;
+  el.muted = true;
+  el.defaultMuted = true;
+  const p = el.play() as Promise<void> | undefined;
+  p?.catch?.(() => undefined);
+}
+
+const VIDEO_ATTRS = { autoPlay: true, muted: true, loop: true, playsInline: true, preload: 'auto' } as const;
+
+/** A photo slot's media: the photo, or the sender's video playing muted on loop. */
+function SlotMedia({ media, className }: { media: BoundMedia; className: string }) {
+  if (media.video) {
+    return <video ref={startMutedVideo} src={media.url} className={className} aria-hidden {...VIDEO_ATTRS} />;
+  }
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img src={media.url} alt="" className={className} />;
+}
+
+/** SlotMedia with framer-motion props (entrance variants, gallery carousel). */
+function MotionSlotMedia({ media, ...rest }: { media: BoundMedia } & React.ComponentProps<typeof motion.img>) {
+  if (media.video) {
+    return (
+      <motion.video
+        ref={startMutedVideo}
+        src={media.url}
+        aria-hidden
+        {...VIDEO_ATTRS}
+        {...(rest as React.ComponentProps<typeof motion.video>)}
+      />
+    );
+  }
+  return <motion.img src={media.url} alt="" {...rest} />;
 }
 
 /* ──────────────────────────── style resolution ──────────────────────────── */
@@ -298,25 +345,38 @@ function TextStack({
   if (blocks.length === 0) return null;
   const [first, ...rest] = blocks;
   const wantsTypewriter = typewriter || first.animation === 'typewriter';
+  const shaded = (b: TextBlock): Resolved =>
+    b.dark ? { ...r, headingColor: darken(r.headingColor), textColor: darken(r.textColor) } : r;
   return (
     <>
       {wantsTypewriter && !reducedMotion ? (
-        <TypewriterHeading text={first.value} r={r} direction={direction} reducedMotion={reducedMotion} active={active} />
+        <TypewriterHeading text={first.value} r={shaded(first)} direction={direction} reducedMotion={reducedMotion} active={active} />
       ) : (
-        <Heading text={first.value} r={r} />
+        <Heading text={first.value} r={shaded(first)} />
       )}
       {rest.map((b) => (
-        <Body key={b.key} text={b.value} r={r} />
+        <Body key={b.key} text={b.value} r={shaded(b)} />
       ))}
     </>
   );
 }
 
+/**
+ * Ornaments drawn down both sides of the section (the florals' vines): text
+ * must stay between them, or a long pair of names runs over the flowers.
+ */
+const SIDE_ORNAMENTS = new Set(['florals']);
+
+function hasSideOrnament(p: SceneRenderProps): boolean {
+  const kind = (p.scene.ornament ?? p.theme.ornament)?.kind;
+  return Boolean(kind && SIDE_ORNAMENTS.has(kind));
+}
+
 /** Standard flex frame honoring align + vertical position. */
-function Frame({ r, children }: { r: Resolved; children: React.ReactNode }) {
+function Frame({ r, children, inset = false }: { r: Resolved; children: React.ReactNode; inset?: boolean }) {
   return (
     <div
-      className={`relative z-[1] flex h-full w-full flex-col px-token-6 ${alignItems[r.align]} ${justify[r.position]}`}
+      className={`relative z-[1] flex h-full w-full flex-col ${inset ? 'px-[17cqw]' : 'px-token-6'} ${alignItems[r.align]} ${justify[r.position]}`}
       style={{ ['--scene-accent' as string]: r.accent }}
     >
       {children}
@@ -366,7 +426,7 @@ function CoverScene(p: SceneRenderProps) {
   const images = sceneImages(p.scene, p.step);
   const blocks = textBlocks(p.scene, p.step, p.recipientName, p.fields);
   return (
-    <Frame r={r}>
+    <Frame r={r} inset={hasSideOrnament(p)}>
       <motion.div
         className={`flex flex-col ${alignItems[r.align]}`}
         variants={variants}
@@ -375,11 +435,10 @@ function CoverScene(p: SceneRenderProps) {
         exit="exit"
       >
         {images[0] ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={images[0].url} alt="" className={`mb-token-6 h-44 w-44 ${frameClass(r.imageStyle === 'rounded' ? 'circle' : r.imageStyle)}`} />
+          <SlotMedia media={images[0]} className={`mb-token-6 h-44 w-44 ${frameClass(r.imageStyle === 'rounded' ? 'circle' : r.imageStyle)}`} />
         ) : null}
         {isTheatre(p.theme) && blocks[0] ? (
-          <Monogram names={blocks[0].value} color={r.headingColor} font={r.headingFamily} />
+          <Monogram names={blocks[0].value} color={ink(blocks[0], r.headingColor)} font={r.headingFamily} />
         ) : null}
         <TextStack blocks={blocks} r={r} direction={p.direction} reducedMotion={p.reducedMotion} active={p.active} />
       </motion.div>
@@ -399,9 +458,8 @@ function PhotoRevealScene(p: SceneRenderProps) {
   return (
     <Frame r={r}>
       {images[0] ? (
-        <motion.img
-          src={images[0].url}
-          alt=""
+        <MotionSlotMedia
+          media={images[0]}
           variants={variants}
           initial="hidden"
           animate={p.active ? 'visible' : 'hidden'}
@@ -530,8 +588,7 @@ function GalleryScene(p: SceneRenderProps) {
           <TextStack blocks={blocks} r={r} direction={p.direction} reducedMotion active={p.active} />
           <div className="grid w-full max-w-lg gap-token-3" style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
             {images.map((img, i) => (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img key={i} src={img.url} alt="" className={`aspect-square w-full ${frameClass(r.imageStyle === 'rounded' ? 'card' : r.imageStyle)}`} />
+              <SlotMedia key={i} media={img} className={`aspect-square w-full ${frameClass(r.imageStyle === 'rounded' ? 'card' : r.imageStyle)}`} />
             ))}
           </div>
         </div>
@@ -557,10 +614,9 @@ function GalleryScene(p: SceneRenderProps) {
             if (d < -count / 2) d += count;
             const far = Math.abs(d) > 2;
             return (
-              <motion.img
+              <MotionSlotMedia
                 key={i}
-                src={img.url}
-                alt=""
+                media={img}
                 className={`absolute left-1/2 top-1/2 h-full w-auto max-w-[78%] ${frame}`}
                 style={{ transformOrigin: 'center' }}
                 animate={{
@@ -608,10 +664,8 @@ function GiftRevealScene(p: SceneRenderProps) {
         exit="exit"
       >
         {image ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={image.url}
-            alt=""
+          <SlotMedia
+            media={image}
             className={`mb-token-6 aspect-square w-[min(60cqw,260px)] ${frameClass(r.imageStyle)}`}
           />
         ) : (
@@ -675,7 +729,7 @@ function QuoteScene(p: SceneRenderProps) {
             // No synthetic italic or letter-spacing in Arabic: slanting a
             // joined script and spacing its letters apart both break it.
             className={`font-semibold leading-snug [text-wrap:balance] ${p.direction === 'rtl' ? '' : 'italic'}`}
-            style={{ color: r.headingColor, fontSize: r.headingSize, fontFamily: r.headingFamily }}
+            style={{ color: ink(quote, r.headingColor), fontSize: r.headingSize, fontFamily: r.headingFamily }}
           >
             {quote.value}
           </p>
@@ -684,7 +738,7 @@ function QuoteScene(p: SceneRenderProps) {
           <p
             key={b.key}
             className={`mt-token-4 text-base ${p.direction === 'rtl' ? '' : 'uppercase tracking-[0.2em]'}`}
-            style={{ color: r.textColor, opacity: 0.85 }}
+            style={{ color: ink(b, r.textColor), opacity: 0.85 }}
           >
             — {b.value}
           </p>
@@ -728,7 +782,7 @@ function LetterScene(p: SceneRenderProps) {
         {heading ? (
           <p
             className="font-heading text-2xl font-semibold"
-            style={{ fontFamily: r.headingFamily, color: letterInk }}
+            style={{ fontFamily: r.headingFamily, color: ink(heading, letterInk) }}
           >
             {heading.value}
           </p>
@@ -740,7 +794,7 @@ function LetterScene(p: SceneRenderProps) {
             <p
               key={b.key}
               className="mt-token-6 whitespace-pre-line text-end text-xl font-semibold"
-              style={{ fontFamily: r.headingFamily, color: signInk }}
+              style={{ fontFamily: r.headingFamily, color: ink(b, signInk) }}
             >
               {b.value}
             </p>
@@ -748,7 +802,7 @@ function LetterScene(p: SceneRenderProps) {
             <p
               key={b.key}
               className="mt-token-3 whitespace-pre-line text-lg leading-relaxed"
-              style={{ color: letterInk, opacity: 0.82 }}
+              style={{ color: ink(b, letterInk), opacity: 0.82 }}
             >
               {b.value}
             </p>

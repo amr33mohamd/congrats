@@ -323,6 +323,8 @@ export const BoundMediaSchema = z.object({
   url: z.string(), // signed/short-lived URL minted server-side
   width: z.number().int().positive().optional(),
   height: z.number().int().positive().optional(),
+  /** A video in a photo slot: plays muted, looping, inline. */
+  video: z.boolean().optional(),
 });
 export type BoundMedia = z.infer<typeof BoundMediaSchema>;
 
@@ -345,6 +347,8 @@ export const BoundExperienceSchema = z.object({
   /** Values of the card-level fields, keyed by field key. */
   fields: z.record(z.string()).default({}),
   theme: TemplateThemeSchema.default({}),
+  /** The sender's own song; when set it replaces the template's `theme.music`. */
+  musicUrl: z.string().optional(),
   // The TemplateDefinition scenes the steps bind to (so the Player is self-contained).
   scenes: z.array(SceneDefSchema).min(1),
   steps: z.array(BoundStepSchema).min(1),

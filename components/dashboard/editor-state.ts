@@ -13,6 +13,8 @@ export interface LocalMedia {
   mediaId?: string;
   width?: number;
   height?: number;
+  /** A video in a photo slot. */
+  video?: boolean;
 }
 
 export interface LocalStep {
@@ -54,8 +56,11 @@ export function seedSteps(exp: EditorExperience): LocalStep[] {
       const media: LocalMedia[] = (existing?.media ?? []).map((m) => ({
         slot: m.slot,
         url: m.url,
+        // The editor view adds the row id so replacing a photo can delete the old one.
+        mediaId: (m as { mediaId?: string }).mediaId,
         width: m.width,
         height: m.height,
+        ...(m.video ? { video: true } : {}),
       }));
       return {
         templateStepId: scene.id,
@@ -115,6 +120,7 @@ export function toBoundExperience(
     recipientName,
     fields,
     theme: exp.theme ?? {},
+    ...(exp.musicUrl ? { musicUrl: exp.musicUrl } : {}),
     scenes: exp.scenes,
     steps: steps
       .slice()
@@ -131,6 +137,7 @@ export function toBoundExperience(
           url: m.url,
           width: m.width,
           height: m.height,
+          ...(m.video ? { video: true } : {}),
         })),
         animationConfig: s.animationConfig ?? {},
       })),
@@ -159,4 +166,22 @@ export function toStepUpserts(steps: LocalStep[]): StepUpsert[] {
         })),
       },
     }));
+}
+
+/** The slot keys switched to "darker" on a step (read by the Player's isDarkSlot). */
+export function darkSlots(step: LocalStep): string[] {
+  const list = step.animationConfig?.darkText;
+  return Array.isArray(list) ? list.filter((k): k is string => typeof k === 'string') : [];
+}
+
+/** Switch some of a step's text slots to (or back from) the darker shade. */
+export function withDarkSlots(step: LocalStep, keys: string[], on: boolean): LocalStep {
+  const set = new Set(darkSlots(step));
+  for (const k of keys) {
+    if (on) set.add(k);
+    else set.delete(k);
+  }
+  const { darkText: _drop, ...rest } = step.animationConfig ?? {};
+  void _drop;
+  return { ...step, animationConfig: set.size ? { ...rest, darkText: [...set] } : rest };
 }

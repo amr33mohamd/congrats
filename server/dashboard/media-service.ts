@@ -15,6 +15,7 @@ import { nanoid } from 'nanoid';
 import type { UserContext } from '@/server/db-context';
 import {
   getStorage,
+  storageDriver,
   experienceMediaKey,
   paymentProofKey,
   isWellFormedMediaKey,
@@ -22,34 +23,89 @@ import {
 } from '@/server/storage';
 import type { Media } from '@/db/schema';
 import { DashboardError } from './errors';
-import { ALLOWED_IMAGE_MIME, MAX_MEDIA_BYTES, type SignMediaInput, type ConfirmMediaInput } from './schemas';
+import {
+  ALLOWED_IMAGE_MIME,
+  ALLOWED_VIDEO_MIME,
+  ALLOWED_AUDIO_MIME,
+  MAX_MEDIA_BYTES,
+  MAX_VIDEO_BYTES,
+  MAX_AUDIO_BYTES,
+  type SignMediaInput,
+  type ConfirmMediaInput,
+} from './schemas';
 import * as repo from './repositories';
-import { sniffImageMime, type SniffedImageMime } from './image-sniff';
+import {
+  sniffImageMime,
+  sniffVideoMime,
+  sniffAudioMime,
+  type SniffedImageMime,
+  type SniffedVideoMime,
+  type SniffedAudioMime,
+} from './image-sniff';
 
 const EXT_BY_MIME: Record<string, string> = {
   'image/jpeg': 'jpg',
   'image/png': 'png',
   'image/webp': 'webp',
   'image/gif': 'gif',
+  'video/mp4': 'mp4',
+  'video/quicktime': 'mov',
+  'video/webm': 'webm',
+  'audio/mpeg': 'mp3',
+  'audio/mp4': 'm4a',
+  'audio/aac': 'aac',
+  'audio/ogg': 'ogg',
+  'audio/wav': 'wav',
 };
 
-function bucketForKind(kind: SignMediaInput['kind']): StorageBucket {
+type MediaKind = SignMediaInput['kind'];
+export type SniffedMediaMime = SniffedImageMime | SniffedVideoMime | SniffedAudioMime;
+
+function bucketForKind(kind: MediaKind): StorageBucket {
   return kind === 'payment_screenshot' ? 'payment-proofs' : 'experience-media';
 }
 
-function assertImageMime(mime: string): asserts mime is keyof typeof EXT_BY_MIME {
-  if (!(ALLOWED_IMAGE_MIME as readonly string[]).includes(mime)) {
-    throw DashboardError.validation(
-      `unsupported mime '${mime}'; allowed: ${ALLOWED_IMAGE_MIME.join(', ')}`,
-    );
+/** The types each kind may hold: a photo slot also takes video, music is audio only. */
+function allowedMimeFor(kind: MediaKind): readonly string[] {
+  if (kind === 'music') return ALLOWED_AUDIO_MIME;
+  if (kind === 'step_image') return [...ALLOWED_IMAGE_MIME, ...ALLOWED_VIDEO_MIME];
+  return ALLOWED_IMAGE_MIME;
+}
+
+/** Size cap for one file of this type. */
+export function maxBytesFor(mime: string): number {
+  if (mime.startsWith('video/')) return MAX_VIDEO_BYTES;
+  if (mime.startsWith('audio/')) return MAX_AUDIO_BYTES;
+  return MAX_MEDIA_BYTES;
+}
+
+/** Browsers and phones name some types differently; map them to ours. */
+const MIME_ALIASES: Record<string, string> = {
+  'audio/mp3': 'audio/mpeg',
+  'audio/x-m4a': 'audio/mp4',
+  'audio/m4a': 'audio/mp4',
+  'audio/x-aac': 'audio/aac',
+  'audio/x-wav': 'audio/wav',
+  'audio/wave': 'audio/wav',
+  'audio/vnd.wave': 'audio/wav',
+  'image/jpg': 'image/jpeg',
+};
+
+export function normalizeMime(mime: string): string {
+  const m = mime.trim().toLowerCase().split(';')[0];
+  return MIME_ALIASES[m] ?? m;
+}
+
+function assertMime(mime: string, kind: MediaKind): void {
+  const allowed = allowedMimeFor(kind);
+  if (!allowed.includes(mime)) {
+    throw DashboardError.validation(`unsupported mime '${mime}'; allowed: ${allowed.join(', ')}`);
   }
 }
 
-function assertSize(bytes: number): void {
-  if (bytes > MAX_MEDIA_BYTES) {
-    throw DashboardError.validation(
-      `file too large: ${bytes} bytes (max ${MAX_MEDIA_BYTES})`,
-    );
+function assertSize(bytes: number, max = MAX_MEDIA_BYTES): void {
+  if (bytes > max) {
+    throw DashboardError.validation(`file too large: ${bytes} bytes (max ${max})`);
   }
 }
 
@@ -72,6 +128,31 @@ export function assertImageBytes(data: Uint8Array): SniffedImageMime {
   return sniffed;
 }
 
+/**
+ * The same check for every kind: what the bytes are, whether this kind may
+ * hold that type, and the size cap for it. Photo slots take an image or a
+ * video; music takes audio (an audio-only MP4 whose brand reads as video is
+ * still audio here, since an <audio> element plays it either way).
+ */
+export function assertMediaBytes(data: Uint8Array, kind: MediaKind): SniffedMediaMime {
+  if (data.byteLength === 0) throw DashboardError.validation('empty file');
+  let sniffed: SniffedMediaMime | null;
+  if (kind === 'music') {
+    sniffed = sniffAudioMime(data) ?? (sniffVideoMime(data) === 'video/mp4' ? 'audio/mp4' : null);
+  } else if (kind === 'step_image') {
+    sniffed = sniffImageMime(data) ?? sniffVideoMime(data);
+  } else {
+    sniffed = sniffImageMime(data);
+  }
+  const allowed = allowedMimeFor(kind);
+  if (!sniffed || !allowed.includes(sniffed)) {
+    const what = kind === 'music' ? 'song' : kind === 'step_image' ? 'image or video' : 'image';
+    throw DashboardError.validation(`file is not a supported ${what}; allowed: ${allowed.join(', ')}`);
+  }
+  assertSize(data.byteLength, maxBytesFor(sniffed));
+  return sniffed;
+}
+
 export interface SignResult {
   bucket: StorageBucket;
   key: string;
@@ -80,11 +161,19 @@ export interface SignResult {
   uploadUrl: string;
   expiresAt: Date;
   kind: SignMediaInput['kind'];
+  /**
+   * True when the browser may upload straight to the object store (Vercel
+   * Blob) through /api/dashboard/media/client-upload. Large videos and songs
+   * need this: a Vercel function rejects request bodies over 4.5 MB. False
+   * locally, where the multipart route has no such limit.
+   */
+  direct: boolean;
 }
 
 export async function signMedia(ctx: UserContext, input: SignMediaInput): Promise<SignResult> {
-  assertImageMime(input.mime);
-  assertSize(input.bytes);
+  const mime = normalizeMime(input.mime);
+  assertMime(mime, input.kind);
+  assertSize(input.bytes, maxBytesFor(mime));
 
   // Ownership: if scoping to an experience, the caller must own it.
   if (input.experienceId) {
@@ -93,7 +182,7 @@ export async function signMedia(ctx: UserContext, input: SignMediaInput): Promis
   }
 
   const bucket = bucketForKind(input.kind);
-  const ext = EXT_BY_MIME[input.mime];
+  const ext = EXT_BY_MIME[mime];
   const fileId = nanoid(16);
 
   // Keys are derived from the session userId — never client-supplied.
@@ -105,7 +194,14 @@ export async function signMedia(ctx: UserContext, input: SignMediaInput): Promis
   const storage = getStorage();
   const signed = await storage.getSignedUrl(bucket, key, 900);
 
-  return { bucket, key, uploadUrl: signed.url, expiresAt: signed.expiresAt, kind: input.kind };
+  return {
+    bucket,
+    key,
+    uploadUrl: signed.url,
+    expiresAt: signed.expiresAt,
+    kind: input.kind,
+    direct: storageDriver() === 'vercel-blob',
+  };
 }
 
 /**
@@ -126,10 +222,9 @@ export async function uploadMedia(
     height?: number;
   },
 ): Promise<Media> {
-  assertImageMime(input.mime);
   // Every caller gets the byte check, not only the HTTP route: the stored and
   // recorded type is what the bytes say, never the declared one.
-  const mime = assertImageBytes(input.data);
+  const mime = assertMediaBytes(input.data, input.kind);
 
   if (input.experienceId) {
     const exp = await repo.getOwnedExperience(ctx.db, ctx.user.id, input.experienceId);
@@ -163,9 +258,48 @@ export async function uploadMedia(
   });
 }
 
+/**
+ * Authorise one browser-to-Blob upload (the client-upload token route).
+ * The pathname must be a key minted by signMedia for THIS user (so a token
+ * can never write under someone else's prefix or overwrite an arbitrary
+ * object), and the experience in it must be theirs. Only video and audio go
+ * this way: they are the files too large for the multipart route on Vercel.
+ * The bytes are checked again by confirmMedia once the upload lands.
+ */
+export async function authorizeClientUpload(
+  ctx: UserContext,
+  pathname: string,
+): Promise<{ allowedContentTypes: string[]; maximumSizeInBytes: number }> {
+  const prefix = 'experience-media/';
+  const key = pathname.startsWith(prefix) ? pathname.slice(prefix.length) : '';
+  if (!isWellFormedMediaKey(key, ctx.user.id)) {
+    throw DashboardError.forbidden('upload path does not belong to the current user');
+  }
+  const experienceId = key.split('/')[1];
+  if (experienceId !== 'unbound') {
+    const exp = await repo.getOwnedExperience(ctx.db, ctx.user.id, experienceId).catch(() => null);
+    if (!exp) throw DashboardError.notFound('experience not found');
+  }
+  const ext = key.slice(key.lastIndexOf('.') + 1);
+  const mime = Object.entries(EXT_BY_MIME).find(([, e]) => e === ext)?.[0];
+  if (!mime || !(mime.startsWith('video/') || mime.startsWith('audio/'))) {
+    throw DashboardError.validation('only video and audio upload directly');
+  }
+  return {
+    // Phones label the same file differently (audio/x-m4a, audio/mp3…); the
+    // real type is decided by the bytes at confirm time.
+    allowedContentTypes: mime.startsWith('video/') ? ['video/*'] : ['audio/*', 'video/mp4'],
+    maximumSizeInBytes: maxBytesFor(mime),
+  };
+}
+
 export async function confirmMedia(ctx: UserContext, input: ConfirmMediaInput): Promise<Media> {
-  assertImageMime(input.mime);
-  assertSize(input.bytes);
+  const kind =
+    input.kind ?? (input.bucket === 'payment-proofs' ? 'payment_screenshot' : 'step_image');
+  if (bucketForKind(kind) !== input.bucket) throw DashboardError.validation('kind does not match bucket');
+  const declared = normalizeMime(input.mime);
+  assertMime(declared, kind);
+  assertSize(input.bytes, maxBytesFor(declared));
 
   // Defensive: the key MUST live under the caller's userId prefix.
   // Strict shape check BEFORE any storage call: rejects traversal tricks
@@ -187,16 +321,13 @@ export async function confirmMedia(ctx: UserContext, input: ConfirmMediaInput): 
   // unverified claims. Check the object itself: real size, real image type. A
   // bad object is removed so it can't be served later by key.
   const stored = await storage.get(input.bucket, input.key);
-  let actualMime: SniffedImageMime;
+  let actualMime: SniffedMediaMime;
   try {
-    actualMime = assertImageBytes(stored);
+    actualMime = assertMediaBytes(stored, kind);
   } catch (err) {
     await storage.remove(input.bucket, input.key).catch(() => undefined);
     throw err;
   }
-
-  const kind =
-    input.kind ?? (input.bucket === 'payment-proofs' ? 'payment_screenshot' : 'step_image');
 
   return repo.insertMedia(ctx.db, {
     userId: ctx.user.id,
@@ -237,4 +368,23 @@ export async function signedUrlForMedia(media: Pick<Media, 'bucket' | 'storagePa
     3600,
   );
   return url;
+}
+
+/** True when a photo-slot media row is a video (the Player renders <video>). */
+export function isVideoMedia(row: Pick<Media, 'mimeType'>): boolean {
+  return Boolean(row.mimeType?.startsWith('video/'));
+}
+
+/** The card's own song: the newest 'music' row, if any (older ones are replaced). */
+export function latestMusic<T extends Pick<Media, 'kind' | 'createdAt' | 'id'>>(rows: T[]): T | undefined {
+  let best: T | undefined;
+  for (const r of rows) {
+    if (r.kind !== 'music') continue;
+    const newer =
+      !best ||
+      (r.createdAt?.getTime() ?? 0) > (best.createdAt?.getTime() ?? 0) ||
+      ((r.createdAt?.getTime() ?? 0) === (best.createdAt?.getTime() ?? 0) && r.id > best.id);
+    if (newer) best = r;
+  }
+  return best;
 }

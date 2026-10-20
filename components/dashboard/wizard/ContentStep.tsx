@@ -7,24 +7,33 @@ import { cn } from '@/components/ui/cn';
 import type { EditorExperience } from '../types';
 import {
   editableScenes,
+  darkSlots,
+  withDarkSlots,
   type LocalStep,
   type LocalMedia,
 } from '../editor-state';
+import { DarkerToggle } from '../DarkerToggle';
 import { isStepHidden } from '@/lib/template-contract';
 import { ImageUpload } from '../ImageUpload';
 import { MultiImageUpload } from '../MultiImageUpload';
+import { MusicUpload, type CardMusic } from '../MusicUpload';
 import { BuilderPreview } from '../BuilderPreview';
+import { trackUrl } from '@/lib/audio';
 
 export function ContentStep({
   experience,
   steps,
   recipientName,
   onUpdateStep,
+  music,
+  onMusic,
 }: {
   experience: EditorExperience;
   steps: LocalStep[];
   recipientName: string;
   onUpdateStep: (stepId: string, updater: (s: LocalStep) => LocalStep) => void;
+  music: CardMusic | null;
+  onMusic: (music: CardMusic | null) => void;
 }) {
   const t = useTranslations('dashboard.wizard.content');
   const tScene = useTranslations('dashboard.sceneTypes');
@@ -48,6 +57,28 @@ export function ContentStep({
 
   const setText = (key: string, value: string) =>
     onUpdateStep(active.scene.id, (s) => ({ ...s, text: { ...s.text, [key]: value } }));
+
+  const darkKeys = darkSlots(active.step);
+  const setDark = (key: string, on: boolean) =>
+    onUpdateStep(active.scene.id, (s) => withDarkSlots(s, [key], on));
+
+  // Line breaks: phones' keyboards often have no Enter for a one-line field,
+  // so a button inserts one at the cursor. The field turns into a textarea
+  // once it holds a break, and the card shows the break (Player: pre-line).
+  const insertNewLine = (key: string, maxLen?: number) => {
+    const el = document.getElementById(`slot-${key}`) as HTMLInputElement | HTMLTextAreaElement | null;
+    const value = active.step.text[key] ?? '';
+    if (maxLen != null && value.length >= maxLen) return;
+    const start = el?.selectionStart ?? value.length;
+    const end = el?.selectionEnd ?? value.length;
+    setText(key, value.slice(0, start) + '\n' + value.slice(end));
+    // After React re-renders (possibly as a textarea), put the cursor after the break.
+    requestAnimationFrame(() => {
+      const next = document.getElementById(`slot-${key}`) as HTMLInputElement | HTMLTextAreaElement | null;
+      next?.focus();
+      next?.setSelectionRange(start + 1, start + 1);
+    });
+  };
 
   // Single-image slot: at most one media under the slot key (replace semantics).
   const setMedia = (slotKey: string, media: LocalMedia | null) =>
@@ -86,6 +117,13 @@ export function ContentStep({
       <div className="grid gap-token-8 lg:grid-cols-[1fr_320px]">
         {/* ── Editor column ── */}
         <div>
+          <MusicUpload
+            experienceId={experience.id}
+            value={music}
+            templateHasMusic={Boolean(trackUrl(experience.theme?.music))}
+            onChange={onMusic}
+          />
+
           {/* scene tabs */}
           <div className="mb-token-4 flex flex-wrap gap-token-2" role="tablist">
             {scenes.map((sc, i) => (
@@ -138,7 +176,7 @@ export function ContentStep({
               {active.textSlots.map((slot) => {
                 const value = active.step.text[slot.key] ?? '';
                 const remaining = slot.maxLen ? slot.maxLen - value.length : null;
-                const multiline = (slot.maxLen ?? 0) > 60 || slot.key === 'body';
+                const multiline = (slot.maxLen ?? 0) > 60 || slot.key === 'body' || value.includes('\n');
                 return (
                   <div key={slot.key}>
                     <div className="mb-token-2 flex items-center justify-between">
@@ -153,16 +191,30 @@ export function ContentStep({
                           </Badge>
                         ) : null}
                       </label>
-                      {remaining != null ? (
-                        <span
-                          className={cn(
-                            'text-xs',
-                            remaining < 0 ? 'text-danger' : 'text-muted',
-                          )}
+                      <div className="flex items-center gap-token-3">
+                        <DarkerToggle on={darkKeys.includes(slot.key)} onChange={(on) => setDark(slot.key, on)} />
+                        <button
+                          type="button"
+                          // Keep focus (and the cursor position) in the field.
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={() => insertNewLine(slot.key, slot.maxLen)}
+                          title={t('newLineHint')}
+                          aria-label={t('newLineHint')}
+                          className="whitespace-nowrap rounded-md border border-border px-token-2 py-0.5 text-xs font-medium text-muted transition-colors hover:border-brand hover:text-brand"
                         >
-                          {t('charsLeft', { count: remaining })}
-                        </span>
-                      ) : null}
+                          {t('newLine')}
+                        </button>
+                        {remaining != null ? (
+                          <span
+                            className={cn(
+                              'text-xs',
+                              remaining < 0 ? 'text-danger' : 'text-muted',
+                            )}
+                          >
+                            {t('charsLeft', { count: remaining })}
+                          </span>
+                        ) : null}
+                      </div>
                     </div>
                     {multiline ? (
                       <Textarea
@@ -208,7 +260,7 @@ export function ContentStep({
                 return (
                   <div key={slot.key}>
                     <span className="mb-token-2 block text-sm font-medium text-ink">
-                      {t('imageLabel')}
+                      {isMulti ? t('imageLabel') : t('mediaLabel')}
                       {slot.required ? (
                         <Badge tone="neutral" className="ms-token-2">
                           {t('required')}
@@ -233,6 +285,7 @@ export function ContentStep({
                         templateStepId={active.scene.id}
                         slotKey={slot.key}
                         aspect={slot.aspect}
+                        allowVideo
                         onChange={(m) => setMedia(slot.key, m)}
                       />
                     )}

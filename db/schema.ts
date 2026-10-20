@@ -181,7 +181,7 @@ export const media = pgTable(
     createdAt: createdAt(),
   },
   (t) => [
-    check('media_kind_chk', sql`${t.kind} in ('step_image','payment_screenshot','thumbnail')`),
+    check('media_kind_chk', sql`${t.kind} in ('step_image','payment_screenshot','thumbnail','music')`),
     check('media_bucket_chk', sql`${t.bucket} in ('experience-media','payment-proofs')`),
     index('media_user_idx').on(t.userId),
     index('media_experience_idx').on(t.experienceId),

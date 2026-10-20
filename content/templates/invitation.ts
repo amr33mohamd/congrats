@@ -27,6 +27,11 @@ interface Style {
   accent: string;
   /** Body/heading colour that reads on `ground`. */
   text: string;
+  /**
+   * Heading colour when the accent is too close to the ornament to read on
+   * top of it (the florals are drawn in the accent). Defaults to `accent`.
+   */
+  headingInk?: string;
   ornament: OrnamentKind;
   /** Brocade weave under the type. Only reads on a dark ground. */
   damask?: boolean;
@@ -94,6 +99,9 @@ const STYLES: Style[] = [
     palette: ['#F6F4EF', '#E6EAF2', '#1F3358', '#4A6FA5'],
     accent: '#4A6FA5',
     text: '#1F3358',
+    // The names were porcelain blue on porcelain-blue peonies and vanished
+    // where they crossed the vines; navy reads on both.
+    headingInk: '#1F3358',
     ornament: 'florals',
     fontEn: 'Cormorant Garamond',
     fontAr: 'Reem Kufi',
@@ -253,7 +261,7 @@ function buildDefinition(s: Style, locale: 'ar' | 'en'): TemplateDefinitionInput
   const [ground, groundDeep, paper, accentSlot] = s.palette;
   const f = (key: keyof typeof c, label: [string, string], opts?: Parameters<typeof slot>[4]) =>
     slot(key === 'names' ? 'heading' : key, locale, c[key], label, opts);
-  const info = { headingColor: s.accent, bodyColor: s.text };
+  const info = { headingColor: s.headingInk ?? s.accent, bodyColor: s.text };
 
   return {
     version: 1,
@@ -314,7 +322,7 @@ function buildDefinition(s: Style, locale: 'ar' | 'en'): TemplateDefinitionInput
         holdMs: 5000,
         ornament: { kind: s.ornament, opacity: 0.8, scale: 1 },
         // `xl`, not `2xl`: the names have to sit INSIDE the arch/frame ornament.
-        style: { headingSize: 'xl', headingColor: s.accent, bodyColor: s.text },
+        style: { headingSize: 'xl', headingColor: s.headingInk ?? s.accent, bodyColor: s.text },
         slots: [
           // Bound: the couple's names come from the card-level field.
           { key: 'heading', type: 'text' as const, editable: true, required: false, bind: 'couple', animation: 'blurIn' as const },
@@ -384,7 +392,7 @@ function buildDefinition(s: Style, locale: 'ar' | 'en'): TemplateDefinitionInput
         transitionIn: { preset: 'glow', durationMs: 1000, delayMs: 0 },
         holdMs: 5000,
         ornament: { kind: 'none' },
-        style: { headingColor: s.accent, headingSize: 'lg', bodyColor: s.text },
+        style: { headingColor: s.headingInk ?? s.accent, headingSize: 'lg', bodyColor: s.text },
         slots: [
           { ...f('countdown', ['Title', 'العنوان']), key: 'heading' },
           { key: 'date', type: 'date' as const, editable: true, required: false, bind: 'weddingDate' },
@@ -396,7 +404,7 @@ function buildDefinition(s: Style, locale: 'ar' | 'en'): TemplateDefinitionInput
         transitionIn: rise(1100),
         holdMs: 5000,
         ornament: { kind: 'none' },
-        style: { imageStyle: 'arch', headingColor: s.accent, headingSize: 'lg' },
+        style: { imageStyle: 'arch', headingColor: s.headingInk ?? s.accent, headingSize: 'lg' },
         slots: [
           { key: 'image', type: 'image', editable: true, required: false, aspect: '3:4', min: 0, max: 1, labelEn: 'Couple photo', labelAr: 'صورة العروسين' },
           { ...f('caption', ['Caption', 'تعليق'], { maxLen: 44 }), animation: 'rise' as const },
@@ -408,7 +416,7 @@ function buildDefinition(s: Style, locale: 'ar' | 'en'): TemplateDefinitionInput
         transitionIn: rise(),
         holdMs: 5000,
         ornament: { kind: 'none' },
-        style: { imageStyle: 'ornate', headingSize: 'md', headingColor: s.accent },
+        style: { imageStyle: 'ornate', headingSize: 'md', headingColor: s.headingInk ?? s.accent },
         slots: [
           { ...f('moments', ['Title', 'العنوان'], { maxLen: 36 }), key: 'heading' },
           { key: 'gallery', type: 'image', editable: true, required: false, min: 0, max: 8, aspect: '3:4', labelEn: 'Gallery photos', labelAr: 'صور المعرض' },
@@ -467,7 +475,7 @@ function buildDefinition(s: Style, locale: 'ar' | 'en'): TemplateDefinitionInput
         ornament: { kind: s.ornament, opacity: s.ornament === 'theatre' ? 1 : 0.7, scale: 1 },
         decoration: s.ornament === 'theatre' ? { effect: 'none' } : { effect: 'sparkles', intensity: 'medium', color: s.accent },
         // The sign-off is longer than the names, so one size smaller keeps it in the arch.
-        style: { headingSize: 'lg', headingColor: s.accent, bodyColor: s.text },
+        style: { headingSize: 'lg', headingColor: s.headingInk ?? s.accent, bodyColor: s.text },
         slots: [
           { ...f('finale', ['Sign-off', 'الختام'], { required: true, maxLen: 56 }), key: 'heading', animation: 'glow' as const },
           { ...f('finaleBody', ['Last line', 'السطر الأخير'], { maxLen: 110 }), key: 'body' },

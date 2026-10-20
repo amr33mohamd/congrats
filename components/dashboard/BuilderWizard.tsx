@@ -10,8 +10,11 @@ import {
   seedSteps,
   type LocalStep,
   toStepUpserts,
+  darkSlots,
+  withDarkSlots,
 } from './editor-state';
 import { useAutosave } from './useAutosave';
+import type { CardMusic } from './MusicUpload';
 import { StepWizardHeader } from './wizard/StepWizardHeader';
 import { DetailsStep } from './wizard/DetailsStep';
 import { ContentStep } from './wizard/ContentStep';
@@ -39,6 +42,10 @@ export function BuilderWizard({
   // Card-level details (couple's names, wedding date…), asked once.
   const [fields, setFields] = React.useState<Record<string, string>>(() => initial.fields ?? {});
   const [saveError, setSaveError] = React.useState<string | null>(null);
+  // The sender's own song. Saved by its upload (a media row), not by autosave.
+  const [music, setMusic] = React.useState<CardMusic | null>(() =>
+    initial.musicUrl && initial.musicMediaId ? { url: initial.musicUrl, mediaId: initial.musicMediaId } : null,
+  );
 
   // Experience meta (title/recipient/locale) lives at the experience level.
   const experience = React.useMemo<EditorExperience>(
@@ -49,8 +56,10 @@ export function BuilderWizard({
       locale: expLocale,
       direction: expLocale === 'ar' ? 'rtl' : 'ltr',
       fields,
+      musicUrl: music?.url ?? null,
+      musicMediaId: music?.mediaId ?? null,
     }),
-    [initial, recipientName, title, expLocale, fields],
+    [initial, recipientName, title, expLocale, fields, music],
   );
 
   /* ── autosave: experience meta ── */
@@ -143,6 +152,50 @@ export function BuilderWizard({
     setSteps((prev) => prev.map((s) => (s.templateStepId === stepId ? updater(s) : s)));
   }, []);
 
+  /**
+   * A card-level field (the couple's names…) shows wherever a scene slot binds
+   * to it, so its "darker" switch flips every one of those slots. A field is
+   * shown as darker when all its slots are; a field no slot binds (or a date)
+   * gets no switch.
+   */
+  const fieldSlots = React.useMemo(() => {
+    const map = new Map<string, Array<{ sceneId: string; key: string }>>();
+    for (const sc of initial.scenes) {
+      for (const sl of sc.slots) {
+        if (sl.type !== 'text' || !sl.bind) continue;
+        const list = map.get(sl.bind) ?? [];
+        list.push({ sceneId: sc.id, key: sl.key });
+        map.set(sl.bind, list);
+      }
+    }
+    return map;
+  }, [initial.scenes]);
+  const darkFields = React.useMemo(() => {
+    const out: Record<string, boolean | null> = {};
+    const stepById = new Map(steps.map((s) => [s.templateStepId, s]));
+    for (const f of initial.fieldDefs ?? []) {
+      const slots = fieldSlots.get(f.key);
+      if (f.type !== 'text' || !slots?.length) {
+        out[f.key] = null;
+        continue;
+      }
+      out[f.key] = slots.every(({ sceneId, key }) => {
+        const st = stepById.get(sceneId);
+        return st ? darkSlots(st).includes(key) : false;
+      });
+    }
+    return out;
+  }, [initial.fieldDefs, fieldSlots, steps]);
+  const setFieldDark = (fieldKey: string, on: boolean) => {
+    const slots = fieldSlots.get(fieldKey) ?? [];
+    setSteps((prev) =>
+      prev.map((s) => {
+        const keys = slots.filter((x) => x.sceneId === s.templateStepId).map((x) => x.key);
+        return keys.length ? withDarkSlots(s, keys, on) : s;
+      }),
+    );
+  };
+
   const goNext = async () => {
     const idx = ORDER.indexOf(step);
     if (idx < ORDER.length - 1) {
@@ -217,6 +270,8 @@ export function BuilderWizard({
             isInvitation={initial.scenes.some((sc) => sc.type === 'Rsvp' || sc.type === 'Families')}
             fields={fields}
             onField={(key, value) => setFields((prev) => ({ ...prev, [key]: value }))}
+            darkFields={darkFields}
+            onFieldDark={setFieldDark}
           />
         ) : null}
 
@@ -226,6 +281,8 @@ export function BuilderWizard({
             steps={steps}
             recipientName={recipientName}
             onUpdateStep={updateStep}
+            music={music}
+            onMusic={setMusic}
           />
         ) : null}
 

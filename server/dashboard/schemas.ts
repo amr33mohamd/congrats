@@ -70,7 +70,9 @@ export type PutStepsInput = z.infer<typeof putStepsSchema>;
 
 /* ─────────────────────────────── Media ────────────────────────────────── */
 
-export const MEDIA_KINDS = ['step_image', 'payment_screenshot', 'thumbnail'] as const;
+// 'step_image' fills a scene's photo slot and may also be a short video;
+// 'music' is the card's own soundtrack, replacing the template's track.
+export const MEDIA_KINDS = ['step_image', 'payment_screenshot', 'thumbnail', 'music'] as const;
 export const MediaKindSchema = z.enum(MEDIA_KINDS);
 
 export const signMediaSchema = z.object({
@@ -124,3 +126,18 @@ export const ALLOWED_IMAGE_MIME = [
 
 /** Max upload size per image: 8 MiB. */
 export const MAX_MEDIA_BYTES = 8 * 1024 * 1024;
+
+/** Video a sender may put in a photo slot (plays muted, looping). */
+export const ALLOWED_VIDEO_MIME = ['video/mp4', 'video/quicktime', 'video/webm'] as const;
+
+/** Audio a sender may upload as the card's music. */
+export const ALLOWED_AUDIO_MIME = ['audio/mpeg', 'audio/mp4', 'audio/aac', 'audio/ogg', 'audio/wav'] as const;
+
+/** Max upload size per video: 30 MiB (about a minute of phone video). */
+export const MAX_VIDEO_BYTES = 30 * 1024 * 1024;
+
+/** Max upload size per song: 15 MiB (a full song at a high bitrate). */
+export const MAX_AUDIO_BYTES = 15 * 1024 * 1024;
+
+/** The largest file any upload route accepts. */
+export const MAX_ANY_MEDIA_BYTES = Math.max(MAX_MEDIA_BYTES, MAX_VIDEO_BYTES, MAX_AUDIO_BYTES);

@@ -1,0 +1,2 @@
+ALTER TABLE "media" DROP CONSTRAINT IF EXISTS "media_kind_chk";--> statement-breakpoint
+ALTER TABLE "media" ADD CONSTRAINT "media_kind_chk" CHECK ("media"."kind" in ('step_image','payment_screenshot','thumbnail','music'));

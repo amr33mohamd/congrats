@@ -58,6 +58,13 @@ export interface PlayerProps {
    * escape the frame and pin itself to the browser window.
    */
   embedded?: boolean;
+  /**
+   * Play the card's music and show its control (default). The builder
+   * preview turns this off and plays the music itself, so the song neither
+   * restarts on every edit (the preview remounts the Player) nor lacks an
+   * off switch.
+   */
+  soundtrack?: boolean;
 }
 
 function usePrefersReducedMotion(): boolean {
@@ -406,6 +413,7 @@ export function Player({
   startAtStepId,
   onComplete,
   embedded = false,
+  soundtrack = true,
 }: PlayerProps) {
   const experience = React.useMemo(() => withLocaleFonts(given), [given]);
   const reducedMotion = usePrefersReducedMotion();
@@ -555,7 +563,8 @@ export function Player({
         monitor would strand the type in the middle of nowhere, so it is capped
         and centred with the theme background showing either side.
       */}
-      <div className="relative mx-auto w-full max-w-[620px]">
+      {/* pre-line: a line break the sender typed shows as one. */}
+      <div className="relative mx-auto w-full max-w-[620px] whitespace-pre-line">
         {sections.map(({ scene, step }) => (
           <SceneSection
             key={step.templateStepId}
@@ -573,10 +582,11 @@ export function Player({
         The music control. Embedded it rides a zero-height sticky rail at the
         bottom of the frame; on the page it is fixed to the viewport corner.
       */}
-      {embedded ? (
+      {!soundtrack ? null : embedded ? (
         <div className="pointer-events-none sticky bottom-0 z-30 h-0">
           <Soundtrack
             music={theme.music}
+            src={experience.musicUrl}
             started={started}
             label={experience.locale === 'ar' ? 'الموسيقى' : 'Music'}
             className="pointer-events-auto absolute bottom-token-4 end-token-4"
@@ -585,6 +595,7 @@ export function Player({
       ) : (
         <Soundtrack
           music={theme.music}
+          src={experience.musicUrl}
           started={started}
           label={experience.locale === 'ar' ? 'الموسيقى' : 'Music'}
           className="fixed bottom-token-4 end-token-4"

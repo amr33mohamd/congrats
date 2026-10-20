@@ -164,7 +164,7 @@ async function ensurePgliteSchema(pg: { exec: (sql: string) => Promise<unknown> 
       step_id uuid REFERENCES steps(id) ON DELETE SET NULL,
       template_step_id text,
       slot_key text,
-      kind text NOT NULL CHECK (kind IN ('step_image','payment_screenshot','thumbnail')),
+      kind text NOT NULL,
       storage_path text NOT NULL,
       bucket text NOT NULL CHECK (bucket IN ('experience-media','payment-proofs')),
       mime_type text,
@@ -256,6 +256,12 @@ async function ensurePgliteSchema(pg: { exec: (sql: string) => Promise<unknown> 
     ALTER TABLE users ADD COLUMN IF NOT EXISTS password_hash text;
     ALTER TABLE users ADD COLUMN IF NOT EXISTS all_access boolean NOT NULL DEFAULT false;
     ALTER TABLE experiences ADD COLUMN IF NOT EXISTS fields jsonb NOT NULL DEFAULT '{}'::jsonb;
+    -- The kind check gained 'music'. Older local databases carry the inline
+    -- (auto-named) check; replace it with the named one on every boot.
+    ALTER TABLE media DROP CONSTRAINT IF EXISTS media_kind_check;
+    ALTER TABLE media DROP CONSTRAINT IF EXISTS media_kind_chk;
+    ALTER TABLE media ADD CONSTRAINT media_kind_chk
+      CHECK (kind IN ('step_image','payment_screenshot','thumbnail','music'));
   `);
 }
 

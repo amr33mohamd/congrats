@@ -29,6 +29,13 @@
       "when": 1790827410068,
       "tag": "0003_events",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1792533841828,
+      "tag": "0004_media_music_kind",
+      "breakpoints": true
     }
   ]
 }

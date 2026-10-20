@@ -71,6 +71,9 @@ export interface EditorExperience {
   /** Card-level details asked once in the Details step (see TemplateDefinition.fields). */
   fieldDefs?: Field[];
   fields?: Record<string, string>;
+  /** The sender's uploaded song, replacing the template's music. */
+  musicUrl?: string | null;
+  musicMediaId?: string | null;
   templateName?: string | null;
   shareSlug?: string | null;
   orderId?: string | null;
@@ -114,4 +117,6 @@ export interface ConfirmedMedia {
   url: string;
   width?: number;
   height?: number;
+  /** The type the server found in the bytes (image/…, video/…, audio/…). */
+  mime?: string;
 }

@@ -19,6 +19,7 @@ import { media, experiences, shareLinks } from '@/db/schema';
 import { getSession } from '@/lib/auth';
 import { getStorage, type StorageBucket } from '@/server/storage';
 import { hasAdminRow } from '@/server/db-context';
+import { parseRange } from '@/lib/http-range';
 
 export const runtime = 'nodejs';
 
@@ -26,7 +27,7 @@ type Params = { params: Promise<{ bucket: string; key: string[] }> };
 
 const BUCKETS: StorageBucket[] = ['experience-media', 'payment-proofs'];
 
-export async function GET(_req: Request, { params }: Params) {
+export async function GET(req: Request, { params }: Params) {
   const { bucket: bucketParam, key: keyParts } = await params;
 
   if (!BUCKETS.includes(bucketParam as StorageBucket)) {
@@ -66,17 +67,40 @@ export async function GET(_req: Request, { params }: Params) {
   }
 
   const contentType = row?.mimeType ?? 'application/octet-stream';
+  const headers: Record<string, string> = {
+    'Content-Type': contentType,
+    'Accept-Ranges': 'bytes',
+    'Cache-Control': 'private, max-age=300',
+    // Bytes are user-uploaded: never let a browser sniff them into something
+    // executable (e.g. HTML smuggled in with an image extension).
+    'X-Content-Type-Options': 'nosniff',
+    'Content-Security-Policy': "default-src 'none'; img-src 'self'; media-src 'self'; style-src 'unsafe-inline'; sandbox",
+  };
+
+  // Video and audio: Safari will not play media unless the server answers
+  // byte-range requests, and every browser seeks/loops with them.
+  const range = parseRange(req.headers.get('range'), bytes.byteLength);
+  if (range === 'unsatisfiable') {
+    return new Response(null, {
+      status: 416,
+      headers: { ...headers, 'Content-Range': `bytes */${bytes.byteLength}` },
+    });
+  }
+  if (range) {
+    const chunk = bytes.subarray(range.start, range.end + 1);
+    return new Response(new Uint8Array(chunk), {
+      status: 206,
+      headers: {
+        ...headers,
+        'Content-Length': String(chunk.byteLength),
+        'Content-Range': `bytes ${range.start}-${range.end}/${bytes.byteLength}`,
+      },
+    });
+  }
+
   return new Response(new Uint8Array(bytes), {
     status: 200,
-    headers: {
-      'Content-Type': contentType,
-      'Content-Length': String(bytes.byteLength),
-      'Cache-Control': 'private, max-age=300',
-      // Bytes are user-uploaded: never let a browser sniff them into something
-      // executable (e.g. HTML smuggled in with an image extension).
-      'X-Content-Type-Options': 'nosniff',
-      'Content-Security-Policy': "default-src 'none'; img-src 'self'; style-src 'unsafe-inline'; sandbox",
-    },
+    headers: { ...headers, 'Content-Length': String(bytes.byteLength) },
   });
 }
 

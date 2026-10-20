@@ -7,6 +7,7 @@ import type { Field } from '@/lib/template-contract';
 import { Input } from '@/components/ui';
 import { cn } from '@/components/ui/cn';
 import type { AppLocale } from '../types';
+import { DarkerToggle } from '../DarkerToggle';
 
 export function DetailsStep({
   recipientName,
@@ -19,6 +20,8 @@ export function DetailsStep({
   fieldDefs = [],
   fields = {},
   onField,
+  darkFields,
+  onFieldDark,
   isInvitation = false,
 }: {
   recipientName: string;
@@ -32,6 +35,13 @@ export function DetailsStep({
   fieldDefs?: Field[];
   fields?: Record<string, string>;
   onField?: (key: string, value: string) => void;
+  /**
+   * Text fields whose places on the card are switched to "darker", and the
+   * switch. A field without a darker switch (absent from `darkFields`'s
+   * domain, e.g. dates) passes `null` for it.
+   */
+  darkFields?: Record<string, boolean | null>;
+  onFieldDark?: (key: string, on: boolean) => void;
   /**
    * On an invitation the "recipient" is the GUEST, and leaving it blank is a
    * real choice (one link for every guest), so it is labelled that way.
@@ -69,10 +79,15 @@ export function DetailsStep({
             <p className="-mt-token-3 text-xs text-muted">{t('cardDetailsHint')}</p>
             {fieldDefs.map((f) => (
               <div key={f.key}>
-                <label htmlFor={`w-field-${f.key}`} className="mb-token-2 block text-sm font-medium text-ink">
-                  {label(f)}
-                  {f.required ? <span className="ms-token-1 text-danger">*</span> : null}
-                </label>
+                <div className="mb-token-2 flex items-center justify-between gap-token-3">
+                  <label htmlFor={`w-field-${f.key}`} className="block text-sm font-medium text-ink">
+                    {label(f)}
+                    {f.required ? <span className="ms-token-1 text-danger">*</span> : null}
+                  </label>
+                  {darkFields && darkFields[f.key] != null && onFieldDark ? (
+                    <DarkerToggle on={Boolean(darkFields[f.key])} onChange={(on) => onFieldDark(f.key, on)} />
+                  ) : null}
+                </div>
                 <Input
                   id={`w-field-${f.key}`}
                   type={f.type === 'date' ? 'datetime-local' : 'text'}

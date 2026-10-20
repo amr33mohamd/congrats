@@ -69,7 +69,7 @@ export function assertSafeStorageKey(key: string): void {
 }
 
 /** Strict shape of every key this app mints: `<uid>/<scope>/<fileId>.<ext>`. */
-const MEDIA_KEY_RE = /^[A-Za-z0-9_-]+\/[A-Za-z0-9_-]+\/[A-Za-z0-9_-]+\.(jpg|png|webp|gif)$/;
+const MEDIA_KEY_RE = /^[A-Za-z0-9_-]+\/[A-Za-z0-9_-]+\/[A-Za-z0-9_-]+\.(jpg|png|webp|gif|mp4|mov|webm|mp3|m4a|aac|ogg|wav)$/;
 
 /** True when `key` has exactly the shape minted by experienceMediaKey/paymentProofKey for `userId`. */
 export function isWellFormedMediaKey(key: string, userId: string): boolean {
@@ -155,8 +155,7 @@ export class LocalDiskStorageAdapter implements StorageAdapter {
  */
 export class VercelBlobStorageAdapter implements StorageAdapter {
   private pathname(bucket: StorageBucket, key: string): string {
-    assertSafeStorageKey(key);
-    return `${bucket}/${key}`;
+    return blobPathname(bucket, key);
   }
 
   async put(input: PutObjectInput): Promise<StoredObject> {
@@ -200,10 +199,20 @@ export class VercelBlobStorageAdapter implements StorageAdapter {
 
 let _adapter: StorageAdapter | undefined;
 
+/** Which adapter this deployment uses ('local' unless STORAGE_DRIVER says otherwise). */
+export function storageDriver(): 'local' | 'vercel-blob' {
+  return process.env.STORAGE_DRIVER === 'vercel-blob' ? 'vercel-blob' : 'local';
+}
+
+/** The Blob pathname an object lives at: `<bucket>/<key>` (see VercelBlobStorageAdapter). */
+export function blobPathname(bucket: StorageBucket, key: string): string {
+  assertSafeStorageKey(key);
+  return `${bucket}/${key}`;
+}
+
 export function getStorage(): StorageAdapter {
   if (_adapter) return _adapter;
-  const driver = process.env.STORAGE_DRIVER ?? 'local';
-  switch (driver) {
+  switch (storageDriver()) {
     case 'vercel-blob':
       _adapter = new VercelBlobStorageAdapter();
       return _adapter;

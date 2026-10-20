@@ -54,6 +54,9 @@ const sentry = sentryDsn ? sentryEndpoints(sentryDsn) : null;
 //  - worker/child blob: three.js / image decoding helpers may spin up blob
 //    workers; WebGL itself needs no CSP source.
 //  - ws: (dev only): HMR websocket.
+//  - connect https://vercel.com: a video or song too big for a function
+//    request is uploaded from the browser straight to Vercel Blob's API
+//    (components/dashboard/api-client.ts → uploadDirect).
 const cspDirectives = {
   'default-src': ["'self'"],
   'script-src': ["'self'", "'unsafe-inline'", ...(isDev ? ["'unsafe-eval'"] : []), ...(plausibleDomain ? [plausibleHost] : []), ...(metaPixel ? ['https://connect.facebook.net'] : [])],
@@ -63,6 +66,7 @@ const cspDirectives = {
   'media-src': ["'self'", 'data:', 'blob:'],
   'connect-src': [
     "'self'",
+    'https://vercel.com',
     ...(plausibleDomain ? [plausibleHost] : []),
     ...(metaPixel ? ['https://www.facebook.com', 'https://connect.facebook.net'] : []),
     ...(sentry ? [sentry.origin] : []),

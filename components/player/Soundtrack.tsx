@@ -22,12 +22,15 @@ import {
  */
 export function Soundtrack({
   music,
+  src: customSrc,
   started,
   label,
   className,
   style,
 }: {
   music?: string | null;
+  /** The sender's uploaded song; wins over the template's `music` key. */
+  src?: string | null;
   started: boolean;
   /** Accessible name for the toggle, localized by the caller. */
   label: string;
@@ -35,7 +38,7 @@ export function Soundtrack({
   className?: string;
   style?: React.CSSProperties;
 }) {
-  const src = trackUrl(music);
+  const src = customSrc || trackUrl(music);
   const ref = React.useRef<HTMLAudioElement>(null);
   const [muted, setMuted] = React.useState(false);
   const [failed, setFailed] = React.useState(false);

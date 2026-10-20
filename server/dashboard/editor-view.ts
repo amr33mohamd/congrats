@@ -12,7 +12,7 @@ import type { UserContext } from '@/server/db-context';
 import type { EditorPayload } from './experiences-service';
 import type { Media } from '@/db/schema';
 import { resolveFields, type SceneDef, type BoundStep, type Field } from '@/lib/template-contract';
-import { signedUrlForMedia } from './media-service';
+import { signedUrlForMedia, isVideoMedia, latestMusic } from './media-service';
 import * as repo from './repositories';
 
 export interface EditorExperienceView {
@@ -33,6 +33,9 @@ export interface EditorExperienceView {
   /** Card-level fields the builder asks once, and their current values. */
   fieldDefs: Field[];
   fields: Record<string, string>;
+  /** The sender's uploaded song (replaces the template's music), if any. */
+  musicUrl: string | null;
+  musicMediaId: string | null;
   templateName: string | null;
   shareSlug: string | null;
   orderId: string | null;
@@ -78,6 +81,8 @@ export async function toEditorExperienceView(
           url: await signedUrlForMedia(m),
           width: m.width ?? undefined,
           height: m.height ?? undefined,
+          ...(isVideoMedia(m) ? { video: true } : {}),
+          mediaId: m.id,
         })),
       );
       return {
@@ -89,6 +94,9 @@ export async function toEditorExperienceView(
       };
     }),
   );
+
+  const music = latestMusic(mediaRows);
+  const musicUrl = music ? await signedUrlForMedia(music) : null;
 
   // Surface the most recent order id so the dashboard can deep-link to status.
   const order = await repo.findReusableOrder(ctx.db, ctx.user.id, experience.id);
@@ -114,6 +122,8 @@ export async function toEditorExperienceView(
       (experience.fields ?? {}) as Record<string, string>,
       experience.locale === 'ar' ? 'ar' : 'en',
     ),
+    musicUrl,
+    musicMediaId: music?.id ?? null,
     templateName: template.slug,
     shareSlug: shareLink?.slug ?? null,
     orderId: order?.id ?? null,

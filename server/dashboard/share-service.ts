@@ -34,7 +34,7 @@ import {
   type SceneDef,
 } from '@/lib/template-contract';
 import { createOrder, type CreatedOrder } from './orders-service';
-import { signedUrlForMedia } from './media-service';
+import { signedUrlForMedia, isVideoMedia, latestMusic } from './media-service';
 import { DashboardError } from './errors';
 import { reconcileSteps, reconcileText } from './step-reconcile';
 import * as repo from './repositories';
@@ -263,6 +263,7 @@ export async function getPublicExperienceBySlug(slug: string): Promise<BoundExpe
           url: await signedUrlForMedia(row),
           width: row.width ?? undefined,
           height: row.height ?? undefined,
+          ...(isVideoMedia(row) ? { video: true } : {}),
         })),
       );
 
@@ -275,6 +276,9 @@ export async function getPublicExperienceBySlug(slug: string): Promise<BoundExpe
       };
     }),
   );
+
+  const music = latestMusic(mediaRows);
+  const musicUrl = music ? await signedUrlForMedia(music) : undefined;
 
   // Best-effort view bump.
   await db
@@ -290,6 +294,7 @@ export async function getPublicExperienceBySlug(slug: string): Promise<BoundExpe
     recipientName: recipient,
     fields: cardFields,
     theme: def.theme,
+    ...(musicUrl ? { musicUrl } : {}),
     scenes: def.scenes,
     steps: boundSteps,
   };
