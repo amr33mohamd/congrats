@@ -83,6 +83,7 @@ const SLUG_STYLE: Array<[string, StyleKey]> = [
   ['ivory-arch', 'classic-gold'],
   ['qasr-gold', 'classic-gold'],
   ['baroque-noir', 'luxe-noir'],
+  ['noir-gold', 'luxe-noir'],
   ['tarab-velvet', 'tarab'],
   ['sage-garden', 'soft-nature'],
   ['blue-porcelain', 'porcelain'],

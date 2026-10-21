@@ -18,6 +18,7 @@ import { parseBoundExperience, type BoundExperience } from '@/lib/template-contr
 import { buildPreviewExperience } from '@/lib/template-preview';
 import { TEMPLATE_CATALOG } from '@/content/templates';
 import { Player } from '@/components/player';
+import { CardPlayer } from '@/components/player/Player';
 
 const confettiMock = vi.hoisted(() => {
   const scoped = Object.assign(vi.fn(() => Promise.resolve()), { reset: vi.fn() });
@@ -248,7 +249,10 @@ describe('every catalog template renders as a one-page card', () => {
         category: tpl.category,
         recipientName: tpl.locale === 'ar' ? 'سارة' : 'Sara',
       });
-      render(<Player experience={exp} startPaused={false} />);
+      // A 3D-stage template (Noir & Gold) plays as this same card wherever
+      // WebGL is missing — jsdom included — so its content is checked here.
+      const Comp = tpl.definition.theme.stage ? CardPlayer : Player;
+      render(<Comp experience={exp} startPaused={false} />);
       const root = screen.getByTestId('player-root');
       expect(root).toHaveAttribute('dir', tpl.locale === 'ar' ? 'rtl' : 'ltr');
       // The preview fills every photo and date, so every scene shows.

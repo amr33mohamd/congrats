@@ -80,9 +80,9 @@ screen; keep the theme-wide ambient layer `low`.
 
 Sans/rounded: `Inter` `Poppins` `Montserrat` `Quicksand` `Fredoka` `Nunito`
 Serif/elegant: `Playfair Display` `Cormorant Garamond` `Marcellus` `Abril Fatface` `Lora` `DM Serif Display`
-Script: `Dancing Script` `Great Vibes` `Pacifico` `Sacramento` `Caveat` `Parisienne`
-Display: `Bebas Neue`
-Arabic: `Cairo` `Tajawal` `Reem Kufi` `Amiri` `Aref Ruqaa` `El Messiri` `Lalezar` `Lateef` `Markazi Text` `Mada` `Harmattan`
+Script: `Dancing Script` `Great Vibes` `Pacifico` `Sacramento` `Caveat` `Parisienne` `Pinyon Script`
+Display: `Bebas Neue` `Cinzel` `Italiana`
+Arabic: `Cairo` `Tajawal` `Reem Kufi` `Amiri` `Aref Ruqaa` `El Messiri` `Lalezar` `Lateef` `Markazi Text` `Mada` `Harmattan` `Gulzar`
 
 A font not on this list falls back to the system face. `fontBody` is used for the
 card's running text.

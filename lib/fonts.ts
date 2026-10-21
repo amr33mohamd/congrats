@@ -31,9 +31,11 @@ const FONT_WEIGHTS: Record<string, string> = {
   Sacramento: '400',
   Caveat: '400;500;600;700',
   Parisienne: '400',
+  'Pinyon Script': '400',
   // Latin — display / bold
   'Bebas Neue': '400',
   Cinzel: '400;500;600;700',
+  Italiana: '400',
   // Arabic
   Cairo: '400;500;600;700;800',
   Tajawal: '400;500;700',
@@ -46,10 +48,12 @@ const FONT_WEIGHTS: Record<string, string> = {
   'Markazi Text': '400;500;600;700',
   Mada: '400;500;700',
   Harmattan: '400;700',
+  // Nastaliq calligraphy: tall, flowing names. Needs generous line height.
+  Gulzar: '400',
 };
 
 const SYSTEM_FALLBACK = 'system-ui, -apple-system, Segoe UI, Roboto, sans-serif';
-const SERIF_HINTS = ['Cinzel', 'Playfair', 'Cormorant', 'Marcellus', 'Abril', 'Lora', 'DM Serif', 'Amiri', 'Aref', 'Markazi'];
+const SERIF_HINTS = ['Cinzel', 'Playfair', 'Cormorant', 'Marcellus', 'Abril', 'Lora', 'DM Serif', 'Amiri', 'Aref', 'Markazi', 'Italiana', 'Gulzar'];
 
 /** Build a CSS font-family value with a type-appropriate fallback. */
 export function cssFamily(name?: string): string {

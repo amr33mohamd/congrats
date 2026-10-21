@@ -277,6 +277,12 @@ export const TemplateThemeSchema = z.object({
     .optional(),
   /** Default text color for scenes that don't override (defaults to white). */
   textColor: z.string().optional(),
+  /**
+   * Play the card on a different stage than the scrolling card. `luxe-hall`
+   * is a full 3D world (components/player/luxe): the same scenes and slots,
+   * so the builder edits it exactly like any other card.
+   */
+  stage: z.enum(['luxe-hall']).optional(),
 });
 export type TemplateTheme = z.infer<typeof TemplateThemeSchema>;
 

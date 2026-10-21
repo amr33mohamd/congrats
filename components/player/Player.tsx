@@ -41,6 +41,16 @@ import { Soundtrack } from './Soundtrack';
 import { track } from '@/lib/track';
 import { MadeWithCongrats } from './MadeWithCongrats';
 import { ClosedCurtains, CurtainReveal } from './StageCurtains';
+import dynamic from 'next/dynamic';
+
+/**
+ * The 3D stage (theme.stage === 'luxe-hall'). WebGL, so client only, and its
+ * own chunk: an ordinary card never downloads three.js.
+ */
+const LuxePlayer = dynamic(() => import('./luxe/LuxePlayer'), {
+  ssr: false,
+  loading: () => <div className="h-full min-h-[100dvh] w-full bg-black" />,
+});
 
 export interface PlayerProps {
   experience: BoundExperience;
@@ -407,7 +417,11 @@ function OpenGate({
 
 /* ─────────────────────────────── the player ─────────────────────────────── */
 
-export function Player({
+export function Player(props: PlayerProps) {
+  return props.experience.theme?.stage === 'luxe-hall' ? <LuxePlayer {...props} /> : <CardPlayer {...props} />;
+}
+
+export function CardPlayer({
   experience: given,
   startPaused = true,
   startAtStepId,

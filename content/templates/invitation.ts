@@ -43,6 +43,10 @@ interface Style {
   art?: { corner?: string; divider?: string; frame?: string; texture?: string };
   fontEn: string;
   fontAr: string;
+  /** A script face for the names on the cover and the sign-off, over `fontEn`. */
+  nameFontEn?: string;
+  /** A Player stage other than the scrolling card (see TemplateTheme.stage). */
+  stage?: 'luxe-hall';
   /** Overlay strength over photo scenes — light grounds need far less. */
   scrim: [string, string];
   titleEn: string;
@@ -53,6 +57,43 @@ interface Style {
 }
 
 const STYLES: Style[] = [
+  {
+    key: 'noir-gold',
+    palette: ['#0B0A0D', '#000000', '#F4EAD5', '#D9B26F'],
+    accent: '#D9B26F',
+    text: '#F4EAD5',
+    // The card itself is a 3D world (components/player/luxe): a velvet ring
+    // box opens, the camera flies through the rings and down a black-marble
+    // hall of gold arches, one section per arch. The engraved frame and the
+    // brocade are what the 2D gallery thumbnail shows.
+    stage: 'luxe-hall',
+    ornament: 'engraved',
+    damask: true,
+    fontEn: 'Cinzel',
+    nameFontEn: 'Pinyon Script',
+    fontAr: 'Gulzar',
+    scrim: ['rgba(0,0,0,0.30)', 'rgba(0,0,0,0.86)'],
+    titleEn: 'Wedding Invitation — Noir & Gold 3D',
+    titleAr: 'دعوة زفاف — قصر الذهب ثلاثي الأبعاد',
+    hint: 'A full 3D invitation: a black velvet ring box opens on two gold rings and a diamond, then the guest flies down a black-marble palace hall, through one gold arch per section, lit by candles.',
+    copy: {
+      en: {
+        sub: 'request the honour of your presence',
+        invite:
+          'Together with our families, we request the honour of your presence as we exchange our vows and begin our forever.',
+        countdown: 'Until we say I do',
+        caption: 'And so our story began',
+        finaleBody: 'We can\u2019t wait to celebrate with you, {recipient}.',
+      },
+      ar: {
+        sub: 'يتشرّفان بدعوتكم لليلة العمر',
+        invite: 'بكل الحب، ووسط عائلتينا وأحبابنا، يسعدنا ويشرّفنا حضوركم حفل زفافنا… ليلة نتمنّى نعيشها معاكم.',
+        countdown: 'باقي على ليلة العمر',
+        caption: 'وبدأت الحكاية',
+        finaleBody: 'مستنيينك يا {recipient} تكمّل فرحتنا',
+      },
+    },
+  },
   {
     key: 'ivory-arch',
     palette: ['#101A2E', '#0A1120', '#F7F2E8', '#D9B778'],
@@ -262,6 +303,10 @@ function buildDefinition(s: Style, locale: 'ar' | 'en'): TemplateDefinitionInput
   const f = (key: keyof typeof c, label: [string, string], opts?: Parameters<typeof slot>[4]) =>
     slot(key === 'names' ? 'heading' : key, locale, c[key], label, opts);
   const info = { headingColor: s.headingInk ?? s.accent, bodyColor: s.text };
+  const nameFont = locale === 'en' && s.nameFontEn ? { headingFont: s.nameFontEn } : {};
+  // The theatre is a printed programme and the 3D hall has its own light:
+  // no falling sparkles on either.
+  const quiet = s.ornament === 'theatre' || Boolean(s.stage);
 
   return {
     version: 1,
@@ -282,8 +327,9 @@ function buildDefinition(s: Style, locale: 'ar' | 'en'): TemplateDefinitionInput
         ...(s.damask ? { pattern: 'damask' as const } : {}),
       },
       // The theatre style is a printed programme, not a party: no falling sparkles.
-      decoration: s.ornament === 'theatre' ? { effect: 'none' } : { effect: 'sparkles', intensity: 'low', color: s.accent },
+      decoration: quiet ? { effect: 'none' } : { effect: 'sparkles', intensity: 'low', color: s.accent },
       ...(s.art ? { art: s.art } : {}),
+      ...(s.stage ? { stage: s.stage } : {}),
     },
     // Asked ONCE in the builder's first step and used everywhere: the cover
     // shows the names, the sign-off says them through {couple}, and the events
@@ -322,7 +368,7 @@ function buildDefinition(s: Style, locale: 'ar' | 'en'): TemplateDefinitionInput
         holdMs: 5000,
         ornament: { kind: s.ornament, opacity: 0.8, scale: 1 },
         // `xl`, not `2xl`: the names have to sit INSIDE the arch/frame ornament.
-        style: { headingSize: 'xl', headingColor: s.headingInk ?? s.accent, bodyColor: s.text },
+        style: { headingSize: 'xl', headingColor: s.headingInk ?? s.accent, bodyColor: s.text, ...nameFont },
         slots: [
           // Bound: the couple's names come from the card-level field.
           { key: 'heading', type: 'text' as const, editable: true, required: false, bind: 'couple', animation: 'blurIn' as const },
@@ -473,9 +519,9 @@ function buildDefinition(s: Style, locale: 'ar' | 'en'): TemplateDefinitionInput
         transitionIn: { preset: 'glow', durationMs: 1200, delayMs: 0 },
         holdMs: 6000,
         ornament: { kind: s.ornament, opacity: s.ornament === 'theatre' ? 1 : 0.7, scale: 1 },
-        decoration: s.ornament === 'theatre' ? { effect: 'none' } : { effect: 'sparkles', intensity: 'medium', color: s.accent },
+        decoration: quiet ? { effect: 'none' } : { effect: 'sparkles', intensity: 'medium', color: s.accent },
         // The sign-off is longer than the names, so one size smaller keeps it in the arch.
-        style: { headingSize: 'lg', headingColor: s.headingInk ?? s.accent, bodyColor: s.text },
+        style: { headingSize: 'lg', headingColor: s.headingInk ?? s.accent, bodyColor: s.text, ...nameFont },
         slots: [
           { ...f('finale', ['Sign-off', 'الختام'], { required: true, maxLen: 56 }), key: 'heading', animation: 'glow' as const },
           { ...f('finaleBody', ['Last line', 'السطر الأخير'], { maxLen: 110 }), key: 'body' },
@@ -499,8 +545,8 @@ function makeInvitation(s: Style, locale: 'ar' | 'en'): CatalogTemplate {
     thumbnailHint: s.hint,
     thumbnailUrl:
       'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=800&q=70',
-    // Lead the category with the two strongest directions.
-    mvp: s.key === 'ivory-arch' || s.key === 'sage-garden',
+    // Lead the category with the strongest directions.
+    mvp: s.key === 'noir-gold' || s.key === 'ivory-arch' || s.key === 'sage-garden',
     definition: buildDefinition(s, locale),
   };
 }
