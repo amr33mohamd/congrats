@@ -5,10 +5,11 @@ import { setRequestLocale, getTranslations } from 'next-intl/server';
 import { getSession } from '@/lib/auth';
 import { getGalleryTemplate, listGalleryTemplates } from '@/server/public/templates-gallery';
 import { closestSlug } from '@/lib/closest-slug';
-import { buildPreviewExperience } from '@/lib/template-preview';
+import { cardPreview } from '@/lib/card-preview';
 import { formatPrice } from '@/components/marketing/gallery-cards';
 import { TemplatePreview } from '@/components/templates/TemplatePreview';
 import { SITE_URL, supportWhatsappHref } from '@/lib/site';
+import { namedPreview, namesParam } from './named';
 
 /**
  * Public, no-account preview of a template — the full animated card exactly
@@ -22,23 +23,32 @@ export const dynamic = 'force-dynamic';
 
 export async function generateMetadata({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string; slug: string }>;
+  searchParams: Promise<{ names?: string | string[] }>;
 }): Promise<Metadata> {
   const { locale, slug } = await params;
   const t = await load(slug);
   if (!t) return { title: 'Congrats' };
+  const names = namesParam((await searchParams).names);
+  if (names) {
+    // The link card in Messenger shows their names, not the design's name.
+    const title = cardPreview(namedPreview(t, names, '').experience).title;
+    const description =
+      locale === 'en' ? 'Your names on the invitation 👀 open it' : 'دعوتكم بأساميكم 👀 افتحها وشوفها بتتفتح قدامك';
+    const image = `/${locale}/t/${slug}/og?names=${encodeURIComponent(names)}`;
+    return {
+      title,
+      description,
+      openGraph: { title, description, type: 'website', images: [{ url: image, width: 1200, height: 630 }] },
+    };
+  }
   const title = (locale === 'ar' ? t.titleAr : t.titleEn) ?? t.titleEn ?? 'Congrats';
   return {
     title,
     openGraph: { title, type: 'website', images: [{ url: `/${locale}/og`, width: 1200, height: 630 }] },
   };
-}
-
-/** `?names=` from a Messenger reply: the couple's names, tidied and capped. */
-function namesParam(raw: string | string[] | undefined): string | null {
-  const v = (Array.isArray(raw) ? raw[0] : raw)?.replace(/\s+/g, ' ').trim();
-  return v ? v.slice(0, 44) : null;
 }
 
 export default async function TemplatePreviewPage({
@@ -79,15 +89,7 @@ export default async function TemplatePreviewPage({
       }
     : null;
 
-  // A design asks for the names once, as the `couple` field; anything else
-  // (greeting cards) shows them where it shows the recipient.
-  const hasCouple = (tpl.definition.fields ?? []).some((f) => f.key === 'couple');
-  const experience = buildPreviewExperience(tpl.definition, {
-    templateId: tpl.id,
-    category: tpl.categorySlug ?? undefined,
-    recipientName: names && !hasCouple ? names : tgDesign('sampleName'),
-  });
-  if (names && hasCouple) experience.fields = { ...experience.fields, couple: names };
+  const { experience, hasCouple } = namedPreview(tpl, names, tgDesign('sampleName'));
 
   return (
     <TemplatePreview
