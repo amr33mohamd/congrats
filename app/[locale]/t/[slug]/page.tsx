@@ -37,17 +37,29 @@ export async function generateMetadata({
     const title = cardPreview(namedPreview(t, names, '').experience).title;
     const description =
       locale === 'en' ? 'Your names on the invitation 👀 open it' : 'دعوتكم بأساميكم 👀 افتحها وشوفها بتتفتح قدامك';
-    const image = `/${locale}/t/${slug}/og?names=${encodeURIComponent(names)}`;
+    const q = `?names=${encodeURIComponent(names)}`;
+    // Canonical is this exact link: the layout's points at the home page, and
+    // Facebook follows canonical, so it showed the home page's card instead.
+    const url = `${SITE_URL}/${locale}/t/${slug}${q}`;
     return {
       title,
       description,
-      openGraph: { title, description, type: 'website', images: [{ url: image, width: 1200, height: 630 }] },
+      alternates: { canonical: url },
+      openGraph: {
+        title,
+        description,
+        url,
+        type: 'website',
+        images: [{ url: `/${locale}/t/${slug}/og${q}`, width: 1200, height: 630 }],
+      },
     };
   }
   const title = (locale === 'ar' ? t.titleAr : t.titleEn) ?? t.titleEn ?? 'Congrats';
+  const url = `${SITE_URL}/${locale}/t/${slug}`;
   return {
     title,
-    openGraph: { title, type: 'website', images: [{ url: `/${locale}/og`, width: 1200, height: 630 }] },
+    alternates: { canonical: url },
+    openGraph: { title, url, type: 'website', images: [{ url: `/${locale}/og`, width: 1200, height: 630 }] },
   };
 }
 
