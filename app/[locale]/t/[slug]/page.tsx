@@ -35,12 +35,21 @@ export async function generateMetadata({
   };
 }
 
+/** `?names=` from a Messenger reply: the couple's names, tidied and capped. */
+function namesParam(raw: string | string[] | undefined): string | null {
+  const v = (Array.isArray(raw) ? raw[0] : raw)?.replace(/\s+/g, ' ').trim();
+  return v ? v.slice(0, 44) : null;
+}
+
 export default async function TemplatePreviewPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string; slug: string }>;
+  searchParams: Promise<{ names?: string | string[] }>;
 }) {
   const { locale, slug } = await params;
+  const names = namesParam((await searchParams).names);
   setRequestLocale(locale);
   const tpl = await load(slug);
   if (!tpl) {
@@ -70,13 +79,21 @@ export default async function TemplatePreviewPage({
       }
     : null;
 
+  // A design asks for the names once, as the `couple` field; anything else
+  // (greeting cards) shows them where it shows the recipient.
+  const hasCouple = (tpl.definition.fields ?? []).some((f) => f.key === 'couple');
+  const experience = buildPreviewExperience(tpl.definition, {
+    templateId: tpl.id,
+    category: tpl.categorySlug ?? undefined,
+    recipientName: names && !hasCouple ? names : tgDesign('sampleName'),
+  });
+  if (names && hasCouple) experience.fields = { ...experience.fields, couple: names };
+
   return (
     <TemplatePreview
-      experience={buildPreviewExperience(tpl.definition, {
-        templateId: tpl.id,
-        category: tpl.categorySlug ?? undefined,
-        recipientName: tgDesign('sampleName'),
-      })}
+      experience={experience}
+      names={names}
+      nameKind={hasCouple ? 'couple' : 'recipient'}
       slug={tpl.slug}
       ctaHref={ctaHref}
       priceLabel={tpl.isPaid ? formatPrice(tpl.pricePiastres, l) : tg('free')}
