@@ -36,6 +36,13 @@
       "when": 1792533841828,
       "tag": "0004_media_music_kind",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1792898862113,
+      "tag": "0005_messenger_bot",
+      "breakpoints": true
     }
   ]
 }

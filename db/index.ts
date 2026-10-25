@@ -245,6 +245,30 @@ async function ensurePgliteSchema(pg: { exec: (sql: string) => Promise<unknown> 
     );
     CREATE INDEX IF NOT EXISTS events_created_idx ON events (created_at);
     CREATE INDEX IF NOT EXISTS events_name_idx ON events (name, created_at);
+
+    CREATE TABLE IF NOT EXISTS messenger_threads (
+      id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+      psid text NOT NULL UNIQUE,
+      display_name text,
+      stage text NOT NULL DEFAULT 'new',
+      facts jsonb NOT NULL DEFAULT '{}'::jsonb,
+      paused_until timestamptz,
+      last_inbound_at timestamptz,
+      created_at timestamptz NOT NULL DEFAULT now(),
+      updated_at timestamptz NOT NULL DEFAULT now()
+    );
+    CREATE INDEX IF NOT EXISTS messenger_threads_inbound_idx ON messenger_threads (last_inbound_at);
+
+    CREATE TABLE IF NOT EXISTS messenger_messages (
+      id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+      thread_id uuid REFERENCES messenger_threads(id) ON DELETE CASCADE,
+      mid text UNIQUE,
+      direction text NOT NULL CHECK (direction IN ('in','out')),
+      kind text NOT NULL DEFAULT 'text' CHECK (kind IN ('text','image','comment','human','system')),
+      body text NOT NULL DEFAULT '',
+      created_at timestamptz NOT NULL DEFAULT now()
+    );
+    CREATE INDEX IF NOT EXISTS messenger_messages_thread_idx ON messenger_messages (thread_id, created_at);
   `);
 
   // ── Idempotent migrations ───────────────────────────────────────────

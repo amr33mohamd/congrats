@@ -120,6 +120,11 @@ export function checkEnv(env: Env = process.env): EnvReport {
   if (!isSet(env.NEXT_PUBLIC_PLAUSIBLE_DOMAIN)) {
     warnings.push('NEXT_PUBLIC_PLAUSIBLE_DOMAIN is not set — analytics are disabled.');
   }
+  if (isTrue(env.MESSENGER_BOT_ENABLED)) {
+    for (const key of ['META_APP_SECRET', 'META_PAGE_ACCESS_TOKEN', 'META_VERIFY_TOKEN', 'META_PAGE_ID', 'META_APP_ID', 'ANTHROPIC_API_KEY'] as const) {
+      if (!isSet(env[key])) warnings.push(`MESSENGER_BOT_ENABLED is on but ${key} is not set — the Messenger bot cannot work.`);
+    }
+  }
   for (const key of ['NEXT_PUBLIC_COMPANY_NAME', 'NEXT_PUBLIC_SUPPORT_EMAIL'] as const) {
     if (!isSet(env[key])) {
       warnings.push(`${key} is not set — legal/contact pages will show placeholder text.`);

@@ -309,6 +309,48 @@ export const events = pgTable(
   (t) => [index('events_created_idx').on(t.createdAt), index('events_name_idx').on(t.name, t.createdAt)],
 );
 
+/* ───────────────────────────── MESSENGER BOT ───────────────────────── */
+
+// One row per person talking to the Page (PSID = their page-scoped id).
+// `pausedUntil` set = a human has the chat (handoff, or the owner replied
+// from Business Suite); the bot stays quiet until then. `facts` holds what
+// the agent has learned (names, chosen design) as small plain values.
+export const messengerThreads = pgTable(
+  'messenger_threads',
+  {
+    id: id(),
+    psid: text('psid').notNull().unique(),
+    displayName: text('display_name'),
+    stage: text('stage').notNull().default('new'),
+    facts: jsonb('facts').notNull().default({}),
+    pausedUntil: timestamp('paused_until', { withTimezone: true }),
+    lastInboundAt: timestamp('last_inbound_at', { withTimezone: true }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [index('messenger_threads_inbound_idx').on(t.lastInboundAt)],
+);
+
+// Every message in and out. `mid` is Meta's message id (or `comment:<id>` for
+// a comment), unique so a webhook Meta delivers twice is handled once.
+export const messengerMessages = pgTable(
+  'messenger_messages',
+  {
+    id: id(),
+    threadId: uuid('thread_id').references(() => messengerThreads.id, { onDelete: 'cascade' }),
+    mid: text('mid').unique(),
+    direction: text('direction').notNull(),
+    kind: text('kind').notNull().default('text'),
+    body: text('body').notNull().default(''),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    check('messenger_messages_direction_chk', sql`${t.direction} in ('in','out')`),
+    check('messenger_messages_kind_chk', sql`${t.kind} in ('text','image','comment','human','system')`),
+    index('messenger_messages_thread_idx').on(t.threadId, t.createdAt),
+  ],
+);
+
 /* ───────────────────────────── INFERRED TYPES ─────────────────────── */
 
 export type User = typeof users.$inferSelect;
@@ -327,6 +369,8 @@ export type ShareLink = typeof shareLinks.$inferSelect;
 export type AuditLogRow = typeof auditLog.$inferSelect;
 export type PasswordResetToken = typeof passwordResetTokens.$inferSelect;
 export type EventRow = typeof events.$inferSelect;
+export type MessengerThread = typeof messengerThreads.$inferSelect;
+export type MessengerMessage = typeof messengerMessages.$inferSelect;
 
 export const schema = {
   users,
@@ -341,4 +385,6 @@ export const schema = {
   auditLog,
   passwordResetTokens,
   events,
+  messengerThreads,
+  messengerMessages,
 };
