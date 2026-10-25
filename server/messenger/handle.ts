@@ -8,7 +8,7 @@
  *                                  leaves comments alone (for testing on the live Page).
  *  - MESSENGER_COMMENTS_ENABLED=true → also answers comments on the Page's posts.
  */
-import { and, desc, eq } from 'drizzle-orm';
+import { and, desc, eq, gte, inArray, lte } from 'drizzle-orm';
 import { getDb } from '@/db';
 import { messengerMessages, messengerThreads, type MessengerThread } from '@/db/schema';
 import { notifyAdmin, cairoTime } from '@/lib/admin-notify';
@@ -94,6 +94,44 @@ async function onEcho(ev: Extract<InboundEvent, { kind: 'echo' }>) {
     .where(eq(messengerThreads.id, thread.id));
 }
 
+/** A Page reply this close to a customer message is an automation (instant reply, away message), not a person. */
+export const AUTOMATION_WINDOW_MS = 15_000;
+
+export function looksAutomated(pageReplyAt: Date, nearestInboundAt: Date | null): boolean {
+  return !!nearestInboundAt && Math.abs(pageReplyAt.getTime() - nearestInboundAt.getTime()) < AUTOMATION_WINDOW_MS;
+}
+
+/**
+ * Business Suite automations echo exactly like a person replying from the
+ * inbox, so a pause only counts when it came from a handoff or from a Page
+ * reply that was not sent right after the customer wrote.
+ */
+async function pauseIsReal(threadId: string): Promise<boolean> {
+  const db = await getDb();
+  const [last] = await db
+    .select({ kind: messengerMessages.kind, createdAt: messengerMessages.createdAt })
+    .from(messengerMessages)
+    .where(and(eq(messengerMessages.threadId, threadId), inArray(messengerMessages.kind, ['human', 'system'])))
+    .orderBy(desc(messengerMessages.createdAt))
+    .limit(1);
+  if (!last || last.kind === 'system') return true;
+  const from = new Date(last.createdAt.getTime() - AUTOMATION_WINDOW_MS);
+  const to = new Date(last.createdAt.getTime() + AUTOMATION_WINDOW_MS);
+  const [near] = await db
+    .select({ createdAt: messengerMessages.createdAt })
+    .from(messengerMessages)
+    .where(
+      and(
+        eq(messengerMessages.threadId, threadId),
+        eq(messengerMessages.direction, 'in'),
+        gte(messengerMessages.createdAt, from),
+        lte(messengerMessages.createdAt, to),
+      ),
+    )
+    .limit(1);
+  return !looksAutomated(last.createdAt, near?.createdAt ?? null);
+}
+
 async function onMessage(ev: Extract<InboundEvent, { kind: 'message' }>) {
   const thread = await threadFor(ev.psid);
   const body = [ev.text, ...ev.imageUrls.map((u) => `[صورة] ${u}`)].filter(Boolean).join('\n');
@@ -107,7 +145,11 @@ async function onMessage(ev: Extract<InboundEvent, { kind: 'message' }>) {
     .where(eq(messengerThreads.id, thread.id));
 
   if (!botMayReply(ev.psid)) return log('message: bot is off for this person');
-  if (thread.pausedUntil && thread.pausedUntil > new Date()) return log('message: chat paused for a person');
+  if (thread.pausedUntil && thread.pausedUntil > new Date()) {
+    if (await pauseIsReal(thread.id)) return log('message: chat paused for a person');
+    await db.update(messengerThreads).set({ pausedUntil: null }).where(eq(messengerThreads.id, thread.id));
+    log('message: pause came from a Business Suite automation, ignoring it');
+  }
 
   // People often send several short messages in a row: answer once, after the last.
   await sleep(DEBOUNCE_MS);
@@ -211,7 +253,7 @@ async function converse(
       ).reverse()
     : [];
   const turns = normalizeTurns([
-    ...history.map((m) => ({
+    ...history.filter((m) => m.kind !== 'system').map((m) => ({
       role: m.direction === 'in' ? ('user' as const) : ('assistant' as const),
       text: m.kind === 'comment' ? `[تعليق على إعلاننا]: ${m.body}` : m.body,
     })),
@@ -302,6 +344,7 @@ async function converse(
       .where(eq(messengerThreads.id, thread.id));
   }
   if (handedOff) {
+    if (thread.id) await record(thread.id, { mid: null, direction: 'out', kind: 'system', body: `handoff: ${handedOff}` });
     const lastIn = history.filter((m) => m.direction === 'in').at(-1)?.body ?? opts.commentText ?? '';
     await notifyAdmin({
       subject: `Messenger: ${thread.displayName ?? 'a customer'} needs you`,

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { normalizeTurns } from './claude';
 import { systemPrompt } from './prompt';
-import { botMayReply, commentsEnabled } from '@/server/messenger/handle';
+import { botMayReply, commentsEnabled, looksAutomated } from '@/server/messenger/handle';
 
 describe('normalizeTurns', () => {
   it('merges consecutive messages and starts with the customer', () => {
@@ -67,5 +67,17 @@ describe('commentsEnabled', () => {
     expect(commentsEnabled({ MESSENGER_BOT_ENABLED: 'true', MESSENGER_COMMENTS_ENABLED: 'true' })).toBe(true);
     expect(commentsEnabled({ MESSENGER_BOT_ENABLED: 'true', MESSENGER_COMMENTS_ENABLED: 'true', MESSENGER_TEST_PSIDS: 'U1' })).toBe(false);
     expect(commentsEnabled({ MESSENGER_COMMENTS_ENABLED: 'true' })).toBe(false);
+  });
+});
+
+describe('looksAutomated', () => {
+  const t = (s: number) => new Date(Date.UTC(2026, 9, 25, 20, 0, s));
+  it('treats a Page reply seconds after the customer as an automation', () => {
+    expect(looksAutomated(t(2), t(0))).toBe(true);
+    expect(looksAutomated(t(0), t(1))).toBe(true); // echo processed before the message
+  });
+  it('treats a later reply, or one with no nearby customer message, as a person', () => {
+    expect(looksAutomated(t(40), t(0))).toBe(false);
+    expect(looksAutomated(t(2), null)).toBe(false);
   });
 });
