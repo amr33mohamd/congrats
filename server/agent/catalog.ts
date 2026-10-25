@@ -21,5 +21,6 @@ export async function invitationCatalog(): Promise<CatalogItem[]> {
 /** The watermarked preview link with the couple's names, as sent by hand today. */
 export function previewUrl(slug: string, names: string): string {
   const n = namesParam(names) ?? '';
-  return `${SITE_URL}/ar/t/${encodeURIComponent(slug)}?names=${encodeURIComponent(n)}`;
+  // `+` for spaces keeps the link shorter; the page reads it back as a space.
+  return `${SITE_URL}/ar/t/${encodeURIComponent(slug)}?names=${encodeURIComponent(n).replace(/%20/g, '+')}`;
 }

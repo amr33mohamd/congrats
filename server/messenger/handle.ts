@@ -21,7 +21,7 @@ import {
   splitReply,
   type InboundEvent,
 } from '@/lib/messenger/meta';
-import { normalizeTurns, runAgent, type ToolDef } from '@/server/agent/claude';
+import { normalizeTurns, runAgent, withImages, withoutImages, type ToolDef } from '@/server/agent/claude';
 import { invitationCatalog, previewUrl } from '@/server/agent/catalog';
 import { FACT_KEYS, systemPrompt, type Facts } from '@/server/agent/prompt';
 
@@ -221,6 +221,20 @@ async function onComment(ev: Extract<InboundEvent, { kind: 'comment' }>) {
   ).catch((err) => console.error('[messenger] public reply failed', err));
 }
 
+/**
+ * The agent writes [[LINK]] and the exact URL is put in here: a model retyping a
+ * long percent-encoded link tends to corrupt it. A link the agent forgot goes
+ * after its first message, alone, as always.
+ */
+export function placeLink(parts: string[], link: string | null): string[] {
+  const out = parts
+    .map((p) => p.replace(/\[\[LINK\]\]/g, link ?? '').trim())
+    .filter(Boolean)
+    .filter((p) => !/^https?:\/\//.test(p) || p === link); // never pass on a link the model typed itself
+  if (link && !out.includes(link)) out.splice(Math.min(1, out.length), 0, link);
+  return out;
+}
+
 const isLink = (s: string) => /^https?:\/\/\S+$/.test(s);
 
 async function deliver(thread: MessengerThread, psid: string, parts: string[]) {
@@ -240,6 +254,7 @@ async function converse(
   const catalog = await invitationCatalog();
   const facts: Facts = { ...((thread.facts as Facts) ?? {}) };
   let previewSent = false;
+  let previewLink: string | null = null;
   let handedOff: string | null = null;
 
   const history = thread.id
@@ -265,7 +280,7 @@ async function converse(
     {
       name: 'make_preview',
       description:
-        "Returns the watermarked preview link of a design with the couple's names on it. Call it as soon as you know both names. Send the link alone on its own line.",
+        "Prepares the watermarked preview of a design with the couple's names on it. Call it as soon as you know both names. Then write the token [[LINK]] alone on its own line where the link goes; never type a link yourself.",
       input_schema: {
         type: 'object',
         properties: {
@@ -282,7 +297,8 @@ async function converse(
         facts.names = names;
         facts.template = item.slug;
         previewSent = true;
-        return previewUrl(item.slug, names);
+        previewLink = previewUrl(item.slug, names);
+        return 'Ready. Put [[LINK]] alone on its own line in your reply; it becomes the link.';
       },
     },
     {
@@ -316,19 +332,23 @@ async function converse(
   ];
 
   const now = new Date();
-  const text = await runAgent({
-    system: systemPrompt({
-      catalog,
-      facts,
-      customerName: thread.displayName,
-      cairoNow: cairoTime(now),
-      isNight: isNightInCairo(now),
-      instapayHandle: process.env.INSTAPAY_HANDLE?.trim() || null,
-      fromComment: opts.fromComment,
-    }),
-    turns,
-    tools,
+  const system = systemPrompt({
+    catalog,
+    facts,
+    customerName: thread.displayName,
+    cairoNow: cairoTime(now),
+    isNight: isNightInCairo(now),
+    instapayHandle: process.env.INSTAPAY_HANDLE?.trim() || null,
+    fromComment: opts.fromComment,
   });
+  let text: string;
+  try {
+    text = await runAgent({ system, turns: withImages(turns), tools });
+  } catch (err) {
+    // Usually an image Meta no longer serves: answer from the text alone.
+    console.warn('[messenger] retrying without images', String((err as Error).message).slice(0, 200));
+    text = await runAgent({ system, turns: withoutImages(turns), tools });
+  }
 
   thread.facts = facts;
   if (previewSent && thread.stage === 'new') thread.stage = 'previewed';
@@ -358,6 +378,12 @@ async function converse(
     });
   }
 
+  if (handedOff && (!text || text.trim() === 'SKIP')) {
+    // The customer must never be left without an answer after a handoff.
+    text = isNightInCairo(now)
+      ? 'تمام، وصلني 🤍 حد من الفريق هيرد عليك الصبح بإذن الله'
+      : 'تمام، وصلني 🤍 حد من الفريق هيرد عليك حالًا';
+  }
   if (!text || text.trim() === 'SKIP') return { parts: [], previewSent };
-  return { parts: splitReply(text), previewSent };
+  return { parts: placeLink(splitReply(text), previewLink), previewSent };
 }

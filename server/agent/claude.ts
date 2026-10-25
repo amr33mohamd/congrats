@@ -5,9 +5,10 @@
 
 export type Role = 'user' | 'assistant';
 type TextBlock = { type: 'text'; text: string };
+type ImageBlock = { type: 'image'; source: { type: 'url'; url: string } };
 type ToolUseBlock = { type: 'tool_use'; id: string; name: string; input: Record<string, unknown> };
 type ToolResultBlock = { type: 'tool_result'; tool_use_id: string; content: string; is_error?: boolean };
-type Block = TextBlock | ToolUseBlock | ToolResultBlock;
+type Block = TextBlock | ImageBlock | ToolUseBlock | ToolResultBlock;
 export type Turn = { role: Role; content: string | Block[] };
 
 export interface ToolDef {
@@ -86,4 +87,40 @@ export function normalizeTurns(turns: { role: Role; text: string }[]): Turn[] {
   }
   while (out.length && out[0].role === 'assistant') out.shift();
   return out.map((t) => ({ role: t.role, content: t.text }));
+}
+
+const IMAGE_LINE = /^\[صورة\] (https?:\/\/\S+)$/;
+
+/**
+ * Stored messages mark images as "[صورة] <url>" lines. The newest customer turn
+ * carries them as real images so the agent can see them (a payment screenshot,
+ * a photo for the invitation); older ones become a short note, since Meta's
+ * image links expire.
+ */
+export function withImages(turns: Turn[]): Turn[] {
+  const lastUser = turns.map((t) => t.role).lastIndexOf('user');
+  return turns.map((t, i) => {
+    if (typeof t.content !== 'string') return t;
+    const lines = t.content.split('\n');
+    const urls = lines.map((l) => IMAGE_LINE.exec(l.trim())?.[1]).filter((u): u is string => !!u);
+    if (urls.length === 0) return t;
+    const text = lines.map((l) => (IMAGE_LINE.test(l.trim()) ? '[أرسل صورة]' : l)).join('\n');
+    if (i !== lastUser) return { ...t, content: text };
+    return {
+      ...t,
+      content: [
+        { type: 'text', text },
+        ...urls.slice(0, 3).map((url): ImageBlock => ({ type: 'image', source: { type: 'url', url } })),
+      ],
+    };
+  });
+}
+
+/** The same turns with every image reduced to a note, for when an image cannot be fetched. */
+export function withoutImages(turns: Turn[]): Turn[] {
+  return turns.map((t) =>
+    typeof t.content === 'string'
+      ? { ...t, content: t.content.split('\n').map((l) => (IMAGE_LINE.test(l.trim()) ? '[أرسل صورة]' : l)).join('\n') }
+      : t,
+  );
 }

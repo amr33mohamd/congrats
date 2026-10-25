@@ -111,7 +111,7 @@ export function splitReply(text: string, max = 4): string[] {
     for (const line of para.split('\n')) {
       const t = line.trim();
       if (!t) continue;
-      if (/^https?:\/\/\S+$/.test(t)) {
+      if (/^https?:\/\/\S+$/.test(t) || t === '[[LINK]]') {
         if (buf.length) parts.push(buf.join('\n'));
         buf = [];
         parts.push(t);

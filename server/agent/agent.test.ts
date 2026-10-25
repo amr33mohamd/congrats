@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { normalizeTurns } from './claude';
+import { normalizeTurns, withImages, withoutImages } from './claude';
 import { systemPrompt } from './prompt';
-import { botMayReply, commentsEnabled, looksAutomated } from '@/server/messenger/handle';
+import { botMayReply, commentsEnabled, looksAutomated, placeLink } from '@/server/messenger/handle';
+import { splitReply } from '@/lib/messenger/meta';
 
 describe('normalizeTurns', () => {
   it('merges consecutive messages and starts with the customer', () => {
@@ -79,5 +80,43 @@ describe('looksAutomated', () => {
   it('treats a later reply, or one with no nearby customer message, as a person', () => {
     expect(looksAutomated(t(40), t(0))).toBe(false);
     expect(looksAutomated(t(2), null)).toBe(false);
+  });
+});
+
+describe('placeLink', () => {
+  const link = 'https://congrats.example/ar/t/x?names=%D8%A3+%D9%88';
+
+  it('puts the exact link where the agent wrote [[LINK]], as its own message', () => {
+    const parts = splitReply('ألف مبروك 🤍 دي دعوتكم\n[[LINK]]\n\nعجبتك؟');
+    expect(placeLink(parts, link)).toEqual(['ألف مبروك 🤍 دي دعوتكم', link, 'عجبتك؟']);
+  });
+
+  it('drops a link the model typed itself and adds the real one after the first message', () => {
+    expect(placeLink(['دي دعوتكم', 'https://congrats.example/broken%D8', 'عجبتك؟'], link)).toEqual(['دي دعوتكم', link, 'عجبتك؟']);
+  });
+
+  it('leaves replies without a preview alone', () => {
+    expect(placeLink(['الساعة كام؟'], null)).toEqual(['الساعة كام؟']);
+  });
+});
+
+describe('withImages', () => {
+  const turns = [
+    { role: 'user' as const, content: 'صورة قديمة\n[صورة] https://cdn/old.jpg' },
+    { role: 'assistant' as const, content: 'تمام' },
+    { role: 'user' as const, content: 'حولت\n[صورة] https://cdn/pay.jpg' },
+  ];
+
+  it('shows only the newest customer image to the agent', () => {
+    const out = withImages(turns);
+    expect(out[0].content).toBe('صورة قديمة\n[أرسل صورة]');
+    expect(out[2].content).toEqual([
+      { type: 'text', text: 'حولت\n[أرسل صورة]' },
+      { type: 'image', source: { type: 'url', url: 'https://cdn/pay.jpg' } },
+    ]);
+  });
+
+  it('can fall back to text only', () => {
+    expect(withoutImages(turns)[2].content).toBe('حولت\n[أرسل صورة]');
   });
 });
