@@ -20,6 +20,7 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   const raw = await req.text();
   if (!verifySignature(raw, req.headers.get('x-hub-signature-256'), process.env.META_APP_SECRET)) {
+    console.warn(`[messenger] rejected: bad signature (app secret ${process.env.META_APP_SECRET ? 'set' : 'missing'})`);
     return new Response('bad signature', { status: 401 });
   }
   let body: unknown;
@@ -29,6 +30,7 @@ export async function POST(req: Request) {
     return new Response('bad json', { status: 400 });
   }
   const events = parseWebhook(body, { pageId: process.env.META_PAGE_ID, appId: process.env.META_APP_ID });
+  console.info(`[messenger] received: ${events.map((e) => e.kind).join(', ') || 'nothing the bot handles'}`);
   if (events.length) after(() => handleEvents(events));
   return new Response('EVENT_RECEIVED', { status: 200 });
 }

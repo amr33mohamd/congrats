@@ -29,6 +29,7 @@ const HUMAN_PAUSE_MS = 12 * 60 * 60 * 1000;
 const DEBOUNCE_MS = 4000;
 const HISTORY = 30;
 
+const log = (what: string) => console.info(`[messenger] ${what}`);
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 export function commentsEnabled(env: Record<string, string | undefined> = process.env): boolean {
@@ -97,7 +98,7 @@ async function onMessage(ev: Extract<InboundEvent, { kind: 'message' }>) {
   const thread = await threadFor(ev.psid);
   const body = [ev.text, ...ev.imageUrls.map((u) => `[صورة] ${u}`)].filter(Boolean).join('\n');
   const fresh = await record(thread.id, { mid: ev.mid, direction: 'in', kind: ev.imageUrls.length ? 'image' : 'text', body });
-  if (!fresh) return;
+  if (!fresh) return log('message: already handled');
 
   const db = await getDb();
   await db
@@ -105,8 +106,8 @@ async function onMessage(ev: Extract<InboundEvent, { kind: 'message' }>) {
     .set({ lastInboundAt: new Date(ev.at), updatedAt: new Date() })
     .where(eq(messengerThreads.id, thread.id));
 
-  if (!botMayReply(ev.psid)) return;
-  if (thread.pausedUntil && thread.pausedUntil > new Date()) return;
+  if (!botMayReply(ev.psid)) return log('message: bot is off for this person');
+  if (thread.pausedUntil && thread.pausedUntil > new Date()) return log('message: chat paused for a person');
 
   // People often send several short messages in a row: answer once, after the last.
   await sleep(DEBOUNCE_MS);
@@ -116,7 +117,7 @@ async function onMessage(ev: Extract<InboundEvent, { kind: 'message' }>) {
     .where(and(eq(messengerMessages.threadId, thread.id), eq(messengerMessages.direction, 'in')))
     .orderBy(desc(messengerMessages.createdAt))
     .limit(1);
-  if (latest?.mid !== ev.mid) return;
+  if (latest?.mid !== ev.mid) return log('message: a newer message will be answered');
 
   if (!thread.displayName) {
     const name = await getProfileName(ev.psid);
@@ -127,8 +128,10 @@ async function onMessage(ev: Extract<InboundEvent, { kind: 'message' }>) {
   }
 
   const result = await converse(thread, { fromComment: false });
-  if (!result) return;
+  if (!result) return log('message: nothing to answer');
+  if (result.parts.length === 0) return log('message: the agent chose not to reply');
   await deliver(thread, ev.psid, result.parts);
+  log(`message: replied with ${result.parts.length} message(s)`);
 }
 
 async function onComment(ev: Extract<InboundEvent, { kind: 'comment' }>) {
