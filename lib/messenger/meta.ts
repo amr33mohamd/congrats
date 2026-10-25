@@ -182,3 +182,40 @@ export async function getProfileName(psid: string): Promise<string | null> {
     return null;
   }
 }
+
+export interface LinkCard {
+  url: string;
+  title: string;
+  subtitle?: string;
+  imageUrl?: string;
+  button: string;
+}
+
+/**
+ * A link as a card (picture, title, button). Messenger shows a bare link sent
+ * through the API as plain text that may not open; a card's button always does.
+ */
+export async function sendCard(psid: string, card: LinkCard): Promise<string> {
+  const r = await graph('/me/messages', {
+    recipient: { id: psid },
+    messaging_type: 'RESPONSE',
+    message: {
+      attachment: {
+        type: 'template',
+        payload: {
+          template_type: 'generic',
+          elements: [
+            {
+              title: card.title.slice(0, 80),
+              ...(card.subtitle ? { subtitle: card.subtitle.slice(0, 80) } : {}),
+              ...(card.imageUrl ? { image_url: card.imageUrl } : {}),
+              default_action: { type: 'web_url', url: card.url },
+              buttons: [{ type: 'web_url', url: card.url, title: card.button.slice(0, 20) }],
+            },
+          ],
+        },
+      },
+    },
+  });
+  return str(r.message_id);
+}

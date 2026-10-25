@@ -16,13 +16,15 @@ import {
   getProfileName,
   replyToComment,
   sendPrivateReply,
+  sendCard,
   sendText,
   sendTyping,
   splitReply,
   type InboundEvent,
+  type LinkCard,
 } from '@/lib/messenger/meta';
 import { normalizeTurns, runAgent, withImages, withoutImages, type ToolDef } from '@/server/agent/claude';
-import { invitationCatalog, previewUrl } from '@/server/agent/catalog';
+import { invitationCatalog, previewImageUrl, previewUrl } from '@/server/agent/catalog';
 import { FACT_KEYS, systemPrompt, type Facts } from '@/server/agent/prompt';
 
 const HUMAN_PAUSE_MS = 12 * 60 * 60 * 1000;
@@ -172,7 +174,7 @@ async function onMessage(ev: Extract<InboundEvent, { kind: 'message' }>) {
   const result = await converse(thread, { fromComment: false });
   if (!result) return log('message: nothing to answer');
   if (result.parts.length === 0) return log('message: the agent chose not to reply');
-  await deliver(thread, ev.psid, result.parts);
+  await deliver(thread, ev.psid, result.parts, result.card);
   log(`message: replied with ${result.parts.length} message(s)`);
 }
 
@@ -213,7 +215,7 @@ async function onComment(ev: Extract<InboundEvent, { kind: 'comment' }>) {
     .set({ threadId: thread.id })
     .where(eq(messengerMessages.mid, `comment:${ev.commentId}`));
   await record(thread.id, { mid: first.mid || null, direction: 'out', kind: 'text', body: parts[0] });
-  await deliver(thread, first.psid, parts.slice(1));
+  await deliver(thread, first.psid, parts.slice(1), result.card);
 
   await replyToComment(
     ev.commentId,
@@ -237,11 +239,20 @@ export function placeLink(parts: string[], link: string | null): string[] {
 
 const isLink = (s: string) => /^https?:\/\/\S+$/.test(s);
 
-async function deliver(thread: MessengerThread, psid: string, parts: string[]) {
+async function deliver(thread: MessengerThread, psid: string, parts: string[], card: LinkCard | null = null) {
   for (const part of parts) {
     await sendTyping(psid);
     await sleep(Math.min(1200 + part.length * 25, 4500));
-    const mid = await sendText(psid, part);
+    let mid: string;
+    if (card && part === card.url) {
+      // The preview goes as a card with a button; the plain link is the fallback.
+      mid = await sendCard(psid, card).catch((err) => {
+        console.warn('[messenger] card failed, sending the link as text', String((err as Error).message).slice(0, 200));
+        return sendText(psid, part);
+      });
+    } else {
+      mid = await sendText(psid, part);
+    }
     await record(thread.id, { mid: mid || null, direction: 'out', kind: 'text', body: part });
   }
 }
@@ -249,12 +260,13 @@ async function deliver(thread: MessengerThread, psid: string, parts: string[]) {
 async function converse(
   thread: MessengerThread,
   opts: { fromComment: boolean; commentText?: string },
-): Promise<{ parts: string[]; previewSent: boolean } | null> {
+): Promise<{ parts: string[]; previewSent: boolean; card: LinkCard | null } | null> {
   const db = await getDb();
   const catalog = await invitationCatalog();
   const facts: Facts = { ...((thread.facts as Facts) ?? {}) };
   let previewSent = false;
   let previewLink: string | null = null;
+  let card: LinkCard | null = null;
   let handedOff: string | null = null;
 
   const history = thread.id
@@ -298,6 +310,13 @@ async function converse(
         facts.template = item.slug;
         previewSent = true;
         previewLink = previewUrl(item.slug, names);
+        card = {
+          url: previewLink,
+          title: `دعوة فرح ${names}`,
+          subtitle: 'افتحها وشوفها بتتفتح قدامك ✨',
+          imageUrl: previewImageUrl(item.slug, names),
+          button: 'افتح الدعوة 💌',
+        };
         return 'Ready. Put [[LINK]] alone on its own line in your reply; it becomes the link.';
       },
     },
@@ -384,6 +403,6 @@ async function converse(
       ? 'تمام، وصلني 🤍 حد من الفريق هيرد عليك الصبح بإذن الله'
       : 'تمام، وصلني 🤍 حد من الفريق هيرد عليك حالًا';
   }
-  if (!text || text.trim() === 'SKIP') return { parts: [], previewSent };
-  return { parts: placeLink(splitReply(text), previewLink), previewSent };
+  if (!text || text.trim() === 'SKIP') return { parts: [], previewSent, card };
+  return { parts: placeLink(splitReply(text), previewLink), previewSent, card };
 }

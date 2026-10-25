@@ -18,6 +18,12 @@ export async function invitationCatalog(): Promise<CatalogItem[]> {
     .sort((a, b) => a.priceEgp - b.priceEgp);
 }
 
+/** The design's share image with the names on it (the same one link previews show). */
+export function previewImageUrl(slug: string, names: string): string {
+  const n = namesParam(names) ?? '';
+  return `${SITE_URL}/ar/t/${encodeURIComponent(slug)}/og?names=${encodeURIComponent(n)}`;
+}
+
 /** The watermarked preview link with the couple's names, as sent by hand today. */
 export function previewUrl(slug: string, names: string): string {
   const n = namesParam(names) ?? '';
