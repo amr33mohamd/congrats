@@ -6,6 +6,7 @@
  *  - MESSENGER_BOT_ENABLED=true  → the bot replies at all; otherwise it only logs.
  *  - MESSENGER_TEST_PSIDS=a,b    → while set, it replies only to these people and
  *                                  leaves comments alone (for testing on the live Page).
+ *  - MESSENGER_COMMENTS_ENABLED=true → also answers comments on the Page's posts.
  */
 import { and, desc, eq } from 'drizzle-orm';
 import { getDb } from '@/db';
@@ -30,8 +31,9 @@ const HISTORY = 30;
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-function testPsids(): string[] {
-  return (process.env.MESSENGER_TEST_PSIDS ?? '').split(',').map((s) => s.trim()).filter(Boolean);
+export function commentsEnabled(env: Record<string, string | undefined> = process.env): boolean {
+  const testing = (env.MESSENGER_TEST_PSIDS ?? '').trim() !== '';
+  return env.MESSENGER_BOT_ENABLED === 'true' && env.MESSENGER_COMMENTS_ENABLED === 'true' && !testing;
 }
 
 export function botMayReply(psid: string | null, env: Record<string, string | undefined> = process.env): boolean {
@@ -133,7 +135,7 @@ async function onComment(ev: Extract<InboundEvent, { kind: 'comment' }>) {
   if (ev.isReply || !ev.commentId || !ev.text.trim()) return;
   const fresh = await record(null, { mid: `comment:${ev.commentId}`, direction: 'in', kind: 'comment', body: ev.text });
   if (!fresh) return;
-  if (process.env.MESSENGER_BOT_ENABLED !== 'true' || testPsids().length > 0) return;
+  if (!commentsEnabled()) return;
 
   // The commenter has no Messenger thread yet: the agent answers the comment alone.
   const scratch = {
