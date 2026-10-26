@@ -6,19 +6,7 @@
  */
 import * as React from 'react';
 
-/** Format integer piastres → localized EGP string (1 EGP = 100 piastres). */
-export function formatPiastres(piastres: number | null | undefined, locale: string): string {
-  const value = (piastres ?? 0) / 100;
-  try {
-    return new Intl.NumberFormat(locale === 'ar' ? 'ar-EG' : 'en-EG', {
-      style: 'currency',
-      currency: 'EGP',
-      maximumFractionDigits: 2,
-    }).format(value);
-  } catch {
-    return `${value.toFixed(2)} EGP`;
-  }
-}
+export { formatPiastres } from './format';
 
 /** Format an ISO date / Date → short localized date-time. */
 export function formatDate(input: string | Date | null | undefined, locale: string): string {

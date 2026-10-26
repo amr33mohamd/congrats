@@ -3,7 +3,7 @@ import { Link } from '@/i18n/navigation';
 import { getDb } from '@/db';
 import { getAnalytics } from '@/server/admin/analytics-service';
 import { PageHeader, Table, THead, TH, TBody, TR, TD, EmptyState } from '@/components/admin/primitives';
-import { formatPiastres } from '@/components/admin/lib';
+import { formatPiastres } from '@/components/admin/format';
 
 export const dynamic = 'force-dynamic';
 
