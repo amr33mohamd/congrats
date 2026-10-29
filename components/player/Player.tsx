@@ -672,6 +672,9 @@ function useAutoScroll({
     const frame = (now: number) => {
       const dt = last ? Math.min(now - last, 64) : 0;
       last = now;
+      // A guest filling in the RSVP form must not have it glide away.
+      const typing = document.activeElement instanceof HTMLInputElement || document.activeElement instanceof HTMLTextAreaElement;
+      if (typing) pausedUntil = now + AUTO_SCROLL_RESUME_AFTER_MS;
       if (now < pausedUntil) {
         // Paused: follow wherever the guest scrolled to, so the glide picks
         // up from there rather than snapping back.

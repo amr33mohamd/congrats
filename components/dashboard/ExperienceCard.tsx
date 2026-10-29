@@ -11,10 +11,12 @@ export function ExperienceCard({
   item,
   onShare,
   onDelete,
+  onRsvps,
 }: {
   item: ExperienceListItem;
   onShare: (item: ExperienceListItem) => void;
   onDelete: (item: ExperienceListItem) => void;
+  onRsvps: (item: ExperienceListItem) => void;
 }) {
   const t = useTranslations('dashboard');
   const status = deriveStatus(item);
@@ -64,6 +66,11 @@ export function ExperienceCard({
                 {t('card.edit')}
               </Button>
             </Link>
+            {item.rsvpCount ? (
+              <Button size="sm" variant="ghost" onClick={() => onRsvps(item)}>
+                <span aria-hidden>💌</span> {t('card.rsvps', { count: item.rsvpCount })}
+              </Button>
+            ) : null}
           </>
         ) : status === 'awaiting_payment' || status === 'rejected' ? (
           <>

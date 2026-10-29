@@ -269,6 +269,17 @@ async function ensurePgliteSchema(pg: { exec: (sql: string) => Promise<unknown> 
       created_at timestamptz NOT NULL DEFAULT now()
     );
     CREATE INDEX IF NOT EXISTS messenger_messages_thread_idx ON messenger_messages (thread_id, created_at);
+
+    CREATE TABLE IF NOT EXISTS rsvps (
+      id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+      experience_id uuid NOT NULL REFERENCES experiences(id) ON DELETE CASCADE,
+      name text NOT NULL,
+      attending boolean NOT NULL,
+      guests integer NOT NULL DEFAULT 1 CONSTRAINT rsvps_guests_chk CHECK (guests BETWEEN 0 AND 20),
+      note text,
+      created_at timestamptz NOT NULL DEFAULT now()
+    );
+    CREATE INDEX IF NOT EXISTS rsvps_experience_idx ON rsvps (experience_id, created_at);
   `);
 
   // ── Idempotent migrations ───────────────────────────────────────────

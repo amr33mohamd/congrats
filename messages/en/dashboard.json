@@ -36,7 +36,8 @@
     "deleteConfirmTitle": "Delete this experience?",
     "deleteConfirmBody": "This can't be undone. The shareable link will stop working.",
     "deleteConfirm": "Delete",
-    "deleteCancel": "Keep it"
+    "deleteCancel": "Keep it",
+    "rsvps": "Replies ({count})"
   },
   "share": {
     "title": "Share your experience",
@@ -221,5 +222,17 @@
     "Venue": "Venue",
     "Rsvp": "RSVP",
     "Gift": "Gift details"
+  },
+  "rsvps": {
+    "title": "Guest replies",
+    "attending": "Coming",
+    "declined": "Can't come",
+    "guests": "People",
+    "coming": "Coming",
+    "notComing": "Can't come",
+    "people": "{count} people",
+    "empty": "No replies yet. When a guest answers from the card it shows up here.",
+    "close": "Done",
+    "failed": "Could not load the replies. Try again."
   }
 }

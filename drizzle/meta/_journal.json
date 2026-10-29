@@ -43,6 +43,13 @@
       "when": 1792898862113,
       "tag": "0005_messenger_bot",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1793304788326,
+      "tag": "0006_rsvps",
+      "breakpoints": true
     }
   ]
 }

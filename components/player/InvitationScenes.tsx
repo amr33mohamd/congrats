@@ -313,15 +313,17 @@ export function VenueScene(p: SceneRenderPropsLike) {
 }
 
 /**
- * RSVP — opens WhatsApp with a prefilled reply. No form backend: in Egypt the
- * couple is going to read replies on WhatsApp anyway, and a prefilled message
- * gets answered far more often than a form nobody checks.
+ * RSVP — a short form (name, coming or not, how many) saved for the couple,
+ * who read the replies in their dashboard. A WhatsApp number, when set, stays
+ * as a second way to answer. Only a shared card page submits; builder and
+ * admin previews show the form without sending.
  */
 export function RsvpScene(p: SceneRenderPropsLike) {
   const c = colors(p);
+  const ar = isAr(p);
   const phone = t(p, 'phone').replace(/[^\d]/g, '');
-  const guest = p.recipientName || (isAr(p) ? 'ضيفكم' : 'your guest');
-  const msg = isAr(p)
+  const guest = p.recipientName || (ar ? 'ضيفكم' : 'your guest');
+  const msg = ar
     ? `أهلاً! أنا ${guest}، يسعدني أؤكد حضوري 🤍`
     : `Hi! It's ${guest} — delighted to confirm I'll be there 🤍`;
   const href = phone.length >= 8 ? `https://wa.me/${phone}?text=${encodeURIComponent(msg)}` : '';
@@ -332,6 +334,7 @@ export function RsvpScene(p: SceneRenderPropsLike) {
       </Reveal>
       <Reveal p={p} delay={0.12}>
         <Lines value={t(p, 'body')} className="text-base leading-relaxed" style={{ color: ink(p, 'body', c.text) }} />
+        <RsvpForm p={p} />
         {href ? (
           <a
             href={href}
@@ -341,14 +344,180 @@ export function RsvpScene(p: SceneRenderPropsLike) {
               e.stopPropagation();
               trackOnCard('rsvp_click');
             }}
-            className={pill}
-            style={{ background: c.accent, color: c.onAccent, outlineColor: c.accent }}
+            className="mt-token-4 inline-block text-sm font-semibold underline underline-offset-4"
+            style={{ color: c.accent }}
           >
-            {isAr(p) ? 'تأكيد الحضور' : 'Confirm attendance'}
+            {ar ? 'أو أكّد على واتساب' : 'Or reply on WhatsApp'}
           </a>
         ) : null}
       </Reveal>
     </Shell>
+  );
+}
+
+/** The slug of the shared card page this runs on, or null in a preview. */
+function cardSlug(): string | null {
+  if (typeof window === 'undefined') return null;
+  return /^\/(?:ar|en)\/p\/([^/?#]+)/.exec(window.location.pathname)?.[1] ?? null;
+}
+
+const rsvpSentKey = (slug: string) => `rsvp:${slug}`;
+
+function RsvpForm({ p }: { p: SceneRenderPropsLike }) {
+  const c = colors(p);
+  const ar = isAr(p);
+  const [name, setName] = React.useState('');
+  const [attending, setAttending] = React.useState<boolean | null>(null);
+  const [guests, setGuests] = React.useState(1);
+  const [state, setState] = React.useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
+  const [sentAttending, setSentAttending] = React.useState(true);
+
+  // Someone who already answered on this phone sees their answer, not the form.
+  React.useEffect(() => {
+    const slug = cardSlug();
+    if (!slug) return;
+    try {
+      const saved = window.localStorage.getItem(rsvpSentKey(slug));
+      if (saved) {
+        setSentAttending(saved === 'yes');
+        setState('sent');
+      }
+    } catch {
+      /* storage blocked — show the form */
+    }
+  }, []);
+
+  const valid = name.trim().length >= 2 && attending !== null;
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!valid || state === 'sending') return;
+    const slug = cardSlug();
+    if (!slug) {
+      // Builder / admin preview: show the result without saving anything.
+      setSentAttending(attending);
+      setState('sent');
+      return;
+    }
+    setState('sending');
+    try {
+      const res = await fetch('/api/rsvp', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ slug, name: name.trim(), attending, guests: attending ? guests : 0 }),
+      });
+      if (!res.ok) throw new Error(String(res.status));
+      try {
+        window.localStorage.setItem(rsvpSentKey(slug), attending ? 'yes' : 'no');
+      } catch {
+        /* storage blocked — the reply is saved anyway */
+      }
+      trackOnCard('rsvp_click');
+      setSentAttending(attending);
+      setState('sent');
+    } catch {
+      setState('error');
+    }
+  };
+
+  const faint = `color-mix(in srgb, ${c.text} 35%, transparent)`;
+  const line = { borderColor: faint, color: c.text } as React.CSSProperties;
+  const choice = (on: boolean) =>
+    on
+      ? { background: c.accent, borderColor: c.accent, color: c.onAccent }
+      : { borderColor: faint, color: c.text };
+
+  if (state === 'sent') {
+    return (
+      <p className="mt-token-6 text-lg font-semibold" style={{ color: c.accent }} role="status">
+        {sentAttending
+          ? ar
+            ? 'وصل ردك، في انتظارك 🤍'
+            : 'Got it — see you there 🤍'
+          : ar
+            ? 'وصل ردك، هنفتقدك 🤍'
+            : "Got it — you'll be missed 🤍"}
+      </p>
+    );
+  }
+
+  return (
+    <form
+      onSubmit={submit}
+      onClick={(e) => e.stopPropagation()}
+      onPointerDown={(e) => e.stopPropagation()}
+      className="mx-auto mt-token-6 flex w-full max-w-xs flex-col gap-token-3 text-start"
+      dir={ar ? 'rtl' : 'ltr'}
+    >
+      <input
+        type="text"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        maxLength={80}
+        autoComplete="name"
+        placeholder={ar ? 'اسمك' : 'Your name'}
+        aria-label={ar ? 'اسمك' : 'Your name'}
+        className="w-full rounded-md border bg-transparent px-token-4 py-token-3 text-base outline-none placeholder:opacity-60 focus:border-current"
+        style={line}
+      />
+      <div className="grid grid-cols-2 gap-token-2" role="radiogroup" aria-label={ar ? 'هتحضر؟' : 'Coming?'}>
+        {[true, false].map((v) => (
+          <button
+            key={String(v)}
+            type="button"
+            role="radio"
+            aria-checked={attending === v}
+            onClick={() => setAttending(v)}
+            className="rounded-md border px-token-2 py-token-3 text-sm font-semibold transition-colors"
+            style={choice(attending === v)}
+          >
+            {v ? (ar ? 'جاي إن شاء الله' : "I'll be there") : ar ? 'مش هقدر آجي' : "Can't make it"}
+          </button>
+        ))}
+      </div>
+      {attending ? (
+        <div className="flex items-center justify-between rounded-md border px-token-4 py-token-2" style={line}>
+          <span className="text-sm">{ar ? 'عدد الأفراد' : 'How many'}</span>
+          <div className="flex items-center gap-token-3" dir="ltr">
+            <button
+              type="button"
+              onClick={() => setGuests((g) => Math.max(1, g - 1))}
+              aria-label={ar ? 'أقل' : 'Fewer'}
+              className="h-8 w-8 rounded-full border text-lg leading-none"
+              style={line}
+            >
+              −
+            </button>
+            <span className="w-6 text-center text-lg font-semibold" aria-live="polite">
+              {guests}
+            </span>
+            <button
+              type="button"
+              onClick={() => setGuests((g) => Math.min(20, g + 1))}
+              aria-label={ar ? 'أكتر' : 'More'}
+              className="h-8 w-8 rounded-full border text-lg leading-none"
+              style={line}
+            >
+              +
+            </button>
+          </div>
+        </div>
+      ) : null}
+      <button
+        type="submit"
+        disabled={!valid || state === 'sending'}
+        className={`${pill.replace('mt-token-6 ', '')} mt-token-2 justify-center disabled:opacity-50`}
+        style={{ background: c.accent, color: c.onAccent, outlineColor: c.accent }}
+      >
+        {state === 'sending' ? (ar ? 'بيتبعت…' : 'Sending…') : ar ? 'ابعت الرد' : 'Send reply'}
+      </button>
+      {state === 'error' ? (
+        <p className="text-center text-sm" style={{ color: c.text }} role="alert">
+          {ar ? 'محصلش إرسال، جرّب تاني.' : "Couldn't send — try again."}
+        </p>
+      ) : null}
+    </form>
   );
 }
 

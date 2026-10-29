@@ -16,6 +16,7 @@ import type {
   SignedUploadTarget,
   ConfirmedMedia,
   AppLocale,
+  RsvpSummary,
 } from './types';
 
 export class ApiError extends Error {
@@ -116,6 +117,8 @@ export const dashboardApi = {
 
   deleteExperience: (id: string) =>
     request<void>(`/api/dashboard/experiences/${id}`, { method: 'DELETE' }),
+
+  listRsvps: (id: string) => request<RsvpSummary>(`/api/dashboard/experiences/${id}/rsvps`),
 
   putSteps: (id: string, steps: StepUpsert[]) =>
     request<{ ok: true }>(`/api/dashboard/experiences/${id}/steps`, {

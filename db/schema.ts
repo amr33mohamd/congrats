@@ -351,6 +351,27 @@ export const messengerMessages = pgTable(
   ],
 );
 
+/* ───────────────────────────── RSVP ──────────────────────────────── */
+
+// A guest's reply from an invitation's RSVP section. Only the card's owner
+// reads these (dashboard); the guest needs no account.
+export const rsvps = pgTable(
+  'rsvps',
+  {
+    id: id(),
+    experienceId: uuid('experience_id').notNull().references(() => experiences.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    attending: boolean('attending').notNull(),
+    guests: integer('guests').notNull().default(1),
+    note: text('note'),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    check('rsvps_guests_chk', sql`${t.guests} between 0 and 20`),
+    index('rsvps_experience_idx').on(t.experienceId, t.createdAt),
+  ],
+);
+
 /* ───────────────────────────── INFERRED TYPES ─────────────────────── */
 
 export type User = typeof users.$inferSelect;
@@ -371,6 +392,7 @@ export type PasswordResetToken = typeof passwordResetTokens.$inferSelect;
 export type EventRow = typeof events.$inferSelect;
 export type MessengerThread = typeof messengerThreads.$inferSelect;
 export type MessengerMessage = typeof messengerMessages.$inferSelect;
+export type Rsvp = typeof rsvps.$inferSelect;
 
 export const schema = {
   users,
@@ -387,4 +409,5 @@ export const schema = {
   events,
   messengerThreads,
   messengerMessages,
+  rsvps,
 };

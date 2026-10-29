@@ -33,6 +33,16 @@ export interface ExperienceListItem {
   createdAt?: string;
   updatedAt?: string;
   orderId?: string | null;
+  /** Guests' replies from the card's RSVP section. */
+  rsvpCount?: number;
+}
+
+/** GET /api/dashboard/experiences/:id/rsvps */
+export interface RsvpSummary {
+  replies: { id: string; name: string; attending: boolean; guests: number; note: string | null; createdAt: string }[];
+  attending: number;
+  declined: number;
+  guests: number;
 }
 
 /** A template card in the picker (served by B1/B2 via GET /api/dashboard/... or admin templates). */

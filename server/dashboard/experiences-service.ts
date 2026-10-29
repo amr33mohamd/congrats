@@ -24,6 +24,7 @@ import type { QuizAnswers } from '@/lib/quiz/answers';
 import { DashboardError } from './errors';
 import { defaultTextForScene, reconcileSteps, reconcileText } from './step-reconcile';
 import * as repo from './repositories';
+import { countRsvps } from '@/server/rsvp/rsvp-service';
 
 export interface EditorStepPayload {
   id: string;
@@ -108,7 +109,7 @@ export async function createExperience(
   return experience;
 }
 
-export type ExperienceListEntry = Experience & { shareSlug: string | null };
+export type ExperienceListEntry = Experience & { shareSlug: string | null; rsvpCount: number };
 
 export async function listExperiences(ctx: UserContext): Promise<ExperienceListEntry[]> {
   const rows = await repo.listExperiences(ctx.db, ctx.user.id);
@@ -117,7 +118,12 @@ export async function listExperiences(ctx: UserContext): Promise<ExperienceListE
     rows.map((r) => r.id),
   );
   const slugByExperience = new Map(links.map((l) => [l.experienceId, l.slug]));
-  return rows.map((r) => ({ ...r, shareSlug: slugByExperience.get(r.id) ?? null }));
+  const rsvpCounts = await countRsvps(ctx, rows.map((r) => r.id));
+  return rows.map((r) => ({
+    ...r,
+    shareSlug: slugByExperience.get(r.id) ?? null,
+    rsvpCount: rsvpCounts.get(r.id) ?? 0,
+  }));
 }
 
 async function requireOwnedExperience(ctx: UserContext, id: string): Promise<Experience> {
