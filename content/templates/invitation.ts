@@ -540,7 +540,7 @@ function makeInvitation(s: Style, locale: 'ar' | 'en'): CatalogTemplate {
     locale,
     direction: locale === 'ar' ? 'rtl' : 'ltr',
     isPaid: true,
-    pricePiastres: PRICE.premium,
+    pricePiastres: PRICE.invitation,
     currency: 'EGP',
     thumbnailHint: s.hint,
     thumbnailUrl:

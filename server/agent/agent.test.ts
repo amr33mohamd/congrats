@@ -22,7 +22,7 @@ describe('normalizeTurns', () => {
 
 describe('systemPrompt', () => {
   const base = {
-    catalog: [{ slug: 'invitation-ivory-arch-ar', title: 'آيفوري', priceEgp: 79 }],
+    catalog: [{ slug: 'invitation-ivory-arch-ar', title: 'آيفوري', priceEgp: 150 }],
     facts: { names: 'أحمد وسارة' },
     customerName: 'Sara',
     cairoNow: '25 Oct 2026, 14:00',
@@ -33,7 +33,10 @@ describe('systemPrompt', () => {
 
   it('quotes only database prices and what is already known', () => {
     const p = systemPrompt(base);
-    expect(p).toContain('invitation-ivory-arch-ar) — 79 جنيه');
+    expect(p).toContain('invitation-ivory-arch-ar) — 150 جنيه');
+    // The price is said in the first reply, not after the preview.
+    expect(p).toContain('say the price (150 جنيه)');
+    expect(p).not.toContain('٧٩');
     expect(p).toContain('- names: أحمد وسارة');
     expect(p).toContain('congrats@instapay');
   });

@@ -329,7 +329,7 @@ export const PRODUCTS: Product[] = [
     tiers: [
       {
         name: { ar: 'دعوة واحدة', en: 'One invitation' },
-        price: 79,
+        price: 150,
         unit: { ar: 'مرة واحدة للدعوة', en: 'one-time, per invitation' },
         fulfilment: 'self',
         selfTemplate: 'invitation-qasr-gold-ar',
@@ -342,8 +342,8 @@ export const PRODUCTS: Product[] = [
       },
       {
         name: { ar: 'باقة خطوبة + كتب كتاب + فرح', en: 'Engagement + katb ketab + wedding' },
-        price: 179,
-        unit: { ar: '٣ دعوات — بدل ٢٣٧', en: '3 invitations — instead of 237' },
+        price: 350,
+        unit: { ar: '٣ دعوات — بدل ٤٥٠', en: '3 invitations — instead of 450' },
         fulfilment: 'whatsapp',
         features: [
           { text: { ar: '٣ دعوات بنفس الستايل لكل مناسبة', en: '3 matching invitations, one per event' } },
@@ -364,8 +364,8 @@ export const PRODUCTS: Product[] = [
     seo: {
       title: { ar: 'دعوة كتب كتاب وخطوبة إلكترونية على واتساب', en: 'Katb ketab & engagement e-invitation on WhatsApp' },
       description: {
-        ar: 'دعوة كتب كتاب أو خطوبة أو حنة من صفحة واحدة: الميعاد واللوكيشن والعدّاد وتأكيد الحضور على واتساب. بـ ٧٩ جنيه، وباقة ٣ مناسبات بـ ١٧٩.',
-        en: 'A one-page katb ketab, engagement or henna invitation with map, countdown and WhatsApp RSVP. EGP 79; 3-event bundle EGP 179.',
+        ar: 'دعوة كتب كتاب أو خطوبة أو حنة من صفحة واحدة: الميعاد واللوكيشن والعدّاد وتأكيد الحضور على واتساب. بـ ١٥٠ جنيه، وباقة ٣ مناسبات بـ ٣٥٠.',
+        en: 'A one-page katb ketab, engagement or henna invitation with map, countdown and WhatsApp RSVP. EGP 150; 3-event bundle EGP 350.',
       },
     },
   },
@@ -401,7 +401,7 @@ export const PRODUCTS: Product[] = [
     ],
     audience: [
       { ar: 'عرسان عندهم أكتر من ١٠٠ ضيف', en: 'Couples with 100+ guests' },
-      { ar: 'اللي عملوا دعوة الـ٧٩ وعايزين يتابعوا الحضور', en: 'Couples on the 79 EGP invitation who want guest tracking' },
+      { ar: 'اللي عملوا دعوة الـ١٥٠ وعايزين يتابعوا الحضور', en: 'Couples on the 150 EGP invitation who want guest tracking' },
     ],
     primary: { kind: 'whatsapp' },
     primaryLabel: { ar: 'اطلبه على واتساب', en: 'Order on WhatsApp' },
@@ -409,7 +409,7 @@ export const PRODUCTS: Product[] = [
     tiers: [
       {
         name: { ar: 'الدعوة بس', en: 'Invitation only' },
-        price: 79,
+        price: 150,
         unit: { ar: 'تعملها بنفسك', en: 'do it yourself' },
         fulfilment: 'self',
         selfTemplate: 'invitation-qasr-gold-ar',
