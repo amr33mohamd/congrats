@@ -36,7 +36,7 @@ export function RsvpPage({ experienceId }: { experienceId: string }) {
     new Date(iso).toLocaleString(locale === 'ar' ? 'ar-EG' : 'en-GB', { dateStyle: 'medium', timeStyle: 'short' });
 
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-col gap-token-5">
+    <div className="mx-auto flex w-full max-w-2xl flex-col gap-token-5 px-token-4 py-token-8 sm:px-token-6">
       <div className="flex items-center justify-between gap-token-3">
         <div>
           <h1 className="font-heading text-xl font-bold text-ink">{t('title')}</h1>
@@ -64,37 +64,59 @@ export function RsvpPage({ experienceId }: { experienceId: string }) {
         </Card>
       ) : data ? (
         <>
-          <div className="grid grid-cols-3 gap-token-3 text-center">
+          <div className="grid grid-cols-3 gap-token-3">
             {[
-              [t('attending'), data.attending],
-              [t('declined'), data.declined],
-              [t('guests'), data.guests],
-            ].map(([label, n]) => (
-              <Card key={label as string} className="px-token-3 py-token-4">
-                <div className="font-heading text-3xl font-bold text-ink">{n}</div>
-                <div className="mt-token-1 text-xs text-muted">{label}</div>
+              { label: t('attending'), n: data.attending, tone: 'text-success' },
+              { label: t('declined'), n: data.declined, tone: 'text-muted' },
+              { label: t('guests'), n: data.guests, tone: 'text-ink' },
+            ].map((s) => (
+              <Card key={s.label} className="flex flex-col items-center gap-token-1 px-token-3 py-token-4">
+                <div className={`font-heading text-4xl font-bold leading-none ${s.tone}`}>{s.n}</div>
+                <div className="text-xs text-muted">{s.label}</div>
               </Card>
             ))}
           </div>
 
           {data.replies.length === 0 ? (
-            <Card className="p-token-8 text-center text-sm text-muted">{t('empty')}</Card>
+            <Card className="mt-token-2 flex flex-col items-center gap-token-2 p-token-8 text-center text-sm text-muted">
+              <span className="text-3xl" aria-hidden>
+                💌
+              </span>
+              {t('empty')}
+            </Card>
           ) : (
-            <div className="flex flex-col gap-token-3">
+            <div className="mt-token-2 flex flex-col gap-token-3 border-t border-border pt-token-5">
               {data.replies.map((r) => (
-                <Card key={r.id} className="flex flex-col gap-token-2 p-token-4">
-                  <div className="flex items-center justify-between gap-token-3">
-                    <span className="truncate font-heading font-semibold text-ink">{r.name}</span>
-                    <span
-                      className={`shrink-0 rounded-full px-token-3 py-token-1 text-xs font-medium ${
-                        r.attending ? 'bg-success/10 text-success' : 'bg-surface-2 text-muted'
-                      }`}
-                    >
-                      {r.attending ? `${t('coming')} · ${t('people', { count: r.guests })}` : t('notComing')}
-                    </span>
+                <Card
+                  key={r.id}
+                  className={`flex items-start gap-token-3 p-token-4 border-s-4 ${
+                    r.attending ? 'border-s-success/60' : 'border-s-border'
+                  }`}
+                >
+                  <div
+                    className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full font-heading text-base font-bold ${
+                      r.attending ? 'bg-success/15 text-success' : 'bg-surface-2 text-muted'
+                    }`}
+                    aria-hidden
+                  >
+                    {r.name.trim().charAt(0) || '؟'}
                   </div>
-                  {r.note ? <p className="text-sm text-muted">{r.note}</p> : null}
-                  <span className="text-xs text-muted">{when(r.createdAt)}</span>
+                  <div className="flex min-w-0 flex-1 flex-col gap-token-1">
+                    <div className="flex flex-wrap items-center justify-between gap-token-2">
+                      <span className="truncate font-heading font-semibold text-ink">{r.name}</span>
+                      <span
+                        className={`shrink-0 rounded-full px-token-3 py-[2px] text-xs font-medium ${
+                          r.attending ? 'bg-success/10 text-success' : 'bg-surface-2 text-muted'
+                        }`}
+                      >
+                        {r.attending ? `${t('coming')} · ${t('people', { count: r.guests })}` : t('notComing')}
+                      </span>
+                    </div>
+                    {r.note ? (
+                      <p className="text-sm leading-relaxed text-ink/80">{r.note}</p>
+                    ) : null}
+                    <span className="text-xs text-muted">{when(r.createdAt)}</span>
+                  </div>
                 </Card>
               ))}
             </div>
