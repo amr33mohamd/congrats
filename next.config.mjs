@@ -75,7 +75,8 @@ const cspDirectives = {
   'worker-src': ["'self'", 'blob:'],
   'child-src': ["'self'", 'blob:'],
   'manifest-src': ["'self'"],
-  'frame-src': ["'none'"],
+  // The White Bloom invitation's venue map (a Google Maps embed, no API key).
+  'frame-src': ['https://www.google.com'],
   'object-src': ["'none'"],
   'base-uri': ["'self'"],
   'form-action': ["'self'"],

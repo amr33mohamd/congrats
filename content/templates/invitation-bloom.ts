@@ -35,10 +35,9 @@ const ON_WHITE = { headingColor: '#0B3F48', bodyColor: '#2C5B62' };
 const ON_TEAL = { headingColor: '#F6FBFB', bodyColor: '#F6FBFB' };
 
 /**
- * `edge` is the art's own colour along the edge away from the flowers. A
- * section taller than one screen (a long program) keeps the art at one
- * screen's size and continues in this colour, so the flowers never grow over
- * the type.
+ * `edge` is the ground the art continues into: the player pins the art to its
+ * flowers' corner at the column's width and fills the rest of the section
+ * with this colour, so the flowers never grow over the type.
  */
 const panel = (imageUrl: string, edge: string) => ({
   type: 'image' as const,
@@ -47,10 +46,10 @@ const panel = (imageUrl: string, edge: string) => ({
 });
 const WHITE = '#F4F5F2';
 const EDGE = {
-  tealTop: '#02626F',
-  tealBottom: '#1D7981',
-  whiteTop: '#E2E1DD',
-  whiteBottom: '#E9E9E9',
+  tealTop: '#036270',
+  tealBottom: '#1D7982',
+  whiteTop: '#E0DFDA',
+  whiteBottom: '#E9E9EA',
 };
 
 type Copy = Record<string, string>;
@@ -171,7 +170,7 @@ function buildDefinition(locale: 'ar' | 'en'): TemplateDefinitionInput {
       accent: '#B8975A',
       textColor: '#0B3F48',
       ornament: { kind: 'none', opacity: 0, scale: 1 },
-      music: 'romantic-strings',
+      music: 'white-bloom',
       background: { type: 'solid', colors: [WHITE], angle: 160 },
       decoration: { effect: 'none', intensity: 'low' },
       stage: 'bloom',

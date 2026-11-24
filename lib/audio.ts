@@ -28,6 +28,7 @@ export const TRACK_KEYS = [
   'eid-takbir-soft',
   'triumphant-soft',
   'lullaby-soft',
+  'white-bloom',
 ] as const;
 
 export type TrackKey = (typeof TRACK_KEYS)[number];
