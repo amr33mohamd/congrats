@@ -37,7 +37,8 @@
     "deleteConfirmBody": "This can't be undone. The shareable link will stop working.",
     "deleteConfirm": "Delete",
     "deleteCancel": "Keep it",
-    "rsvps": "Replies ({count})"
+    "rsvps": "Replies ({count})",
+    "rsvpsEmpty": "RSVPs"
   },
   "share": {
     "title": "Share your experience",
@@ -233,6 +234,8 @@
     "people": "{count} people",
     "empty": "No replies yet. When a guest answers from the card it shows up here.",
     "close": "Done",
-    "failed": "Could not load the replies. Try again."
+    "failed": "Could not load the replies. Try again.",
+    "subtitle": "Your guests’ replies to this card, with the totals to plan around.",
+    "retry": "Try again"
   }
 }

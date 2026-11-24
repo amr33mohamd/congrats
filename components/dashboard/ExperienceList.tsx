@@ -8,7 +8,6 @@ import { dashboardApi } from './api-client';
 import type { ExperienceListItem } from './types';
 import { ExperienceCard } from './ExperienceCard';
 import { ShareDialog } from './ShareDialog';
-import { RsvpDialog } from './RsvpDialog';
 
 export function ExperienceList() {
   const t = useTranslations('dashboard');
@@ -18,7 +17,6 @@ export function ExperienceList() {
   const [shareItem, setShareItem] = React.useState<ExperienceListItem | null>(null);
   const [deleteItem, setDeleteItem] = React.useState<ExperienceListItem | null>(null);
   const [deleting, setDeleting] = React.useState(false);
-  const [rsvpItem, setRsvpItem] = React.useState<ExperienceListItem | null>(null);
 
   const load = React.useCallback(async () => {
     setError(null);
@@ -106,7 +104,6 @@ export function ExperienceList() {
               item={item}
               onShare={setShareItem}
               onDelete={setDeleteItem}
-              onRsvps={setRsvpItem}
             />
           ))}
         </div>
@@ -119,7 +116,6 @@ export function ExperienceList() {
         recipientName={shareItem?.recipientName}
       />
 
-      <RsvpDialog experienceId={rsvpItem?.id ?? null} onClose={() => setRsvpItem(null)} />
 
       <Dialog
         open={Boolean(deleteItem)}
