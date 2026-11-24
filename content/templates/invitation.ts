@@ -152,6 +152,25 @@ const STYLES: Style[] = [
     hint: 'Ivory with porcelain-blue florals in an oval crest, fine blue rules, gold hairline.',
   },
   {
+    key: 'turquoise-pearl',
+    // Deep turquoise velvet reads as the dark ground; pearl white is the paper,
+    // antique gold the accent. Names go in Great Vibes over a fine gold rule.
+    palette: ['#0B3F48', '#06343C', '#F6FBFB', '#E2C98F'],
+    accent: '#B8975A',
+    text: '#F6FBFB',
+    // Gold is too close to the wreath to read on the cover; pearl-gold light does.
+    headingInk: '#F2E3BD',
+    ornament: 'wreath',
+    damask: true,
+    fontEn: 'Cormorant Garamond',
+    nameFontEn: 'Great Vibes',
+    fontAr: 'Reem Kufi',
+    scrim: ['rgba(6,52,60,0.30)', 'rgba(6,52,60,0.86)'],
+    titleEn: 'Wedding Invitation — Turquoise Pearl',
+    titleAr: 'دعوة زفاف — لؤلؤ فيروزي',
+    hint: 'Deep turquoise velvet and pearl white, a pearl-and-gold wreath, Great Vibes names over a fine gold rule, scattered pearls.',
+  },
+  {
     key: 'qasr-gold',
     palette: ['#F6EEDC', '#EADCBE', '#4A3418', '#B08A3E'],
     accent: '#9C7A34',
@@ -546,7 +565,7 @@ function makeInvitation(s: Style, locale: 'ar' | 'en'): CatalogTemplate {
     thumbnailUrl:
       'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=800&q=70',
     // Lead the category with the strongest directions.
-    mvp: s.key === 'noir-gold' || s.key === 'ivory-arch' || s.key === 'sage-garden',
+    mvp: s.key === 'noir-gold' || s.key === 'ivory-arch' || s.key === 'sage-garden' || s.key === 'turquoise-pearl',
     definition: buildDefinition(s, locale),
   };
 }
