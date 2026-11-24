@@ -13,6 +13,7 @@ import { SceneRenderer } from '@/components/player/SceneRenderer';
 import { SceneBackground, backgroundCss } from '@/components/player/SceneBackground';
 import { Decorations } from '@/components/player/Decorations';
 import { SceneOrnament } from '@/components/player/SceneOrnament';
+import { BloomCoverStill } from '@/components/player/bloom/parts';
 
 /**
  * One scene of a BoundExperience, chrome-free and sized to its container.
@@ -138,17 +139,22 @@ export function TemplateStage({
           reducedMotion={reduced}
           active={animate}
         />
-        <SceneRenderer
-          key={scene.id}
-          scene={scene}
-          step={step}
-          theme={theme}
-          direction={experience.direction}
-          recipientName={experience.recipientName}
-          fields={experience.fields}
-          reducedMotion={reduced}
-          active
-        />
+        {theme.stage === 'bloom' && scene.type === 'Cover' ? (
+          // The painted-panel stage draws its own cover (names inside the wreath).
+          <BloomCoverStill scene={scene} step={step} experience={experience} />
+        ) : (
+          <SceneRenderer
+            key={scene.id}
+            scene={scene}
+            step={step}
+            theme={theme}
+            direction={experience.direction}
+            recipientName={experience.recipientName}
+            fields={experience.fields}
+            reducedMotion={reduced}
+            active
+          />
+        )}
       </div>
     </div>
   );

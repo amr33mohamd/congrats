@@ -363,7 +363,7 @@ function cardSlug(): string | null {
 
 const rsvpSentKey = (slug: string) => `rsvp:${slug}`;
 
-function RsvpForm({ p }: { p: SceneRenderPropsLike }) {
+export function RsvpForm({ p }: { p: SceneRenderPropsLike }) {
   const c = colors(p);
   const ar = isAr(p);
   const [name, setName] = React.useState('');

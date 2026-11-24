@@ -52,6 +52,12 @@ const LuxePlayer = dynamic(() => import('./luxe/LuxePlayer'), {
   loading: () => <div className="h-full min-h-[100dvh] w-full bg-black" />,
 });
 
+/** The painted-panel stage (theme.stage === 'bloom'), in its own chunk. */
+const BloomPlayer = dynamic(() => import('./bloom/BloomPlayer'), {
+  ssr: false,
+  loading: () => <div className="h-full min-h-[100dvh] w-full" style={{ background: '#F4F5F2' }} />,
+});
+
 export interface PlayerProps {
   experience: BoundExperience;
   /** Gate behind a tap before opening (also what legitimises audio playback). */
@@ -418,7 +424,10 @@ function OpenGate({
 /* ─────────────────────────────── the player ─────────────────────────────── */
 
 export function Player(props: PlayerProps) {
-  return props.experience.theme?.stage === 'luxe-hall' ? <LuxePlayer {...props} /> : <CardPlayer {...props} />;
+  const stage = props.experience.theme?.stage;
+  if (stage === 'luxe-hall') return <LuxePlayer {...props} />;
+  if (stage === 'bloom') return <BloomPlayer {...props} />;
+  return <CardPlayer {...props} />;
 }
 
 export function CardPlayer({

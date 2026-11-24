@@ -41,6 +41,7 @@ import { graduationEn, graduationAr } from './graduation';
 import { newbornEn, newbornAr } from './newborn';
 import { weddingEn, weddingAr } from './wedding';
 import { INVITATION_TEMPLATES } from './invitation';
+import { BLOOM_TEMPLATES } from './invitation-bloom';
 
 export type { CatalogTemplate, CatalogCategory, CategorySlug } from './_helpers';
 export { CATALOG_CATEGORIES } from './categories';
@@ -73,6 +74,7 @@ const RAW_CATALOG: CatalogTemplate[] = [
   weddingAr,
   // Wedding invitations (sent BY the couple, not a congratulation)
   ...INVITATION_TEMPLATES,
+  ...BLOOM_TEMPLATES,
 ];
 
 /* ───────────────────── load-time integrity checks ────────────────────── */

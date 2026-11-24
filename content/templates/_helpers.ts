@@ -74,4 +74,5 @@ export const PRICE = {
   standard: 4900, // 49.00 EGP
   premium: 7900, // 79.00 EGP
   invitation: 15000, // 150.00 EGP: wedding invitations
+  invitationPremium: 50000, // 500.00 EGP: invitations with their own player (White Bloom)
 } as const;

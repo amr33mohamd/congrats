@@ -280,9 +280,10 @@ export const TemplateThemeSchema = z.object({
   /**
    * Play the card on a different stage than the scrolling card. `luxe-hall`
    * is a full 3D world (components/player/luxe): the same scenes and slots,
-   * so the builder edits it exactly like any other card.
+   * so the builder edits it exactly like any other card. `bloom` is a stack
+   * of full-screen painted panels (components/player/bloom), one per section.
    */
-  stage: z.enum(['luxe-hall']).optional(),
+  stage: z.enum(['luxe-hall', 'bloom']).optional(),
 });
 export type TemplateTheme = z.infer<typeof TemplateThemeSchema>;
 
